@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R-Value Estimator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0ffef; /* Light green-gray background for a fresh look */
+        }
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff; /* White background for the card */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.04); /* Deeper shadow */
+        }
+        input[type="number"], select {
+            @apply w-full p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all duration-200 ease-in-out;
+        }
+        label {
+            @apply block text-gray-700 text-sm font-semibold mb-1;
+        }
+        .section-title {
+            @apply text-2xl font-bold text-gray-800 mb-5 pb-3 border-b-2 border-green-200;
+        }
+        .btn {
+            @apply bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105;
+        }
+        .result-box {
+            @apply bg-green-50 p-6 rounded-xl border-2 border-green-200 mt-8;
+        }
+        .result-text {
+            @apply text-xl font-semibold text-green-800;
+        }
+        .error-message {
+            @apply text-red-700 text-sm mt-2;
+        }
+        .alert-warning {
+            @apply bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-md mb-4;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="container relative"> <!-- Added relative positioning for the menu -->
+        <!-- Hamburger Menu -->
+        <div class="absolute top-0 right-0 p-4 mr-4 mt-1"> <!-- Adjusted margin for aesthetics -->
+            <button id="menu-btn" class="text-gray-600 hover:text-green-700 focus:outline-none">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+            </button>
+            <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-20 py-1">
+                <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Tiny Home Calculator</a>
+                <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Existing Building Estimator</a>
+            </div>
+        </div>
+
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-10 pt-8">R-Value Estimator</h1> <!-- Added pt-8 to avoid overlap with menu -->
+        <p class="text-center text-gray-600 mb-10">Estimate wall/ceiling R-value using HVAC data and temperature measurements where internal construction is unknown.</p>
+
+        <div id="error-display" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md hidden mb-4" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span id="error-message" class="block sm:inline"></span>
+        </div>
+
+        <!-- Section: Space Information -->
+        <div class="mb-8">
+            <h2 class="section-title">1. Space Information & Temperatures</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label for="spaceLength">Length (ft):</label>
+                    <input type="number" id="spaceLength" value="20" placeholder="e.g., 20">
+                </div>
+                <div>
+                    <label for="spaceWidth">Width (ft):</label>
+                    <input type="number" id="spaceWidth" value="15" placeholder="e.g., 15">
+                </div>
+                <div>
+                    <label for="spaceHeight">Height (ft):</label>
+                    <input type="number" id="spaceHeight" value="8" placeholder="e.g., 8">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="tIndoorAir">Indoor Air Temperature (&deg;F):</label>
+                    <input type="number" id="tIndoorAir" value="70" placeholder="e.g., 70">
+                </div>
+                <div>
+                    <label for="tOutdoorAir">Outdoor Air Temperature (&deg;F):</label>
+                    <input type="number" id="tOutdoorAir" value="30" placeholder="e.g., 30">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="qHvac">Applied HVAC Rate (BTUs/Hr):</label>
+                    <input type="number" id="qHvac" value="20000" placeholder="e.g., 20000">
+                </div>
+                <div>
+                    <label for="hvacMode">HVAC Mode:</label>
+                    <select id="hvacMode">
+                        <option value="heating">Heating</option>
+                        <option value="cooling">Cooling</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Target Wall/Ceiling Properties (Unknown R-value) -->
+        <div class="mb-8">
+            <h2 class="section-title">2. Target Component to Estimate R-Value</h2>
+            <p class="text-sm text-gray-600 mb-4">Select the type and area of the wall or ceiling whose R-value you want to estimate. The internal construction of this component is assumed to be unknown, and its R-value will be calculated from the energy balance.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="targetComponentType">Component Type:</label>
+                    <select id="targetComponentType">
+                        <option value="wall">Wall</option>
+                        <option value="ceiling">Ceiling</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="targetComponentArea">Target Component Area (ft²):</label>
+                    <input type="number" id="targetComponentArea" value="120" placeholder="e.g., 120 (e.g., 10x12 ft wall)">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="tTargetSurfaceIndoor">Target Indoor Surface Temp (&deg;F) (Optional):</label>
+                    <input type="number" id="tTargetSurfaceIndoor" placeholder="e.g., 65 (for material R-value)">
+                    <p class="text-xs text-gray-500 mt-1">If provided, calculates R-value based on surface-to-surface temps.</p>
+                </div>
+                <div>
+                    <label for="tTargetSurfaceOutdoor">Target Outdoor Surface Temp (&deg;F) (Optional):</label>
+                    <input type="number" id="tTargetSurfaceOutdoor" placeholder="e.g., 35 (for material R-value)">
+                    <p class="text-xs text-gray-500 mt-1">Required if indoor surface temp is provided.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Other Gains/Losses (Assumptions) -->
+        <div class="mb-8">
+            <h2 class="section-title">3. Other Heat Gains & Losses (Assumptions)</h2>
+            <div class="alert-warning">
+                <p class="font-bold">Important Assumptions:</p>
+                <ul class="list-disc list-inside text-sm pl-4">
+                    <li>Internal heat gains (from occupants, lights, equipment) and solar heat gains are assumed to be **zero** for this calculation. For best accuracy, take measurements during periods with no internal activity and no direct sunlight.</li>
+                    <li>U-values for **other envelope components (windows, non-target walls/ceilings, floor)** are based on typical default values. This is necessary to balance the energy equation. The accuracy of the estimated R-value depends heavily on how well these defaults represent your building.</li>
+                </ul>
+            </div>
+
+            <p class="text-sm text-gray-600 mb-4">To accurately estimate the heat transfer through your target component, we need to account for all other heat flows in the space. These values are used as defaults in the calculation.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="achRate">Air Change Rate (ACH):</label>
+                    <input type="number" id="achRate" value="0.5" step="0.1" placeholder="e.g., 0.5">
+                    <p class="text-xs text-gray-500 mt-1">Typical: 0.3 (tight) to 1.0+ (leaky) ACH</p>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-gray-700 mb-2">Areas for Other Envelope Components (Default U-Values Used):</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label for="areaWindows">Window Area (ft²):</label>
+                    <input type="number" id="areaWindows" value="30" placeholder="e.g., 30">
+                    <p class="text-xs text-gray-500 mt-1">Default Window U-Value: <span class="font-semibold">2.8 W/m²K</span> (Double-pane)</p>
+                </div>
+                <div>
+                    <label for="areaOtherWallsCeilings">Other Walls/Ceilings Area (ft²):</label>
+                    <input type="number" id="areaOtherWallsCeilings" value="600" placeholder="e.g., 600">
+                    <p class="text-xs text-gray-500 mt-1">Default Other Walls/Ceilings U-Value: <span class="font-semibold">0.5 W/m²K</span> (Insulated)</p>
+                </div>
+                <div>
+                    <label for="areaFloor">Floor Area (ft²):</label>
+                    <input type="number" id="areaFloor" value="300" placeholder="e.g., 300">
+                    <p class="text-xs text-gray-500 mt-1">Default Floor U-Value: <span class="font-semibold">0.3 W/m²K</span> (Insulated)</p>
+                </div>
+            </div>
+        </div>
+
+        <button id="calculateBtn" class="btn w-full mb-6">Calculate R-Value</button>
+
+        <!-- Section: Results -->
+        <div id="results" class="result-box hidden">
+            <h2 class="section-title !mb-2">Results</h2>
+            <p class="result-text mb-2">Estimated Overall R-Value (Air-to-Air, Imperial): <span id="rValueImperialOverall">--</span> (ft&sup2;&middot;hr&middot;&deg;F/BTU)</p>
+            <p class="result-text mb-4">Estimated Overall R-Value (Air-to-Air, SI): <span id="rValueSIOverall">--</span> (m&sup2;&middot;K/W)</p>
+            <p class="result-text mb-2 hidden" id="materialRValueImperialRow">Estimated Material R-Value (Surface-to-Surface, Imperial): <span id="rValueImperialMaterial">--</span> (ft&sup2;&middot;hr&middot;&deg;F/BTU)</p>
+            <p class="result-text mb-4 hidden" id="materialRValueSIRow">Estimated Material R-Value (Surface-to-Surface, SI): <span id="rValueSIMaterial">--</span> (m&sup2;&middot;K/W)</p>
+            <p class="text-sm text-gray-700 mt-4"><em>Disclaimer: This is an estimation based on steady-state assumptions and your inputs, and relies on assumed typical U-values for other building components. Real-world conditions can vary significantly, especially if internal/solar gains are present or the assumed U-values are not representative.</em></p>
+        </div>
+    </div>
+
+    <script>
+        // Hamburger menu toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const menuDropdown = document.getElementById('menu-dropdown');
+
+        if (menuBtn && menuDropdown) { // Check if elements exist
+            menuBtn.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent click from immediately closing menu
+                menuDropdown.classList.toggle('hidden');
+            });
+
+            // Close dropdown if clicking outside
+            document.addEventListener('click', (event) => {
+                if (!menuDropdown.classList.contains('hidden') && !menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
+                    menuDropdown.classList.add('hidden');
+                }
+            });
+        }
+
+
+        // Constants for calculations
+        const BTU_TO_W = 0.293071; // 1 BTU/hr = 0.293071 Watts
+        const FT_TO_M = 0.3048; // 1 foot = 0.3048 meters
+        const FAHRENHEIT_TO_CELSIUS_OFFSET = 32;
+        const FAHRENHEIT_TO_CELSIUS_SCALE = 5/9;
+        const R_VALUE_IMPERIAL_TO_SI = 0.1761; // 1 (ft^2 * hr * F) / BTU = 0.1761 (m^2 * K) / W
+
+        const AIR_DENSITY_KG_PER_M3 = 1.2; // kg/m^3 at standard conditions
+        const AIR_SPECIFIC_HEAT_J_PER_KG_K = 1000; // J/(kg·K) or 1 kJ/(kg·K)
+
+        // DEFAULT U-VALUES (W/m²K) for other components
+        const DEFAULT_U_WINDOWS = 2.8; // Typical double-pane window
+        const DEFAULT_U_OTHER_WALLS_CEILINGS = 0.5; // Moderately insulated wall/ceiling
+        const DEFAULT_U_FLOOR = 0.3; // Moderately insulated floor/slab
+
+        // DOM Elements
+        const spaceLengthInput = document.getElementById('spaceLength');
+        const spaceWidthInput = document.getElementById('spaceWidth');
+        const spaceHeightInput = document.getElementById('spaceHeight');
+        const tIndoorAirInput = document.getElementById('tIndoorAir');
+        const tOutdoorAirInput = document.getElementById('tOutdoorAir');
+        const qHvacInput = document.getElementById('qHvac');
+        const hvacModeSelect = document.getElementById('hvacMode');
+
+        const targetComponentTypeSelect = document.getElementById('targetComponentType');
+        const targetComponentAreaInput = document.getElementById('targetComponentArea');
+        const tTargetSurfaceIndoorInput = document.getElementById('tTargetSurfaceIndoor');
+        const tTargetSurfaceOutdoorInput = document.getElementById('tTargetSurfaceOutdoor');
+
+        const achRateInput = document.getElementById('achRate');
+        const areaWindowsInput = document.getElementById('areaWindows');
+        const areaOtherWallsCeilingsInput = document.getElementById('areaOtherWallsCeilings');
+        const areaFloorInput = document.getElementById('areaFloor');
+
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resultsDiv = document.getElementById('results');
+        const rValueImperialOverallSpan = document.getElementById('rValueImperialOverall');
+        const rValueSIOverallSpan = document.getElementById('rValueSIOverall');
+        const rValueImperialMaterialSpan = document.getElementById('rValueImperialMaterial');
+        const rValueSIMaterialSpan = document.getElementById('rValueSIMaterial');
+        const materialRValueImperialRow = document.getElementById('materialRValueImperialRow');
+        const materialRValueSIRow = document.getElementById('materialRValueSIRow');
+        const errorDisplay = document.getElementById('error-display');
+        const errorMessageSpan = document.getElementById('error-message');
+
+        // Helper functions for unit conversion
+        function fahrenheitToCelsius(f) {
+            return (f - FAHRENHEIT_TO_CELSIUS_OFFSET) * FAHRENHEIT_TO_CELSIUS_SCALE;
+        }
+
+        function displayError(message) {
+            errorMessageSpan.textContent = message;
+            errorDisplay.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+        }
+
+        function hideError() {
+            errorDisplay.classList.add('hidden');
+        }
+
+        // Main calculation logic
+        if (calculateBtn) { // Check if calculateBtn exists
+            calculateBtn.addEventListener('click', () => {
+                hideError();
+                materialRValueImperialRow.classList.add('hidden');
+                materialRValueSIRow.classList.add('hidden');
+
+                // 1. Get all inputs and validate
+                const spaceLengthFt = parseFloat(spaceLengthInput.value);
+                const spaceWidthFt = parseFloat(spaceWidthInput.value);
+                const spaceHeightFt = parseFloat(spaceHeightInput.value);
+                const tIndoorAirF = parseFloat(tIndoorAirInput.value);
+                const tOutdoorAirF = parseFloat(tOutdoorAirInput.value);
+                let qHvacBtuh = parseFloat(qHvacInput.value); // Will adjust sign based on mode
+                const hvacMode = hvacModeSelect.value;
+
+                const targetComponentAreaFt2 = parseFloat(targetComponentAreaInput.value);
+                const tTargetSurfaceIndoorF = parseFloat(tTargetSurfaceIndoorInput.value); // Optional input
+                const tTargetSurfaceOutdoorF = parseFloat(tTargetSurfaceOutdoorInput.value); // Optional input
+
+                const achRate = parseFloat(achRateInput.value);
+                const areaWindowsFt2 = parseFloat(areaWindowsInput.value);
+                const areaOtherWallsCeilingsFt2 = parseFloat(areaOtherWallsCeilingsInput.value);
+                const areaFloorFt2 = parseFloat(areaFloorInput.value);
+
+                // Basic Validation for mandatory inputs
+                const mandatoryInputs = [
+                    spaceLengthFt, spaceWidthFt, spaceHeightFt, tIndoorAirF, tOutdoorAirF, qHvacBtuh,
+                    targetComponentAreaFt2, achRate, areaWindowsFt2,
+                    areaOtherWallsCeilingsFt2, areaFloorFt2
+                ];
+
+                if (mandatoryInputs.some(isNaN) || mandatoryInputs.some(val => val < 0 && val !== qHvacBtuh && !isNaN(val)) ) {
+                     displayError('Please enter valid, non-negative numbers for all required fields. HVAC rate can be positive or negative depending on mode.');
+                     return;
+                }
+                 if (isNaN(qHvacBtuh)) { // Specifically check qHvacBtuh for NaN as it's handled separately for sign
+                    displayError('HVAC Rate must be a valid number.');
+                    return;
+                }
+
+
+                if (targetComponentAreaFt2 === 0) {
+                     displayError('Target component area cannot be zero. Please enter a valid area.');
+                     return;
+                }
+
+                // Validation for optional surface temperatures
+                const hasSurfaceTemps = !isNaN(tTargetSurfaceIndoorF) && !isNaN(tTargetSurfaceOutdoorF);
+                if ((!isNaN(tTargetSurfaceIndoorF) && isNaN(tTargetSurfaceOutdoorF)) || (isNaN(tTargetSurfaceIndoorF) && !isNaN(tTargetSurfaceOutdoorF))) {
+                    displayError('If providing surface temperatures, both Indoor and Outdoor Surface Temperatures for the Target Component must be entered.');
+                    return;
+                }
+
+                // Adjust HVAC rate sign: positive for heating, negative for cooling
+                if (hvacMode === 'cooling') {
+                    qHvacBtuh = -Math.abs(qHvacBtuh); // Ensure it's negative for cooling
+                } else {
+                    qHvacBtuh = Math.abs(qHvacBtuh); // Ensure it's positive for heating
+                }
+
+                // Convert units to SI for calculation consistency
+                const spaceVolumeM3 = (spaceLengthFt * spaceWidthFt * spaceHeightFt) * (FT_TO_M ** 3);
+                const tIndoorAirC = fahrenheitToCelsius(tIndoorAirF);
+                const tOutdoorAirC = fahrenheitToCelsius(tOutdoorAirF);
+                const deltaT_Air_C = tIndoorAirC - tOutdoorAirC; // Temperature difference in Celsius/Kelvin (for air-to-air R-value)
+
+                let tTargetSurfaceIndoorC, tTargetSurfaceOutdoorC, deltaT_Surface_C;
+                if (hasSurfaceTemps) {
+                    tTargetSurfaceIndoorC = fahrenheitToCelsius(tTargetSurfaceIndoorF);
+                    tTargetSurfaceOutdoorC = fahrenheitToCelsius(tTargetSurfaceOutdoorF);
+                    deltaT_Surface_C = tTargetSurfaceIndoorC - tTargetSurfaceOutdoorC; // Temperature difference (for material R-value)
+                }
+
+
+                if (deltaT_Air_C === 0) {
+                     displayError('Temperature difference between indoor and outdoor air cannot be zero for R-value calculation.');
+                     return;
+                }
+
+                const qHvacW = qHvacBtuh * BTU_TO_W;
+                const targetComponentAreaM2 = targetComponentAreaFt2 * (FT_TO_M ** 2);
+                const areaWindowsM2 = areaWindowsFt2 * (FT_TO_M ** 2);
+                const areaOtherWallsCeilingsM2 = areaOtherWallsCeilingsFt2 * (FT_TO_M ** 2);
+                const areaFloorM2 = areaFloorFt2 * (FT_TO_M ** 2);
+
+                // 2. Estimate Other Heat Transfer Components (in Watts)
+                // IMPORTANT ASSUMPTION: qInternal and qSolar are assumed to be ZERO for this calculation.
+                const qInternalW = 0;
+                const qSolarW = 0;
+
+                // Note: Q_values are positive for heat gain to the space, negative for heat loss from the space.
+                // HVAC: Already signed based on heating/cooling mode
+
+                // Transmission through windows (using DEFAULT_U_WINDOWS)
+                const qWindows = DEFAULT_U_WINDOWS * areaWindowsM2 * deltaT_Air_C;
+
+                // Transmission through other walls and ceilings (combined, using DEFAULT_U_OTHER_WALLS_CEILINGS)
+                const qOtherWallsCeilings = DEFAULT_U_OTHER_WALLS_CEILINGS * areaOtherWallsCeilingsM2 * deltaT_Air_C;
+
+                // Transmission through floor (using DEFAULT_U_FLOOR)
+                const qFloor = DEFAULT_U_FLOOR * areaFloorM2 * deltaT_Air_C;
+
+                // Infiltration/Ventilation
+                const qInfiltration = spaceVolumeM3 * achRate / 3600 * AIR_DENSITY_KG_PER_M3 * AIR_SPECIFIC_HEAT_J_PER_KG_K * deltaT_Air_C;
+
+
+                // 3. Perform Energy Balance to find Q_target_component (in Watts)
+                // Energy Balance: Q_HVAC + Q_internal + Q_solar = Q_transmission_total + Q_ventilation
+                // We want to find Q_target_component (part of Q_transmission_total)
+                // Q_transmission_total = Q_target_component + Q_windows + Q_other_walls_ceilings + Q_floor
+                // Rearranging:
+                // Q_target_component = Q_HVAC + Q_internal + Q_solar - (Q_windows + Q_other_walls_ceilings + Q_floor + Q_infiltration)
+
+                const qTargetComponentW = qHvacW + qInternalW + qSolarW - (qWindows + qOtherWallsCeilings + qFloor + qInfiltration);
+
+                // 4. Calculate Heat Flux and Estimated R-value
+                // Heat flux through the target component (Watts/m^2)
+                const qFluxTargetComponentW_per_m2 = qTargetComponentW / targetComponentAreaM2;
+
+                // Calculate Overall R-value (Air-to-Air)
+                const estimatedRValueSIOverall = deltaT_Air_C / qFluxTargetComponentW_per_m2;
+                const estimatedRValueImperialOverall = estimatedRValueSIOverall / R_VALUE_IMPERIAL_TO_SI;
+
+                // Display Overall R-value
+                rValueImperialOverallSpan.textContent = estimatedRValueImperialOverall.toFixed(2);
+                rValueSIOverallSpan.textContent = estimatedRValueSIOverall.toFixed(2);
+
+                // Calculate Material R-value (Surface-to-Surface) if surface temperatures are provided
+                if (hasSurfaceTemps) {
+                    if (deltaT_Surface_C === 0) {
+                        displayError('Temperature difference between indoor and outdoor SURFACE temperatures cannot be zero for Material R-value calculation.');
+                        return;
+                    }
+                    const estimatedRValueSIMaterial = deltaT_Surface_C / qFluxTargetComponentW_per_m2;
+                    const estimatedRValueImperialMaterial = estimatedRValueSIMaterial / R_VALUE_IMPERIAL_TO_SI;
+
+                    rValueImperialMaterialSpan.textContent = estimatedRValueImperialMaterial.toFixed(2);
+                    rValueSIMaterialSpan.textContent = estimatedRValueSIMaterial.toFixed(2);
+                    materialRValueImperialRow.classList.remove('hidden');
+                    materialRValueSIRow.classList.remove('hidden');
+                }
+
+                resultsDiv.classList.remove('hidden');
+            });
+        }
+    </script>
+</body>
+</html>

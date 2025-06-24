@@ -43,9 +43,22 @@
 <body class="bg-gray-50 text-gray-800">
 
     <div class="container mx-auto p-4 md:p-8 max-w-4xl">
-        <header class="text-center mb-8">
+        <header class="text-center mb-8 relative">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Tiny Home Heat Loss Calculator</h1>
             <p class="text-gray-600 mt-2">Estimate the heating load for your tiny home to size your heat pump correctly.</p>
+
+            <!-- Hamburger Menu -->
+            <div class="absolute top-0 right-0 p-4">
+                <button id="menu-btn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                    <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tiny Home Calculator</a>
+                    <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Existing Building Estimator</a>
+                </div>
+            </div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -976,6 +989,21 @@ heatLossChart.data.datasets = datasets;
 
             // Final calculation based on all loaded values
             // calculateAll(); // This is already called by updateDimensionInputs and toggleCustomOpenings
+
+            // Hamburger menu toggle
+            const menuBtn = document.getElementById('menu-btn');
+            const menuDropdown = document.getElementById('menu-dropdown');
+
+            menuBtn.addEventListener('click', () => {
+                menuDropdown.classList.toggle('hidden');
+            });
+
+            // Close dropdown if clicking outside
+            document.addEventListener('click', (event) => {
+                if (!menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
+                    menuDropdown.classList.add('hidden');
+                }
+            });
         });
     </script>
 </body>
