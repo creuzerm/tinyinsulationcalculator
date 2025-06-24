@@ -274,9 +274,13 @@
             // Function to load input value from localStorage
             function loadInputFromLocalStorage(element) {
                 if (element && element.id) {
-                    const savedValue = localStorage.getItem(element.id);
-                    if (savedValue !== null) {
-                        element.value = savedValue;
+                    try {
+                        const savedValue = localStorage.getItem(element.id);
+                        if (savedValue !== null) {
+                            element.value = savedValue;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load from localStorage:', e);
                     }
                 }
             }
