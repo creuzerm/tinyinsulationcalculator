@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Home Heat Loss Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #4A5568;
+            font-weight: 500;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #E2E8F0;
+            background-color: #F7FAFC;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #4299E1;
+            box-shadow: 0 0 0 1px #4299E1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Tiny Home Heat Loss Calculator</h1>
+            <p class="text-gray-600 mt-2">Estimate the heating load for your tiny home to size your heat pump correctly.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Input Controls Column -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-6 border-b pb-3">Building Specifications</h2>
+
+                <!-- Building Shape Selector -->
+                <div class="input-group">
+                    <label for="buildingShape" class="input-label">Building Shape</label>
+                    <select id="buildingShape" class="input-field">
+                        <option value="rectangle">Simple Rectangle</option>
+                        <option value="a-frame">A-Frame</option>
+                        <option value="gothic-arch">Gothic Arch</option>
+                    </select>
+                </div>
+
+                <!-- Dimension Inputs -->
+                <div id="dimensionInputs">
+                    <!-- Dynamic inputs will be injected here by JS -->
+                </div>
+
+                <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Climate & Comfort</h2>
+
+                <!-- Temperature Inputs -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 input-group">
+                    <div>
+                        <label for="indoorTemp" class="input-label">Indoor Temp (°F)</label>
+                        <input type="number" id="indoorTemp" class="input-field" value="68">
+                    </div>
+                    <div>
+                        <label for="outdoorTemp" class="input-label">Outdoor Temp (°F)</label>
+                        <input type="number" id="outdoorTemp" class="input-field" value="10">
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Construction Details</h2>
+
+                <!-- Wall Assembly Selector -->
+                <div class="input-group">
+                    <label for="wallAssembly" class="input-label">Insulation / Wall</label>
+                    <select id="wallAssembly" class="input-field">
+                        <option value="13">2x4 Walls (R-13)</option>
+                        <option value="21">2x6 Walls (R-21)</option>
+                        <option value="29">2x8 Walls (R-29)</option>
+                        <option value="custom">Custom R-Value</option>
+                        <option value="double-wall">Double Stud Wall (No Thermal Bridge)</option>
+                    </select>
+                </div>
+                <div id="customRValueContainer" class="input-group hidden">
+                    <label for="customRValue" class="input-label">Custom Wall R-Value</label>
+                    <input type="number" id="customRValue" class="input-field" value="21">
+                </div>
+                 <div id="doubleWallContainer" class="input-group hidden">
+                    <label for="doubleWallRValue" class="input-label">Double Wall Insulation R-Value</label>
+                    <input type="number" id="doubleWallRValue" class="input-field" value="40">
+                </div>
+
+                <!-- Openings Selector -->
+                <div class="input-group">
+                    <label for="openingsArea" class="input-label">Openings (Windows & Doors)</label>
+                    <select id="openingsArea" class="input-field">
+                        <option value="10">10% of Surface Area (Minimal)</option>
+                        <option value="15" selected>15% of Surface Area (Common)</option>
+                        <option value="20">20% of Surface Area (Generous)</option>
+                        <option value="25">25% of Surface Area (Lots of Glass)</option>
+                    </select>
+                </div>
+                
+                <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Qualitative Factors</h2>
+
+                <!-- Qualitative Factors -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 input-group">
+                    <div>
+                        <label for="airSealing" class="input-label">Air Sealing</label>
+                        <select id="airSealing" class="input-field">
+                            <option value="good">Good Air Barrier</option>
+                            <option value="poor">Poor Air Barrier (Drafty)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="radiantBarrier" class="input-label">Radiant Barrier</label>
+                        <select id="radiantBarrier" class="input-field">
+                            <option value="no">No Reflective Barrier</option>
+                            <option value="yes">Reflective Barrier Included</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Column -->
+            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col">
+                <h2 class="text-2xl font-semibold mb-6 border-b pb-3">Estimated Heat Loss</h2>
+                <div class="flex-grow flex flex-col items-center justify-center text-center">
+                    <div id="resultsDisplay" class="mb-4">
+                        <p class="text-6xl font-bold text-blue-600">0</p>
+                        <p class="text-xl text-gray-600">BTUs/hr</p>
+                    </div>
+                    <p id="resultsExplanation" class="max-w-md text-gray-500">
+                        This is the approximate heating power your system needs to maintain the desired indoor temperature on the coldest day. Look for a heat pump with a capacity that meets or exceeds this value.
+                    </p>
+                </div>
+                 <div class="mt-8">
+                    <h3 class="text-xl font-semibold text-center mb-4">Heat Loss vs. Outdoor Temperature</h3>
+                    <canvas id="heatLossChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const buildingShape = document.getElementById('buildingShape');
+            const dimensionInputsContainer = document.getElementById('dimensionInputs');
+            const indoorTemp = document.getElementById('indoorTemp');
+            const outdoorTemp = document.getElementById('outdoorTemp');
+            const wallAssembly = document.getElementById('wallAssembly');
+            const customRValueContainer = document.getElementById('customRValueContainer');
+            const customRValue = document.getElementById('customRValue');
+            const doubleWallContainer = document.getElementById('doubleWallContainer');
+            const doubleWallRValue = document.getElementById('doubleWallRValue');
+            const openingsArea = document.getElementById('openingsArea');
+            const airSealing = document.getElementById('airSealing');
+            const radiantBarrier = document.getElementById('radiantBarrier');
+            const resultsDisplay = document.getElementById('resultsDisplay').querySelector('p:first-child');
+            
+            let heatLossChart;
+
+            // --- Dimension Templates ---
+            const dimensionTemplates = {
+                rectangle: `
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
+                        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field" value="20"></div>
+                        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field" value="10"></div>
+                        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field" value="8"></div>
+                    </div>
+                    <div class="input-group">
+                        <label for="roofPitch" class="input-label">Roof Pitch (e.g., 4 for 4/12)</label>
+                        <input type="number" id="roofPitch" class="input-field" value="4">
+                        <small class="text-gray-500">For under-roof insulation calculation.</small>
+                    </div>
+                `,
+                'a-frame': `
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
+                        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field" value="20"></div>
+                        <div><label class="input-label">Base Width (ft)</label><input type="number" id="width" class="input-field" value="12"></div>
+                        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field" value="15"></div>
+                    </div>
+                `,
+                'gothic-arch': `
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
+                        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field" value="20"></div>
+                        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field" value="12"></div>
+                         <div><label class="input-label">Spring Wall Ht (ft)</label><input type="number" id="springWallHeight" class="input-field" value="2"></div>
+                    </div>
+                `
+            };
+
+            // --- Functions ---
+            function updateDimensionInputs() {
+                dimensionInputsContainer.innerHTML = dimensionTemplates[buildingShape.value];
+                attachInputListeners();
+                calculateAll();
+            }
+
+            function getWallRValue() {
+                let rValue = parseFloat(wallAssembly.value);
+                if (wallAssembly.value === 'custom') {
+                    customRValueContainer.classList.remove('hidden');
+                    doubleWallContainer.classList.add('hidden');
+                    rValue = parseFloat(customRValue.value) || 0;
+                } else if (wallAssembly.value === 'double-wall') {
+                    customRValueContainer.classList.add('hidden');
+                    doubleWallContainer.classList.remove('hidden');
+                    rValue = parseFloat(doubleWallRValue.value) || 0;
+                } else {
+                    customRValueContainer.classList.add('hidden');
+                    doubleWallContainer.classList.add('hidden');
+                }
+                
+                if (radiantBarrier.value === 'yes') {
+                    rValue += 3;
+                }
+                return rValue;
+            }
+
+            function calculateSurfaceArea() {
+                const shape = buildingShape.value;
+                const L = parseFloat(document.getElementById('length')?.value) || 0;
+                const W = parseFloat(document.getElementById('width')?.value) || 0;
+                const H = parseFloat(document.getElementById('height')?.value) || 0;
+                const SWH = parseFloat(document.getElementById('springWallHeight')?.value) || 0;
+
+                let area = 0;
+                switch (shape) {
+                    case 'rectangle': {
+                        const roofPitch = parseFloat(document.getElementById('roofPitch')?.value) || 0;
+                        const roofWidth = Math.sqrt(Math.pow(W / 2, 2) + Math.pow((W / 2) * (roofPitch / 12), 2)) * 2;
+                        const roofArea = L * roofWidth;
+                        const wallArea = 2 * L * H + 2 * W * H;
+                        area = wallArea + roofArea;
+                        break;
+                    }
+                    case 'a-frame': {
+                        const slopeHeight = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(H, 2));
+                        const roofWallArea = 2 * L * slopeHeight;
+                        const endWallArea = 2 * (0.5 * W * H);
+                        area = roofWallArea + endWallArea;
+                        break;
+                    }
+                    case 'gothic-arch': {
+                        const radius = W / 2;
+                        const archLength = Math.PI * radius; // Half circumference
+                        const curvedRoofArea = L * archLength;
+                        const endWallArea = 2 * (0.5 * Math.PI * Math.pow(radius, 2));
+                        const springWallArea = 2 * L * SWH;
+                        area = curvedRoofArea + endWallArea + springWallArea;
+                        break;
+                    }
+                }
+                return area;
+            }
+
+            function calculateAll() {
+                const totalSurfaceArea = calculateSurfaceArea();
+                if (totalSurfaceArea <= 0) {
+                    resultsDisplay.textContent = '0';
+                    return;
+                }
+
+                const deltaT = Math.abs(parseFloat(indoorTemp.value) - parseFloat(outdoorTemp.value));
+                const wallR = getWallRValue();
+                const openingsR = 3; // Standard for double-pane
+                const openingsPercent = parseFloat(openingsArea.value) / 100;
+
+                const areaOpenings = totalSurfaceArea * openingsPercent;
+                const areaInsulated = totalSurfaceArea - areaOpenings;
+
+                const lossInsulated = (wallR > 0) ? (areaInsulated * deltaT) / wallR : 0;
+                const lossOpenings = (areaOpenings * deltaT) / openingsR;
+
+                let totalLoss = lossInsulated + lossOpenings;
+
+                if (airSealing.value === 'poor') {
+                    totalLoss *= 1.25; // 25% penalty
+                }
+
+                resultsDisplay.textContent = Math.round(totalLoss).toLocaleString();
+                updateChart();
+            }
+            
+            function updateChart() {
+                const tempLabels = [];
+                const heatLossData = [];
+                const startTemp = parseFloat(outdoorTemp.value);
+                const maxTemp = 90;
+
+                for (let temp = startTemp; temp <= maxTemp; temp += 10) {
+                     const deltaT = Math.abs(parseFloat(indoorTemp.value) - temp);
+                     const totalSurfaceArea = calculateSurfaceArea();
+                     if (totalSurfaceArea <= 0) continue;
+
+                     const wallR = getWallRValue();
+                     const openingsR = 3;
+                     const openingsPercent = parseFloat(openingsArea.value) / 100;
+
+                     const areaOpenings = totalSurfaceArea * openingsPercent;
+                     const areaInsulated = totalSurfaceArea - areaOpenings;
+
+                     const lossInsulated = (wallR > 0) ? (areaInsulated * deltaT) / wallR : 0;
+                     const lossOpenings = (areaOpenings * deltaT) / openingsR;
+                     let totalLoss = lossInsulated + lossOpenings;
+                      if (airSealing.value === 'poor') {
+                        totalLoss *= 1.25;
+                    }
+                     
+                    tempLabels.push(`${temp}°F`);
+                    heatLossData.push(Math.round(totalLoss));
+                }
+
+                if (!heatLossChart) {
+                    const ctx = document.getElementById('heatLossChart').getContext('2d');
+                    heatLossChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: tempLabels,
+                            datasets: [{
+                                label: 'Estimated Heat Loss (BTU/hr)',
+                                data: heatLossData,
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                             responsive: true,
+                             maintainAspectRatio: true,
+                             scales: {
+                                 y: {
+                                     beginAtZero: true,
+                                     title: { display: true, text: 'BTU/hr' }
+                                 },
+                                 x: {
+                                      title: { display: true, text: 'Outdoor Temperature' }
+                                 }
+                             },
+                             plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return ` ${context.raw.toLocaleString()} BTU/hr`;
+                                        }
+                                    }
+                                }
+                             }
+                        }
+                    });
+                } else {
+                     heatLossChart.data.labels = tempLabels;
+                     heatLossChart.data.datasets[0].data = heatLossData;
+                     heatLossChart.update();
+                }
+
+            }
+
+            function attachInputListeners() {
+                const inputs = document.querySelectorAll('.input-field, input[type="number"]');
+                inputs.forEach(input => {
+                    input.addEventListener('input', calculateAll);
+                    input.addEventListener('change', calculateAll);
+                });
+            }
+
+            // --- Initial Setup ---
+            buildingShape.addEventListener('change', updateDimensionInputs);
+            wallAssembly.addEventListener('change', calculateAll); // Recalculate when assembly type changes
+            
+            updateDimensionInputs(); // Initial call to set default dimensions
+        });
+    </script>
+</body>
+</html>
