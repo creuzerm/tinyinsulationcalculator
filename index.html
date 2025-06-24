@@ -103,14 +103,51 @@
 
                 <!-- Openings Selector -->
                 <div class="input-group">
-                    <label for="openingsArea" class="input-label">Openings (Windows & Doors)</label>
+                    <label for="openingsArea" class="input-label">Openings (Windows & Doors) - General Area %</label>
                     <select id="openingsArea" class="input-field">
                         <option value="10">10% of Surface Area (Minimal)</option>
                         <option value="15" selected>15% of Surface Area (Common)</option>
                         <option value="20">20% of Surface Area (Generous)</option>
                         <option value="25">25% of Surface Area (Lots of Glass)</option>
+                        <option value="custom">Custom Areas Below</option>
                     </select>
+                    <small class="text-gray-500">Select 'Custom Areas Below' to input specific door/window details.</small>
                 </div>
+
+                <div id="customOpeningsContainer" class="hidden">
+                    <h3 class="text-xl font-semibold mb-4 mt-6 border-b pb-2">Window Details</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
+                        <div>
+                            <label for="numWindows" class="input-label">Number of Windows</label>
+                            <input type="number" id="numWindows" class="input-field" value="3">
+                        </div>
+                        <div>
+                            <label for="windowArea" class="input-label">Area per Window (sq ft)</label>
+                            <input type="number" id="windowArea" class="input-field" value="10">
+                        </div>
+                        <div>
+                            <label for="windowRValue" class="input-label">Window R-Value</label>
+                            <input type="number" id="windowRValue" class="input-field" value="2.5">
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-4 mt-6 border-b pb-2">Door Details</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
+                        <div>
+                            <label for="numDoors" class="input-label">Number of Doors</label>
+                            <input type="number" id="numDoors" class="input-field" value="1">
+                        </div>
+                        <div>
+                            <label for="doorArea" class="input-label">Area per Door (sq ft)</label>
+                            <input type="number" id="doorArea" class="input-field" value="20">
+                        </div>
+                        <div>
+                            <label for="doorRValue" class="input-label">Door R-Value</label>
+                            <input type="number" id="doorRValue" class="input-field" value="5">
+                        </div>
+                    </div>
+                </div>
+
 
                 <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Qualitative Factors</h2>
 
@@ -178,6 +215,13 @@
             const airSealing = document.getElementById('airSealing');
             const radiantBarrier = document.getElementById('radiantBarrier');
             const resultsDisplay = document.getElementById('resultsDisplay').querySelector('p:first-child');
+            const customOpeningsContainer = document.getElementById('customOpeningsContainer');
+            const numWindows = document.getElementById('numWindows');
+            const windowArea = document.getElementById('windowArea');
+            const windowRValue = document.getElementById('windowRValue');
+            const numDoors = document.getElementById('numDoors');
+            const doorArea = document.getElementById('doorArea');
+            const doorRValue = document.getElementById('doorRValue');
 
             let heatLossChart;
 
@@ -213,60 +257,127 @@
 
             // --- Functions ---
 
-            function calculateHeatLossForTemperature(deltaT, surfaceAreas, combinedRVal, openingsRVal, openingsFractionVal, airSealingValue) {
+            function toggleCustomOpenings() {
+                if (openingsArea.value === 'custom') {
+                    customOpeningsContainer.classList.remove('hidden');
+                } else {
+                    customOpeningsContainer.classList.add('hidden');
+                }
+                calculateAll(); // Recalculate when toggling
+            }
+
+
+            function calculateHeatLossForTemperature(deltaT, surfaceAreas, wallRVal, openingsData, airSealingValue) {
+                // openingsData can be:
+                // 1. { type: "percentage", fraction: 0.15, rValue: 3 }
+                // 2. { type: "custom", windows: { area: X, rValue: Y }, doors: { area: Z, rValue: A } }
+
                 let componentLosses = {
                     totalLoss: 0,
-                    wallLoss: 0,
-                    roofLoss: 0,
-                    endWallLoss: 0,
-                    openingsLoss: 0 // Combined loss from all openings
+                    wallLoss: 0, // Insulated part of walls
+                    roofLoss: 0, // Insulated part of roof
+                    endWallLoss: 0, // Insulated part of end walls
+                    windowLoss: 0,
+                    doorLoss: 0,
+                    genericOpeningsLoss: 0 // Used if openingsData.type is "percentage"
                 };
 
                 let currentTotalLossPrePenalty = 0;
+                let totalActualOpeningArea = 0;
 
-                // Calculate loss through INSULATED portion of Walls
-                if (surfaceAreas.wall > 0) {
-                    const wallInsulatedArea = surfaceAreas.wall * (1 - openingsFractionVal);
-                    const insulatedWallLoss = (combinedRVal > 0) ? (wallInsulatedArea * deltaT) / combinedRVal : 0;
-                    componentLosses.wallLoss = airSealingValue === 'poor' ? insulatedWallLoss * 1.25 : insulatedWallLoss;
-                    currentTotalLossPrePenalty += insulatedWallLoss;
+                if (openingsData.type === 'custom') {
+                    totalActualOpeningArea = (openingsData.windows?.area || 0) + (openingsData.doors?.area || 0);
+                } else { // percentage
+                    totalActualOpeningArea = surfaceAreas.total * openingsData.fraction;
                 }
 
-                // Calculate loss through INSULATED portion of Roof
-                if (surfaceAreas.roof > 0) {
-                    const roofInsulatedArea = surfaceAreas.roof * (1 - openingsFractionVal);
-                    const insulatedRoofLoss = (combinedRVal > 0) ? (roofInsulatedArea * deltaT) / combinedRVal : 0;
-                    componentLosses.roofLoss = airSealingValue === 'poor' ? insulatedRoofLoss * 1.25 : insulatedRoofLoss;
-                    currentTotalLossPrePenalty += insulatedRoofLoss;
+                // Ensure opening area does not exceed total surface area (important for custom inputs)
+                if (totalActualOpeningArea > surfaceAreas.total) {
+                    totalActualOpeningArea = surfaceAreas.total; // Cap it
                 }
 
-                // Calculate loss through INSULATED portion of End Walls
-                if (surfaceAreas.endWall > 0) {
-                    const endWallInsulatedArea = surfaceAreas.endWall * (1 - openingsFractionVal);
-                    const insulatedEndWallLoss = (combinedRVal > 0) ? (endWallInsulatedArea * deltaT) / combinedRVal : 0;
-                    componentLosses.endWallLoss = airSealingValue === 'poor' ? insulatedEndWallLoss * 1.25 : insulatedEndWallLoss;
-                    currentTotalLossPrePenalty += insulatedEndWallLoss;
+
+                // Calculate effective opaque surface area (total surface area - actual opening area)
+                // This opaque area is what's covered by general wall/roof/endwall insulation.
+                const totalOpaqueArea = Math.max(0, surfaceAreas.total - totalActualOpeningArea);
+
+                // Distribute this opaque area proportionally to walls, roof, end-walls
+                // if total surface area is not zero, otherwise opaque areas are zero.
+                let opaqueWallArea = 0;
+                let opaqueRoofArea = 0;
+                let opaqueEndWallArea = 0;
+
+                if (surfaceAreas.total > 0) {
+                    opaqueWallArea = (surfaceAreas.wall / surfaceAreas.total) * totalOpaqueArea;
+                    opaqueRoofArea = (surfaceAreas.roof / surfaceAreas.total) * totalOpaqueArea;
+                    opaqueEndWallArea = (surfaceAreas.endWall / surfaceAreas.total) * totalOpaqueArea;
                 }
 
-                // Calculate loss through ALL Openings (sum of openings in walls, roof, endwalls)
-                const totalOpeningAreaOverall = surfaceAreas.total * openingsFractionVal;
-                const totalOpeningsHeatLoss = (openingsRVal > 0 && totalOpeningAreaOverall > 0) ? (totalOpeningAreaOverall * deltaT) / openingsRVal : 0;
-                componentLosses.openingsLoss = airSealingValue === 'poor' ? totalOpeningsHeatLoss * 1.25 : totalOpeningsHeatLoss;
-                currentTotalLossPrePenalty += totalOpeningsHeatLoss;
 
-                // Apply air sealing penalty for the total loss
-                componentLosses.totalLoss = currentTotalLossPrePenalty;
+                // Loss through INSULATED portion of Walls
+                if (opaqueWallArea > 0 && wallRVal > 0) {
+                    const loss = (opaqueWallArea * deltaT) / wallRVal;
+                    componentLosses.wallLoss = loss;
+                    currentTotalLossPrePenalty += loss;
+                }
+
+                // Loss through INSULATED portion of Roof
+                // Assuming roof has same R-value as walls for simplicity in this model
+                if (opaqueRoofArea > 0 && wallRVal > 0) {
+                    const loss = (opaqueRoofArea * deltaT) / wallRVal;
+                    componentLosses.roofLoss = loss;
+                    currentTotalLossPrePenalty += loss;
+                }
+
+                // Loss through INSULATED portion of End Walls
+                // Assuming end walls have same R-value as main walls
+                if (opaqueEndWallArea > 0 && wallRVal > 0) {
+                    const loss = (opaqueEndWallArea * deltaT) / wallRVal;
+                    componentLosses.endWallLoss = loss;
+                    currentTotalLossPrePenalty += loss;
+                }
+
+
+                // Loss through Openings
+                if (openingsData.type === 'custom') {
+                    if (openingsData.windows && openingsData.windows.area > 0 && openingsData.windows.rValue > 0) {
+                        const loss = (openingsData.windows.area * deltaT) / openingsData.windows.rValue;
+                        componentLosses.windowLoss = loss;
+                        currentTotalLossPrePenalty += loss;
+                    }
+                    if (openingsData.doors && openingsData.doors.area > 0 && openingsData.doors.rValue > 0) {
+                        const loss = (openingsData.doors.area * deltaT) / openingsData.doors.rValue;
+                        componentLosses.doorLoss = loss;
+                        currentTotalLossPrePenalty += loss;
+                    }
+                } else { // percentage based
+                    if (totalActualOpeningArea > 0 && openingsData.rValue > 0) {
+                        const loss = (totalActualOpeningArea * deltaT) / openingsData.rValue;
+                        componentLosses.genericOpeningsLoss = loss;
+                        currentTotalLossPrePenalty += loss;
+                    }
+                }
+
+                // Apply air sealing penalty to all calculated losses
                 if (airSealingValue === 'poor') {
-                    componentLosses.totalLoss *= 1.25;
+                    componentLosses.wallLoss *= 1.25;
+                    componentLosses.roofLoss *= 1.25;
+                    componentLosses.endWallLoss *= 1.25;
+                    componentLosses.windowLoss *= 1.25;
+                    componentLosses.doorLoss *= 1.25;
+                    componentLosses.genericOpeningsLoss *= 1.25;
+                    currentTotalLossPrePenalty *= 1.25; // Apply to the sum for totalLoss
                 }
+
+                componentLosses.totalLoss = currentTotalLossPrePenalty;
 
                 // Round all losses
                 for (let key in componentLosses) {
                     componentLosses[key] = Math.round(componentLosses[key]);
                 }
-
                 return componentLosses;
             }
+
 
             function updateDimensionInputs() {
                 dimensionInputsContainer.innerHTML = dimensionTemplates[buildingShape.value];
@@ -381,65 +492,135 @@ if (heatLossChart) {
                 }
 
                 const deltaT = Math.abs(parseFloat(indoorTemp.value) - parseFloat(outdoorTemp.value));
-                const combinedRVal = getWallRValue();
-                const openingsRVal = 3; // Standard R-value for double-pane openings
-                const openingsFractionVal = parseFloat(openingsArea.value) / 100;
+                const wallRVal = getWallRValue();
                 const airSealingValue = airSealing.value;
+
+                let openingsData = {};
+                let totalCustomOpeningsArea = 0;
+
+                if (openingsArea.value === 'custom') {
+                    const numWin = parseFloat(numWindows.value) || 0;
+                    const areaPerWin = parseFloat(windowArea.value) || 0;
+                    const rValWin = parseFloat(windowRValue.value) || 0;
+                    const numDr = parseFloat(numDoors.value) || 0;
+                    const areaPerDr = parseFloat(doorArea.value) || 0;
+                    const rValDr = parseFloat(doorRValue.value) || 0;
+
+                    const totalWindowArea = numWin * areaPerWin;
+                    const totalDoorArea = numDr * areaPerDr;
+                    totalCustomOpeningsArea = totalWindowArea + totalDoorArea;
+
+                    openingsData = {
+                        type: "custom",
+                        windows: { area: totalWindowArea, rValue: rValWin },
+                        doors: { area: totalDoorArea, rValue: rValDr }
+                    };
+                } else {
+                    openingsData = {
+                        type: "percentage",
+                        fraction: parseFloat(openingsArea.value) / 100,
+                        rValue: 3 // Default R-value for percentage-based openings
+                    };
+                    totalCustomOpeningsArea = surfaceAreas.total * openingsData.fraction;
+                }
+
 
                 const heatLosses = calculateHeatLossForTemperature(
                     deltaT,
                     surfaceAreas,
-                    combinedRVal,
-                    openingsRVal,
-                    openingsFractionVal,
+                    wallRVal,
+                    openingsData,
                     airSealingValue
                 );
 
                 let breakdown = {
                     components: [],
                     totalLoss: heatLosses.totalLoss,
-                    totalArea: surfaceAreas.total
+                    totalArea: surfaceAreas.total, // This is total building envelope area
+                    totalOpaqueArea: 0, // Will be calculated based on openings
+                    totalOpeningsAreaUsed: 0 // Actual opening area used in calculation
                 };
 
+                // Calculate actual opaque and opening areas based on what calculateHeatLossForTemperature used
+                let actualTotalOpeningArea = 0;
+                if (openingsData.type === 'custom') {
+                    actualTotalOpeningArea = (openingsData.windows?.area || 0) + (openingsData.doors?.area || 0);
+                } else {
+                    actualTotalOpeningArea = surfaceAreas.total * openingsData.fraction;
+                }
+                // Cap actual opening area if it exceeded total surface area
+                actualTotalOpeningArea = Math.min(actualTotalOpeningArea, surfaceAreas.total);
+                breakdown.totalOpeningsAreaUsed = actualTotalOpeningArea;
+                breakdown.totalOpaqueArea = Math.max(0, surfaceAreas.total - actualTotalOpeningArea);
+
+
                 // Populate breakdown.components
-                // Note: The individual component losses from calculateHeatLossForTemperature already include the air sealing factor.
-                // The percentage calculation will be based on these already-adjusted losses.
+                // The areas for walls, roof, endwall should now be their *opaque* portions.
+                // The heatLoss values are already adjusted for air sealing by calculateHeatLossForTemperature.
 
-                if (surfaceAreas.wall > 0) {
-                    breakdown.components.push({
-                        name: "Walls",
-                        area: surfaceAreas.wall,
-                        heatLoss: heatLosses.wallLoss, // This is (insulated wall loss * penalty)
-                        percentageOfTotalLoss: 0
-                    });
-                }
-                if (surfaceAreas.roof > 0) {
-                    breakdown.components.push({
-                        name: "Roof",
-                        area: surfaceAreas.roof,
-                        heatLoss: heatLosses.roofLoss, // This is (insulated roof loss * penalty)
-                        percentageOfTotalLoss: 0
-                    });
-                }
-                if (surfaceAreas.endWall > 0) {
-                    breakdown.components.push({
-                        name: "End Walls/Gables",
-                        area: surfaceAreas.endWall,
-                        heatLoss: heatLosses.endWallLoss, // This is (insulated end wall loss * penalty)
-                        percentageOfTotalLoss: 0
-                    });
-                }
-                 // Add openings as a separate category in the breakdown
-                const totalOpeningAreaOverall = surfaceAreas.total * openingsFractionVal;
-                if (totalOpeningAreaOverall > 0) {
-                    breakdown.components.push({
-                        name: "Openings (Windows/Doors)",
-                        area: totalOpeningAreaOverall, // Show total opening area
-                        heatLoss: heatLosses.openingsLoss, // This is (total openings loss * penalty)
-                        percentageOfTotalLoss: 0
-                    });
+                let opaqueWallArea = 0;
+                let opaqueRoofArea = 0;
+                let opaqueEndWallArea = 0;
+
+                if (surfaceAreas.total > 0) { // Avoid division by zero if total area is 0
+                    opaqueWallArea = (surfaceAreas.wall / surfaceAreas.total) * breakdown.totalOpaqueArea;
+                    opaqueRoofArea = (surfaceAreas.roof / surfaceAreas.total) * breakdown.totalOpaqueArea;
+                    opaqueEndWallArea = (surfaceAreas.endWall / surfaceAreas.total) * breakdown.totalOpaqueArea;
                 }
 
+
+                if (opaqueWallArea > 0) { // Check against derived opaque area
+                    breakdown.components.push({
+                        name: "Insulated Walls",
+                        area: opaqueWallArea,
+                        heatLoss: heatLosses.wallLoss,
+                        percentageOfTotalLoss: 0
+                    });
+                }
+                if (opaqueRoofArea > 0) {
+                    breakdown.components.push({
+                        name: "Insulated Roof",
+                        area: opaqueRoofArea,
+                        heatLoss: heatLosses.roofLoss,
+                        percentageOfTotalLoss: 0
+                    });
+                }
+                if (opaqueEndWallArea > 0) {
+                    breakdown.components.push({
+                        name: "Insulated End Walls/Gables",
+                        area: opaqueEndWallArea,
+                        heatLoss: heatLosses.endWallLoss,
+                        percentageOfTotalLoss: 0
+                    });
+                }
+
+                if (openingsData.type === 'custom') {
+                    if (openingsData.windows && openingsData.windows.area > 0) {
+                        breakdown.components.push({
+                            name: "Custom Windows",
+                            area: openingsData.windows.area,
+                            heatLoss: heatLosses.windowLoss,
+                            percentageOfTotalLoss: 0
+                        });
+                    }
+                    if (openingsData.doors && openingsData.doors.area > 0) {
+                        breakdown.components.push({
+                            name: "Custom Doors",
+                            area: openingsData.doors.area,
+                            heatLoss: heatLosses.doorLoss,
+                            percentageOfTotalLoss: 0
+                        });
+                    }
+                } else { // Percentage based
+                    if (actualTotalOpeningArea > 0) { // Use actualTotalOpeningArea here
+                         breakdown.components.push({
+                            name: "Openings (General)",
+                            area: actualTotalOpeningArea,
+                            heatLoss: heatLosses.genericOpeningsLoss,
+                            percentageOfTotalLoss: 0
+                        });
+                    }
+                }
 
                 // Calculate percentageOfTotalLoss for each component
                 if (breakdown.totalLoss > 0) {
@@ -492,15 +673,20 @@ if (heatLossChart) {
                     }
                 });
 
-                // Add a footer row for totals, excluding individual component opening/insulated areas
+                // Add a footer row for totals.
+                // The total area displayed here is the sum of individual component areas shown in the table,
+                // which should equal surfaceAreas.total (envelope area).
+                let sumOfDisplayedAreas = 0;
+                breakdown.components.forEach(comp => sumOfDisplayedAreas += comp.area);
+
                 tableHTML += `
                         </tbody>
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td class="px-4 py-3 text-left text-sm font-bold text-gray-700">Total</td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(breakdown.totalArea).toLocaleString()}</td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(breakdown.totalLoss).toLocaleString()}</td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">100.0%</td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(sumOfDisplayedAreas).toLocaleString()} sq ft</td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(breakdown.totalLoss).toLocaleString()} BTU/hr</td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${breakdown.totalLoss > 0 ? '100.0%' : 'N/A'}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -509,16 +695,14 @@ if (heatLossChart) {
                 tableContainer.innerHTML = tableHTML;
             }
 
-function updateChart(surfaceAreas) { // surfaceAreas is now passed as a parameter
+function updateChart(surfaceAreas) {
                 const tempLabels = [];
                 const datasets = [];
-                const startTemp = parseFloat(outdoorTemp.value);
+                const startTemp = parseFloat(outdoorTemp.value); // Use current outdoor temp as start for chart
                 const currentIndoorTemp = parseFloat(indoorTemp.value);
-                const maxTemp = 90;
+                const maxTemp = Math.max(startTemp + 50, currentIndoorTemp + 20); // Ensure chart covers a reasonable range
 
-                // const surfaceAreas = calculateSurfaceArea(); // This line is removed
-
-                if (surfaceAreas.total <= 0) {
+                if (!surfaceAreas || surfaceAreas.total <= 0) {
                     if (heatLossChart) {
                         heatLossChart.data.labels = [];
                         heatLossChart.data.datasets = [];
@@ -527,44 +711,67 @@ function updateChart(surfaceAreas) { // surfaceAreas is now passed as a paramete
                     return;
                 }
 
-                // Define colors for different datasets
                 const colors = {
-                    total: 'rgba(54, 162, 235, 1)',
-                    walls: 'rgba(255, 99, 132, 1)',
-                    roof: 'rgba(75, 192, 192, 1)',
-                    endWalls: 'rgba(255, 206, 86, 1)',
-                    openings: 'rgba(153, 102, 255, 1)'
+                    total: 'rgba(54, 162, 235, 1)',     // Blue
+                    walls: 'rgba(255, 99, 132, 1)',    // Red
+                    roof: 'rgba(75, 192, 192, 1)',     // Green
+                    endWalls: 'rgba(255, 206, 86, 1)', // Yellow
+                    windows: 'rgba(153, 102, 255, 1)', // Purple
+                    doors: 'rgba(255, 159, 64, 1)',    // Orange
+                    genericOpenings: 'rgba(130, 130, 130, 1)' // Grey
                 };
-                const backgroundColors = {
+                const backgroundColors = { // Lighter versions for fill
                     total: 'rgba(54, 162, 235, 0.2)',
                     walls: 'rgba(255, 99, 132, 0.2)',
                     roof: 'rgba(75, 192, 192, 0.2)',
                     endWalls: 'rgba(255, 206, 86, 0.2)',
-                    openings: 'rgba(153, 102, 255, 0.2)'
+                    windows: 'rgba(153, 102, 255, 0.2)',
+                    doors: 'rgba(255, 159, 64, 0.2)',
+                    genericOpenings: 'rgba(130, 130, 130, 0.2)'
                 };
 
-                // Initialize data arrays for each component and total
                 let totalHeatLossData = [];
                 let wallHeatLossData = [];
                 let roofHeatLossData = [];
                 let endWallHeatLossData = [];
-                let openingsHeatLossData = []; // Combined loss from all openings
+                let windowHeatLossData = [];
+                let doorHeatLossData = [];
+                let genericOpeningsHeatLossData = [];
 
-                const combinedRVal = getWallRValue();
-                const openingsRVal = 3;
-                const openingsFractionVal = parseFloat(openingsArea.value) / 100;
+                const wallRVal = getWallRValue();
                 const airSealingValue = airSealing.value;
+                // Determine current openings configuration for the chart
+                let openingsDataForChart = {};
+                 if (openingsArea.value === 'custom') {
+                    const numWin = parseFloat(numWindows.value) || 0;
+                    const areaPerWin = parseFloat(windowArea.value) || 0;
+                    const rValWin = parseFloat(windowRValue.value) || 0;
+                    const numDr = parseFloat(numDoors.value) || 0;
+                    const areaPerDr = parseFloat(doorArea.value) || 0;
+                    const rValDr = parseFloat(doorRValue.value) || 0;
+                    openingsDataForChart = {
+                        type: "custom",
+                        windows: { area: numWin * areaPerWin, rValue: rValWin },
+                        doors: { area: numDr * areaPerDr, rValue: rValDr }
+                    };
+                } else {
+                    openingsDataForChart = {
+                        type: "percentage",
+                        fraction: parseFloat(openingsArea.value) / 100,
+                        rValue: 3 // Default R-value
+                    };
+                }
 
-                for (let temp = startTemp; temp <= maxTemp; temp += 10) {
+
+                for (let temp = Math.min(startTemp, currentIndoorTemp - 10) ; temp <= maxTemp; temp += 5) { // Chart across various outdoor temps
                     tempLabels.push(`${temp}°F`);
                     const deltaT = Math.abs(currentIndoorTemp - temp);
 
                     const heatLosses = calculateHeatLossForTemperature(
                         deltaT,
                         surfaceAreas,
-                        combinedRVal,
-                        openingsRVal,
-                        openingsFractionVal,
+                        wallRVal,
+                        openingsDataForChart,
                         airSealingValue
                     );
 
@@ -572,44 +779,65 @@ function updateChart(surfaceAreas) { // surfaceAreas is now passed as a paramete
                     wallHeatLossData.push(heatLosses.wallLoss);
                     roofHeatLossData.push(heatLosses.roofLoss);
                     endWallHeatLossData.push(heatLosses.endWallLoss);
-                    openingsHeatLossData.push(heatLosses.openingsLoss);
+                    windowHeatLossData.push(heatLosses.windowLoss);
+                    doorHeatLossData.push(heatLosses.doorLoss);
+                    genericOpeningsHeatLossData.push(heatLosses.genericOpeningsLoss);
                 }
 
-                // Prepare datasets for Chart.js
                 datasets.push({
                     label: 'Total Heat Loss', data: totalHeatLossData,
                     borderColor: colors.total, backgroundColor: backgroundColors.total,
                     borderWidth: 3, fill: true, tension: 0.1, type: 'line'
                 });
-                if (surfaceAreas.wall > 0) { // Only add dataset if wall area exists
-                    datasets.push({
-                        label: 'Insulated Wall Loss', data: wallHeatLossData, // Changed label
-                        borderColor: colors.walls, backgroundColor: backgroundColors.walls,
-                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
-                    });
+
+                // Helper to add dataset if its corresponding data array has non-zero sum
+                const addDatasetIfRelevant = (label, dataArray, color, bgColor) => {
+                    if (dataArray.some(val => val > 0)) {
+                        datasets.push({
+                            label: label, data: dataArray,
+                            borderColor: color, backgroundColor: bgColor,
+                            borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
+                        });
+                    }
+                };
+
+                // Calculate actual opaque areas for labeling, similar to breakdown table logic
+                let actualTotalOpeningAreaForChart = 0;
+                if (openingsDataForChart.type === 'custom') {
+                    actualTotalOpeningAreaForChart = (openingsDataForChart.windows?.area || 0) + (openingsDataForChart.doors?.area || 0);
+                } else {
+                    actualTotalOpeningAreaForChart = surfaceAreas.total * openingsDataForChart.fraction;
                 }
-                if (surfaceAreas.roof > 0) { // Only add dataset if roof area exists
-                    datasets.push({
-                        label: 'Insulated Roof Loss', data: roofHeatLossData, // Changed label
-                        borderColor: colors.roof, backgroundColor: backgroundColors.roof,
-                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
-                    });
-                }
-                if (surfaceAreas.endWall > 0) { // Only add dataset if endWall area exists
-                     datasets.push({
-                        label: 'Insulated End Wall/Gable Loss', data: endWallHeatLossData, // Changed label
-                        borderColor: colors.endWalls, backgroundColor: backgroundColors.endWalls,
-                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
-                    });
-                }
-                if (openingsFractionVal > 0) { // Only add dataset if there are openings
-                    datasets.push({
-                        label: 'Total Openings Loss', data: openingsHeatLossData, // Changed label
-                        borderColor: colors.openings, backgroundColor: backgroundColors.openings,
-                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
-                    });
+                actualTotalOpeningAreaForChart = Math.min(actualTotalOpeningAreaForChart, surfaceAreas.total);
+                const totalOpaqueAreaForChart = Math.max(0, surfaceAreas.total - actualTotalOpeningAreaForChart);
+
+                let opaqueWallAreaForChart = 0;
+                let opaqueRoofAreaForChart = 0;
+                let opaqueEndWallAreaForChart = 0;
+
+                if(surfaceAreas.total > 0){
+                    opaqueWallAreaForChart = (surfaceAreas.wall / surfaceAreas.total) * totalOpaqueAreaForChart;
+                    opaqueRoofAreaForChart = (surfaceAreas.roof / surfaceAreas.total) * totalOpaqueAreaForChart;
+                    opaqueEndWallAreaForChart = (surfaceAreas.endWall / surfaceAreas.total) * totalOpaqueAreaForChart;
                 }
 
+
+                if (opaqueWallAreaForChart > 0) addDatasetIfRelevant('Insulated Wall Loss', wallHeatLossData, colors.walls, backgroundColors.walls);
+                if (opaqueRoofAreaForChart > 0) addDatasetIfRelevant('Insulated Roof Loss', roofHeatLossData, colors.roof, backgroundColors.roof);
+                if (opaqueEndWallAreaForChart > 0) addDatasetIfRelevant('Insulated End Wall/Gable Loss', endWallHeatLossData, colors.endWalls, backgroundColors.endWalls);
+
+                if (openingsDataForChart.type === 'custom') {
+                    if (openingsDataForChart.windows && openingsDataForChart.windows.area > 0) {
+                        addDatasetIfRelevant('Window Loss', windowHeatLossData, colors.windows, backgroundColors.windows);
+                    }
+                    if (openingsDataForChart.doors && openingsDataForChart.doors.area > 0) {
+                        addDatasetIfRelevant('Door Loss', doorHeatLossData, colors.doors, backgroundColors.doors);
+                    }
+                } else { // Percentage based
+                     if (actualTotalOpeningAreaForChart > 0) {
+                        addDatasetIfRelevant('Generic Openings Loss', genericOpeningsHeatLossData, colors.genericOpenings, backgroundColors.genericOpenings);
+                     }
+                }
 
                 if (!heatLossChart) {
                     const ctx = document.getElementById('heatLossChart').getContext('2d');
@@ -669,13 +897,23 @@ heatLossChart.data.datasets = datasets;
             wallAssembly.addEventListener('change', calculateAll);
             customRValue.addEventListener('input', calculateAll);
             doubleWallRValue.addEventListener('input', calculateAll);
-            openingsArea.addEventListener('change', calculateAll);
+            openingsArea.addEventListener('change', toggleCustomOpenings); // Use toggle function here
             airSealing.addEventListener('change', calculateAll);
             radiantBarrier.addEventListener('change', calculateAll);
             indoorTemp.addEventListener('input', calculateAll);
             outdoorTemp.addEventListener('input', calculateAll);
 
+            // Listeners for custom opening inputs
+            numWindows.addEventListener('input', calculateAll);
+            windowArea.addEventListener('input', calculateAll);
+            windowRValue.addEventListener('input', calculateAll);
+            numDoors.addEventListener('input', calculateAll);
+            doorArea.addEventListener('input', calculateAll);
+            doorRValue.addEventListener('input', calculateAll);
+
+
             updateDimensionInputs(); // Initial call to set default dimensions and perform first calculation
+            toggleCustomOpenings(); // Ensure correct visibility of custom openings on load
         });
     </script>
 </body>
