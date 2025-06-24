@@ -620,8 +620,7 @@
                     });
                 } else {
                      heatLossChart.data.labels = tempLabels;
-                     heatLossChart.data.datasets[0].data = heatLossData; // For now, only updating the first dataset
-                     // TODO: Add logic to update other datasets when they are added
+heatLossChart.data.datasets = datasets;
                      heatLossChart.update();
                 }
             }
