@@ -35,6 +35,9 @@
             border-color: #4299E1;
             box-shadow: 0 0 0 1px #4299E1;
         }
+        .heatLossChartBox {
+            height: 600px; 
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -182,7 +185,7 @@
                         This is the approximate heating power your system needs to maintain the desired indoor temperature on the coldest day. Look for a heat pump with a capacity that meets or exceeds this value.
                     </p>
                 </div>
-                 <div class="mt-8">
+                 <div class="mt-8 heatLossChartBox">
                     <h3 class="text-xl font-semibold text-center mb-4">Heat Loss vs. Outdoor Temperature</h3>
                     <canvas id="heatLossChart"></canvas>
                 </div>
@@ -849,7 +852,7 @@ function updateChart(surfaceAreas) {
                         },
                         options: {
                              responsive: true,
-                             maintainAspectRatio: true,
+                             maintainAspectRatio: false,
                              scales: {
                                  y: {
                                      beginAtZero: true,
