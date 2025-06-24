@@ -184,6 +184,10 @@
                 </div>
                  <div class="mt-8">
                     <h3 class="text-xl font-semibold text-center mb-4">Heat Loss vs. Outdoor Temperature</h3>
+                    <div class="input-group mb-4">
+                        <label for="chartHeight" class="input-label text-sm">Graph Height (pixels):</label>
+                        <input type="number" id="chartHeight" class="input-field w-1/2 mx-auto" value="400" min="100" max="1000" step="50">
+                    </div>
                     <canvas id="heatLossChart"></canvas>
                 </div>
 
@@ -222,6 +226,7 @@
             const numDoors = document.getElementById('numDoors');
             const doorArea = document.getElementById('doorArea');
             const doorRValue = document.getElementById('doorRValue');
+            const chartHeightInput = document.getElementById('chartHeight'); // New chart height input
 
             let heatLossChart;
 
@@ -256,6 +261,91 @@
             };
 
             // --- Functions ---
+
+            function saveInputsToLocalStorage() {
+                const inputsToSave = {
+                    buildingShape: buildingShape.value,
+                    indoorTemp: indoorTemp.value,
+                    outdoorTemp: outdoorTemp.value,
+                    wallAssembly: wallAssembly.value,
+                    customRValue: customRValue.value,
+                    doubleWallRValue: doubleWallRValue.value,
+                    openingsArea: openingsArea.value,
+                    airSealing: airSealing.value,
+                    radiantBarrier: radiantBarrier.value,
+                    numWindows: numWindows.value,
+                    windowArea: windowArea.value,
+                    windowRValue: windowRValue.value,
+                    numDoors: numDoors.value,
+                    doorArea: doorArea.value,
+                    doorRValue: doorRValue.value,
+                    chartHeight: chartHeightInput.value,
+                    // Dimension inputs are dynamic, so we need to save them based on current shape
+                    dimensions: {}
+                };
+
+                const currentShape = buildingShape.value;
+                const dynamicDimensionInputs = dimensionInputsContainer.querySelectorAll('input[type="number"]');
+                dynamicDimensionInputs.forEach(input => {
+                    if (input.id) { // Ensure input has an ID to use as a key
+                        inputsToSave.dimensions[input.id] = input.value;
+                    }
+                });
+
+                localStorage.setItem('tinyHomeCalculatorInputs', JSON.stringify(inputsToSave));
+            }
+
+            function loadInputsFromLocalStorage() {
+                const savedInputs = localStorage.getItem('tinyHomeCalculatorInputs');
+                if (savedInputs) {
+                    const inputs = JSON.parse(savedInputs);
+
+                    // Set building shape first as it dictates dimension fields
+                    if (inputs.buildingShape) {
+                        buildingShape.value = inputs.buildingShape;
+                        // Important: Update dimension inputs *before* trying to set their values
+                        updateDimensionInputs(); // This will create the correct dimension fields
+                    }
+
+                    // Now set the dynamic dimension values
+                    if (inputs.dimensions) {
+                        for (const id in inputs.dimensions) {
+                            const inputElement = document.getElementById(id);
+                            if (inputElement) {
+                                inputElement.value = inputs.dimensions[id];
+                            }
+                        }
+                    }
+
+                    // Set other standard inputs
+                    if (inputs.indoorTemp) indoorTemp.value = inputs.indoorTemp;
+                    if (inputs.outdoorTemp) outdoorTemp.value = inputs.outdoorTemp;
+                    if (inputs.wallAssembly) wallAssembly.value = inputs.wallAssembly;
+                    // Trigger change on wallAssembly to show/hide custom/double-wall inputs
+                    wallAssembly.dispatchEvent(new Event('change'));
+                    if (inputs.customRValue) customRValue.value = inputs.customRValue;
+                    if (inputs.doubleWallRValue) doubleWallRValue.value = inputs.doubleWallRValue;
+
+                    if (inputs.openingsArea) {
+                        openingsArea.value = inputs.openingsArea;
+                        // Trigger change on openingsArea to show/hide custom openings container
+                        openingsArea.dispatchEvent(new Event('change'));
+                    }
+                    if (inputs.airSealing) airSealing.value = inputs.airSealing;
+                    if (inputs.radiantBarrier) radiantBarrier.value = inputs.radiantBarrier;
+                    if (inputs.numWindows) numWindows.value = inputs.numWindows;
+                    if (inputs.windowArea) windowArea.value = inputs.windowArea;
+                    if (inputs.windowRValue) windowRValue.value = inputs.windowRValue;
+                    if (inputs.numDoors) numDoors.value = inputs.numDoors;
+                    if (inputs.doorArea) doorArea.value = inputs.doorArea;
+                    if (inputs.doorRValue) doorRValue.value = inputs.doorRValue;
+                    if (inputs.chartHeight) chartHeightInput.value = inputs.chartHeight;
+
+                    // After loading all inputs, recalculate everything
+                    calculateAll();
+                }
+            }
+
 
             function toggleCustomOpenings() {
                 if (openingsArea.value === 'custom') {
@@ -490,6 +580,13 @@ if (heatLossChart) {
 }
                     return;
                 }
+
+                // Apply chart height from input before updating chart
+                const newChartHeight = parseInt(chartHeightInput.value, 10) || 400; // Default to 400 if input is invalid
+                const chartCanvas = document.getElementById('heatLossChart');
+                chartCanvas.style.height = `${newChartHeight}px`;
+                // We might need to adjust container height too if Chart.js doesn't resize canvas parent
+                // For now, let's assume Chart.js handles the canvas rendering within its given style height.
 
                 const deltaT = Math.abs(parseFloat(indoorTemp.value) - parseFloat(outdoorTemp.value));
                 const wallRVal = getWallRValue();
@@ -849,7 +946,7 @@ function updateChart(surfaceAreas) {
                         },
                         options: {
                              responsive: true,
-                             maintainAspectRatio: true,
+                             maintainAspectRatio: false, // Set to false to manually control height via canvas style
                              scales: {
                                  y: {
                                      beginAtZero: true,
@@ -883,37 +980,60 @@ heatLossChart.data.datasets = datasets;
             function attachInputListeners() {
                 const inputs = document.querySelectorAll('.input-field, input[type="number"]');
                 inputs.forEach(input => {
-                    input.removeEventListener('input', calculateAll); // Remove existing to prevent duplicates if run multiple times
-                    input.removeEventListener('change', calculateAll);
-                    input.addEventListener('input', calculateAll);
-                    input.addEventListener('change', calculateAll);
+                    // Remove existing to prevent duplicates if run multiple times
+                    input.removeEventListener('input', handleInputChange);
+                    input.removeEventListener('change', handleInputChange);
+                    // Add new listeners
+                    input.addEventListener('input', handleInputChange);
+                    input.addEventListener('change', handleInputChange);
                 });
             }
 
+            function handleInputChange() {
+                calculateAll();
+                saveInputsToLocalStorage();
+            }
+
             // --- Initial Setup ---
+            // Load saved inputs first, if any
+            loadInputsFromLocalStorage(); // This will also call updateDimensionInputs and calculateAll if data is loaded
+
             buildingShape.addEventListener('change', () => {
-                updateDimensionInputs(); // This already calls calculateAll
+                updateDimensionInputs(); // This calls calculateAll internally
+                saveInputsToLocalStorage(); // Save after shape change and dimension update
             });
-            wallAssembly.addEventListener('change', calculateAll);
-            customRValue.addEventListener('input', calculateAll);
-            doubleWallRValue.addEventListener('input', calculateAll);
-            openingsArea.addEventListener('change', toggleCustomOpenings); // Use toggle function here
-            airSealing.addEventListener('change', calculateAll);
-            radiantBarrier.addEventListener('change', calculateAll);
-            indoorTemp.addEventListener('input', calculateAll);
-            outdoorTemp.addEventListener('input', calculateAll);
+            // For other inputs, attach a generic handler that calculates and saves
+            wallAssembly.addEventListener('change', handleInputChange);
+            customRValue.addEventListener('input', handleInputChange);
+            doubleWallRValue.addEventListener('input', handleInputChange);
+            openingsArea.addEventListener('change', () => { // Special handling for openingsArea due to toggle
+                toggleCustomOpenings(); // This calls calculateAll
+                saveInputsToLocalStorage();
+            });
+            airSealing.addEventListener('change', handleInputChange);
+            radiantBarrier.addEventListener('change', handleInputChange);
+            indoorTemp.addEventListener('input', handleInputChange);
+            outdoorTemp.addEventListener('input', handleInputChange);
+            numWindows.addEventListener('input', handleInputChange);
+            windowArea.addEventListener('input', handleInputChange);
+            windowRValue.addEventListener('input', handleInputChange);
+            numDoors.addEventListener('input', handleInputChange);
+            doorArea.addEventListener('input', handleInputChange);
+            doorRValue.addEventListener('input', handleInputChange);
+            chartHeightInput.addEventListener('input', handleInputChange);
 
-            // Listeners for custom opening inputs
-            numWindows.addEventListener('input', calculateAll);
-            windowArea.addEventListener('input', calculateAll);
-            windowRValue.addEventListener('input', calculateAll);
-            numDoors.addEventListener('input', calculateAll);
-            doorArea.addEventListener('input', calculateAll);
-            doorRValue.addEventListener('input', calculateAll);
 
-
-            updateDimensionInputs(); // Initial call to set default dimensions and perform first calculation
-            toggleCustomOpenings(); // Ensure correct visibility of custom openings on load
+            // Initial setup if no saved data was loaded (or to ensure correct state)
+            // updateDimensionInputs() is called by loadInputsFromLocalStorage or by the buildingShape listener.
+            // If loadInputsFromLocalStorage did not run calculateAll (because no data),
+            // we might need an initial calculateAll here. However, updateDimensionInputs calls calculateAll.
+            // And loadInputsFromLocalStorage calls calculateAll if data is present.
+            // If no data, the default values will be used for the first calculateAll triggered by updateDimensionInputs.
+            if (!localStorage.getItem('tinyHomeCalculatorInputs')) {
+                 updateDimensionInputs(); // Ensure dimensions are set up for the default shape
+                 toggleCustomOpenings();  // Ensure custom openings are correctly shown/hidden
+                 calculateAll(); // Perform an initial calculation with default values
+            }
         });
     </script>
 </body>
