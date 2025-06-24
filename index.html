@@ -394,7 +394,7 @@ if (heatLossChart) {
 
                 updateHeatLossBreakdownTable(breakdown);
 
-                updateChart(breakdown); // Pass the full breakdown for charting individual components
+                updateChart(surfaceAreas); // Pass the surfaceAreas object for charting
             }
 
             function updateHeatLossBreakdownTable(breakdown) {
@@ -449,14 +449,14 @@ if (heatLossChart) {
                 tableContainer.innerHTML = tableHTML;
             }
 
-function updateChart(surfaceAreas) {
+function updateChart(surfaceAreas) { // surfaceAreas is now passed as a parameter
                 const tempLabels = [];
                 const datasets = [];
                 const startTemp = parseFloat(outdoorTemp.value);
                 const currentIndoorTemp = parseFloat(indoorTemp.value);
                 const maxTemp = 90;
 
-                const surfaceAreas = calculateSurfaceArea(); // Get current surface areas for chart generation across temps
+                // const surfaceAreas = calculateSurfaceArea(); // This line is removed
 
                 if (surfaceAreas.total <= 0) {
                     if (heatLossChart) {
