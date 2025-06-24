@@ -188,7 +188,9 @@
                         <label for="chartHeight" class="input-label text-sm">Graph Height (pixels):</label>
                         <input type="number" id="chartHeight" class="input-field w-1/2 mx-auto" value="400" min="100" max="1000" step="50">
                     </div>
-                    <canvas id="heatLossChart"></canvas>
+                    <div id="chartContainer" style="position: relative;">
+                        <canvas id="heatLossChart"></canvas>
+                    </div>
                 </div>
 
                 <!-- New Section for Heat Loss Breakdown Table -->
@@ -583,10 +585,10 @@ if (heatLossChart) {
 
                 // Apply chart height from input before updating chart
                 const newChartHeight = parseInt(chartHeightInput.value, 10) || 400; // Default to 400 if input is invalid
-                const chartCanvas = document.getElementById('heatLossChart');
-                chartCanvas.style.height = `${newChartHeight}px`;
-                // We might need to adjust container height too if Chart.js doesn't resize canvas parent
-                // For now, let's assume Chart.js handles the canvas rendering within its given style height.
+                const chartContainer = document.getElementById('chartContainer');
+                chartContainer.style.height = `${newChartHeight}px`;
+                // The canvas itself will be handled by Chart.js to fill this container
+                // due to responsive:true and maintainAspectRatio:false.
 
                 const deltaT = Math.abs(parseFloat(indoorTemp.value) - parseFloat(outdoorTemp.value));
                 const wallRVal = getWallRValue();
@@ -972,7 +974,8 @@ function updateChart(surfaceAreas) {
                     });
                 } else {
                      heatLossChart.data.labels = tempLabels;
-heatLossChart.data.datasets = datasets;
+                     heatLossChart.data.datasets = datasets;
+                     heatLossChart.resize(); // Explicitly call resize before update
                      heatLossChart.update();
                 }
             }
