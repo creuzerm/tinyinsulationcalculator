@@ -264,38 +264,11 @@
 
             // --- Functions ---
 
-            function saveInputsToLocalStorage() {
-                const inputsToSave = {
-                    buildingShape: buildingShape.value,
-                    indoorTemp: indoorTemp.value,
-                    outdoorTemp: outdoorTemp.value,
-                    wallAssembly: wallAssembly.value,
-                    customRValue: customRValue.value,
-                    doubleWallRValue: doubleWallRValue.value,
-                    openingsArea: openingsArea.value,
-                    airSealing: airSealing.value,
-                    radiantBarrier: radiantBarrier.value,
-                    numWindows: numWindows.value,
-                    windowArea: windowArea.value,
-                    windowRValue: windowRValue.value,
-                    numDoors: numDoors.value,
-                    doorArea: doorArea.value,
-                    doorRValue: doorRValue.value,
-                    chartHeight: chartHeightInput.value,
-                    // Dimension inputs are dynamic, so we need to save them based on current shape
-                    dimensions: {}
-                };
-
-                const currentShape = buildingShape.value;
-                const dynamicDimensionInputs = dimensionInputsContainer.querySelectorAll('input[type="number"]');
-                dynamicDimensionInputs.forEach(input => {
-                    if (input.id) { // Ensure input has an ID to use as a key
-                        inputsToSave.dimensions[input.id] = input.value;
-                    }
-                });
-
-                localStorage.setItem('tinyHomeCalculatorInputs', JSON.stringify(inputsToSave));
-            }
+                try {
+                    localStorage.setItem('tinyHomeCalculatorInputs', JSON.stringify(inputsToSave));
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                }
 
             function loadInputsFromLocalStorage() {
                 const savedInputs = localStorage.getItem('tinyHomeCalculatorInputs');
