@@ -763,7 +763,7 @@ function updateChart(surfaceAreas) {
                 }
 
 
-                for (let temp = Math.min(startTemp, currentIndoorTemp - 10) ; temp <= maxTemp; temp += 5) { // Chart across various outdoor temps
+                for (let temp = Math.min(startTemp, currentIndoorTemp - 20) ; temp <= maxTemp; temp += 5) { // Chart across various outdoor temps
                     tempLabels.push(`${temp}°F`);
                     const deltaT = Math.abs(currentIndoorTemp - temp);
 
