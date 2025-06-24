@@ -972,7 +972,9 @@ function updateChart(surfaceAreas) {
 
             // --- Initial Setup ---
             // Load saved inputs first, if any
-            loadInputsFromLocalStorage(); // This will also call updateDimensionInputs and calculateAll if data is loaded
+            const loadedData = loadInputsFromLocalStorage(); // This will also call updateDimensionInputs and calculateAll if data is loaded
+
+            if (!loadedData && !localStorage.getItem('tinyHomeCalculatorInputs')) {
 
             buildingShape.addEventListener('change', () => {
                 updateDimensionInputs(); // This calls calculateAll internally
