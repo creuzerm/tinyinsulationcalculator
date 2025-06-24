@@ -263,7 +263,11 @@
             // Function to save input value to localStorage
             function saveInputToLocalStorage(element) {
                 if (element && element.id) {
-                    localStorage.setItem(element.id, element.value);
+                    try {
+                        localStorage.setItem(element.id, element.value);
+                    } catch (e) {
+                        console.error('Failed to save to localStorage:', e);
+                    }
                 }
             }
 
