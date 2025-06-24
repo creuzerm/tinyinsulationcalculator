@@ -260,6 +260,31 @@
 
             // --- Functions ---
 
+            // Function to save input value to localStorage
+            function saveInputToLocalStorage(element) {
+                if (element && element.id) {
+                    try {
+                        localStorage.setItem(element.id, element.value);
+                    } catch (e) {
+                        console.error('Failed to save to localStorage:', e);
+                    }
+                }
+            }
+
+            // Function to load input value from localStorage
+            function loadInputFromLocalStorage(element) {
+                if (element && element.id) {
+                    try {
+                        const savedValue = localStorage.getItem(element.id);
+                        if (savedValue !== null) {
+                            element.value = savedValue;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load from localStorage:', e);
+                    }
+                }
+            }
+
             function toggleCustomOpenings() {
                 if (openingsArea.value === 'custom') {
                     customOpeningsContainer.classList.remove('hidden');
@@ -384,8 +409,11 @@
 
             function updateDimensionInputs() {
                 dimensionInputsContainer.innerHTML = dimensionTemplates[buildingShape.value];
-                attachInputListeners();
-                calculateAll();
+                // Load values for newly created dynamic inputs
+                const dynamicInputs = dimensionInputsContainer.querySelectorAll('.input-field, input[type="number"]');
+                dynamicInputs.forEach(input => loadInputFromLocalStorage(input));
+                attachInputListeners(); // Attaches listeners which also handle saving
+                calculateAll(); // Recalculate based on potentially loaded values
             }
 
             function getWallRValue() {
@@ -886,37 +914,66 @@ heatLossChart.data.datasets = datasets;
             function attachInputListeners() {
                 const inputs = document.querySelectorAll('.input-field, input[type="number"]');
                 inputs.forEach(input => {
-                    input.removeEventListener('input', calculateAll); // Remove existing to prevent duplicates if run multiple times
-                    input.removeEventListener('change', calculateAll);
-                    input.addEventListener('input', calculateAll);
-                    input.addEventListener('change', calculateAll);
+                    // Remove existing to prevent duplicates if run multiple times
+                    input.removeEventListener('input', handleInputChange);
+                    input.removeEventListener('change', handleInputChange);
+                    // Add new combined listener
+                    input.addEventListener('input', handleInputChange);
+                    input.addEventListener('change', handleInputChange);
                 });
             }
 
+            function handleInputChange(event) {
+                saveInputToLocalStorage(event.target);
+                calculateAll();
+            }
+
+            function handleSelectChange(event) {
+                saveInputToLocalStorage(event.target);
+                // Specific actions for certain selects
+                if (event.target.id === 'buildingShape') {
+                    updateDimensionInputs(); // This calls calculateAll internally
+                } else if (event.target.id === 'openingsArea') {
+                    toggleCustomOpenings(); // This calls calculateAll internally
+                } else {
+                    calculateAll();
+                }
+            }
+
             // --- Initial Setup ---
-            buildingShape.addEventListener('change', () => {
-                updateDimensionInputs(); // This already calls calculateAll
+            // Static inputs that trigger recalculation and save their state
+            [buildingShape, wallAssembly, openingsArea, airSealing, radiantBarrier].forEach(selectElement => {
+                selectElement.removeEventListener('change', handleSelectChange); // Remove if re-running
+                selectElement.addEventListener('change', handleSelectChange);
             });
-            wallAssembly.addEventListener('change', calculateAll);
-            customRValue.addEventListener('input', calculateAll);
-            doubleWallRValue.addEventListener('input', calculateAll);
-            openingsArea.addEventListener('change', toggleCustomOpenings); // Use toggle function here
-            airSealing.addEventListener('change', calculateAll);
-            radiantBarrier.addEventListener('change', calculateAll);
-            indoorTemp.addEventListener('input', calculateAll);
-            outdoorTemp.addEventListener('input', calculateAll);
 
-            // Listeners for custom opening inputs
-            numWindows.addEventListener('input', calculateAll);
-            windowArea.addEventListener('input', calculateAll);
-            windowRValue.addEventListener('input', calculateAll);
-            numDoors.addEventListener('input', calculateAll);
-            doorArea.addEventListener('input', calculateAll);
-            doorRValue.addEventListener('input', calculateAll);
+            [customRValue, doubleWallRValue, indoorTemp, outdoorTemp, numWindows, windowArea, windowRValue, numDoors, doorArea, doorRValue].forEach(inputElement => {
+                inputElement.removeEventListener('input', handleInputChange); // Remove if re-running
+                inputElement.addEventListener('input', handleInputChange);
+            });
 
+            // updateDimensionInputs also calls attachInputListeners, which sets up saving for dynamic fields.
+            // toggleCustomOpenings is called by openingsArea change listener.
 
-            updateDimensionInputs(); // Initial call to set default dimensions and perform first calculation
-            toggleCustomOpenings(); // Ensure correct visibility of custom openings on load
+            // --- Load all static inputs from localStorage first ---
+            const allStaticInputElements = [
+                buildingShape, indoorTemp, outdoorTemp, wallAssembly, customRValue, doubleWallRValue,
+                openingsArea, airSealing, radiantBarrier, numWindows, windowArea, windowRValue,
+                numDoors, doorArea, doorRValue
+            ];
+            allStaticInputElements.forEach(el => loadInputFromLocalStorage(el));
+
+            // --- Initial UI setup and calculation ---
+            // Call updateDimensionInputs AFTER loading static inputs, especially buildingShape,
+            // as it determines which dynamic inputs are created.
+            // updateDimensionInputs itself will then load values for those dynamic inputs.
+            updateDimensionInputs();
+
+            // Call toggleCustomOpenings AFTER loading static inputs, especially openingsArea.
+            toggleCustomOpenings();
+
+            // Final calculation based on all loaded values
+            // calculateAll(); // This is already called by updateDimensionInputs and toggleCustomOpenings
         });
     </script>
 </body>
