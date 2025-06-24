@@ -315,7 +315,12 @@
 
                 if (!surfaceAreas || surfaceAreas.total <= 0) {
                     resultsDisplay.textContent = '0';
-                    // TODO: Clear breakdown table and chart if they exist and are populated.
+document.getElementById('heatLossBreakdownTable').innerHTML = '<p class="text-center text-gray-500">Enter valid dimensions to see breakdown.</p>';
+if (heatLossChart) {
+    heatLossChart.data.labels = [];
+    heatLossChart.data.datasets = [];
+    heatLossChart.update();
+}
                     return;
                 }
 
