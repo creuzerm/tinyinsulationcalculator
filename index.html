@@ -111,7 +111,7 @@
                         <option value="25">25% of Surface Area (Lots of Glass)</option>
                     </select>
                 </div>
-                
+
                 <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Qualitative Factors</h2>
 
                 <!-- Qualitative Factors -->
@@ -149,6 +149,15 @@
                     <h3 class="text-xl font-semibold text-center mb-4">Heat Loss vs. Outdoor Temperature</h3>
                     <canvas id="heatLossChart"></canvas>
                 </div>
+
+                <!-- New Section for Heat Loss Breakdown Table -->
+                <div id="heatLossBreakdownContainer" class="mt-8 pt-6 border-t">
+                    <h3 class="text-xl font-semibold text-center mb-4">Heat Loss Breakdown by Surface</h3>
+                    <div id="heatLossBreakdownTable" class="overflow-x-auto">
+                        <!-- Table will be injected here by JS -->
+                        <p class="text-center text-gray-500">Calculating breakdown...</p>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -169,7 +178,7 @@
             const airSealing = document.getElementById('airSealing');
             const radiantBarrier = document.getElementById('radiantBarrier');
             const resultsDisplay = document.getElementById('resultsDisplay').querySelector('p:first-child');
-            
+
             let heatLossChart;
 
             // --- Dimension Templates ---
@@ -223,7 +232,7 @@
                     customRValueContainer.classList.add('hidden');
                     doubleWallContainer.classList.add('hidden');
                 }
-                
+
                 if (radiantBarrier.value === 'yes') {
                     rValue += 3;
                 }
@@ -234,111 +243,359 @@
                 const shape = buildingShape.value;
                 const L = parseFloat(document.getElementById('length')?.value) || 0;
                 const W = parseFloat(document.getElementById('width')?.value) || 0;
-                const H = parseFloat(document.getElementById('height')?.value) || 0;
-                const SWH = parseFloat(document.getElementById('springWallHeight')?.value) || 0;
+                const H = parseFloat(document.getElementById('height')?.value) || 0; // For rectangle, eave height. For A-frame, overall peak height.
+                const SWH = parseFloat(document.getElementById('springWallHeight')?.value) || 0; // For Gothic Arch
 
-                let area = 0;
+                let areas = {
+                    total: 0,
+                    wall: 0,        // Vertical walls (rectangle main walls, gothic spring walls)
+                    roof: 0,        // Pitched/flat roof (rectangle), sloped surfaces (a-frame main), curved roof (gothic)
+                    endWall: 0,     // Gable ends (rectangle), triangular ends (a-frame), semi-circular ends (gothic)
+                                    // Note: For A-frame, 'roof' includes the primary sloped surfaces that function as walls+roof.
+                                    // 'endWall' is for the typically triangular end caps.
+                };
+
                 switch (shape) {
                     case 'rectangle': {
-                        const roofPitch = parseFloat(document.getElementById('roofPitch')?.value) || 0;
-                        const roofWidth = Math.sqrt(Math.pow(W / 2, 2) + Math.pow((W / 2) * (roofPitch / 12), 2)) * 2;
-                        const roofArea = L * roofWidth;
-                        const wallArea = 2 * L * H + 2 * W * H;
-                        area = wallArea + roofArea;
+                        const roofPitchValue = parseFloat(document.getElementById('roofPitch')?.value);
+                        const roofPitch = !isNaN(roofPitchValue) && roofPitchValue >= 0 ? roofPitchValue : 0;
+
+                        // Vertical walls (sum of 2*L*H and 2*W*H)
+                        areas.wall = (2 * L * H) + (2 * W * H);
+
+                        if (roofPitch === 0) { // Flat roof
+                            areas.roof = L * W;
+                            areas.endWall = 0; // No gables for a truly flat roof from these definitions
+                        } else { // Pitched roof
+                            const gableHeight = (W / 2) * (roofPitch / 12);
+                            const rafterLength = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(gableHeight, 2));
+                            areas.roof = L * rafterLength * 2;
+                            // Gable end walls (triangular part above the main H of the end walls)
+                            // These are part of the 'endWall' category, distinct from the main 'wall' area.
+                            areas.endWall = 2 * (0.5 * W * gableHeight);
+                        }
                         break;
                     }
                     case 'a-frame': {
+                        // H is the total height from base to peak. W is base width.
                         const slopeHeight = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(H, 2));
-                        const roofWallArea = 2 * L * slopeHeight;
-                        const endWallArea = 2 * (0.5 * W * H);
-                        area = roofWallArea + endWallArea;
+                        areas.roof = 2 * L * slopeHeight; // These are the main sloped surfaces (roof/wall combined)
+
+                        areas.endWall = 2 * (0.5 * W * H); // Triangular end walls
+                        areas.wall = 0; // No separate vertical 'side' walls in a pure A-frame.
                         break;
                     }
                     case 'gothic-arch': {
+                        // W is the full width of the arch base. SWH is height of vertical spring walls.
                         const radius = W / 2;
-                        const archLength = Math.PI * radius; // Half circumference
-                        const curvedRoofArea = L * archLength;
-                        const endWallArea = 2 * (0.5 * Math.PI * Math.pow(radius, 2));
-                        const springWallArea = 2 * L * SWH;
-                        area = curvedRoofArea + endWallArea + springWallArea;
+
+                        const archPerimeterSegment = Math.PI * radius; // Length of the arch (half circumference)
+                        areas.roof = L * archPerimeterSegment; // Curved roof surface area
+
+                        areas.endWall = Math.PI * Math.pow(radius, 2); // Area of two semi-circular end walls = one full circle
+
+                        areas.wall = 2 * L * SWH; // Area of vertical spring walls (if SWH > 0)
                         break;
                     }
                 }
-                return area;
+
+                // Ensure all components are numbers and sum them for the total
+                areas.wall = isNaN(areas.wall) ? 0 : areas.wall;
+                areas.roof = isNaN(areas.roof) ? 0 : areas.roof;
+                areas.endWall = isNaN(areas.endWall) ? 0 : areas.endWall;
+
+                areas.total = areas.wall + areas.roof + areas.endWall;
+                if (isNaN(areas.total)) areas.total = 0;
+
+                return areas;
             }
 
             function calculateAll() {
-                const totalSurfaceArea = calculateSurfaceArea();
-                if (totalSurfaceArea <= 0) {
+                const surfaceAreas = calculateSurfaceArea(); // surfaceAreas is now an object: {total, wall, roof, endWall}
+
+                if (!surfaceAreas || surfaceAreas.total <= 0) {
                     resultsDisplay.textContent = '0';
+document.getElementById('heatLossBreakdownTable').innerHTML = '<p class="text-center text-gray-500">Enter valid dimensions to see breakdown.</p>';
+if (heatLossChart) {
+    heatLossChart.data.labels = [];
+    heatLossChart.data.datasets = [];
+    heatLossChart.update();
+}
                     return;
                 }
 
                 const deltaT = Math.abs(parseFloat(indoorTemp.value) - parseFloat(outdoorTemp.value));
-                const wallR = getWallRValue();
-                const openingsR = 3; // Standard for double-pane
-                const openingsPercent = parseFloat(openingsArea.value) / 100;
+                const combinedRValue = getWallRValue(); // R-value for all insulated opaque surfaces (walls, roof, end walls)
+                const openingsR = 3; // Standard R-value for double-pane openings
+                const openingsFraction = parseFloat(openingsArea.value) / 100; // Fraction of total area that is openings
 
-                const areaOpenings = totalSurfaceArea * openingsPercent;
-                const areaInsulated = totalSurfaceArea - areaOpenings;
+                let breakdown = {
+                    components: [],
+                    totalLoss: 0,
+                    totalArea: surfaceAreas.total
+                };
 
-                const lossInsulated = (wallR > 0) ? (areaInsulated * deltaT) / wallR : 0;
-                const lossOpenings = (areaOpenings * deltaT) / openingsR;
+                // Calculate loss for each component type: wall, roof, endWall
+                const componentTypes = [
+                    { name: "Walls", area: surfaceAreas.wall },
+                    { name: "Roof", area: surfaceAreas.roof },
+                    { name: "End Walls/Gables", area: surfaceAreas.endWall }
+                ];
 
-                let totalLoss = lossInsulated + lossOpenings;
+                let overallCalculatedTotalLoss = 0;
 
+                componentTypes.forEach(comp => {
+                    if (comp.area > 0) {
+                        const componentOpeningArea = comp.area * openingsFraction;
+                        const componentInsulatedArea = comp.area * (1 - openingsFraction);
+
+                        const lossFromInsulatedPart = (combinedRValue > 0) ? (componentInsulatedArea * deltaT) / combinedRValue : 0;
+                        const lossFromOpeningPart = (openingsR > 0) ? (componentOpeningArea * deltaT) / openingsR : 0;
+
+                        const componentTotalLoss = lossFromInsulatedPart + lossFromOpeningPart;
+                        overallCalculatedTotalLoss += componentTotalLoss;
+
+                        breakdown.components.push({
+                            name: comp.name,
+                            area: comp.area,
+                            insulatedArea: componentInsulatedArea,
+                            openingArea: componentOpeningArea,
+                            heatLoss: componentTotalLoss,
+                            percentageOfTotalLoss: 0 // Will calculate later
+                        });
+                    }
+                });
+
+                // Apply air sealing penalty to the sum of conductive losses
                 if (airSealing.value === 'poor') {
-                    totalLoss *= 1.25; // 25% penalty
+                    overallCalculatedTotalLoss *= 1.25; // 25% penalty for poor air sealing
                 }
 
-                resultsDisplay.textContent = Math.round(totalLoss).toLocaleString();
-                updateChart();
+                breakdown.totalLoss = overallCalculatedTotalLoss;
+
+                // Calculate percentageOfTotalLoss for each component
+                if (breakdown.totalLoss > 0) {
+                    breakdown.components.forEach(comp => {
+                        // If air sealing penalty was applied, we need to adjust individual losses proportionally
+                        // or accept that the sum of individual component losses (before penalty) won't match totalLoss.
+                        // For simplicity in display, let's scale component losses if penalty applied.
+                        let effectiveCompLoss = comp.heatLoss;
+                        if (airSealing.value === 'poor') {
+                             effectiveCompLoss *= 1.25;
+                        }
+                        comp.percentageOfTotalLoss = (effectiveCompLoss / breakdown.totalLoss) * 100;
+                        comp.heatLoss = effectiveCompLoss; // Update heatLoss to include penalty for consistent display
+                    });
+                } else {
+                     breakdown.components.forEach(comp => comp.percentageOfTotalLoss = 0);
+                }
+
+                resultsDisplay.textContent = Math.round(breakdown.totalLoss).toLocaleString();
+
+                updateHeatLossBreakdownTable(breakdown);
+
+                updateChart(breakdown); // Pass the full breakdown for charting individual components
             }
-            
-            function updateChart() {
+
+            function updateHeatLossBreakdownTable(breakdown) {
+                const tableContainer = document.getElementById('heatLossBreakdownTable');
+                if (!tableContainer) return;
+
+                if (!breakdown || !breakdown.components || breakdown.components.length === 0) {
+                    tableContainer.innerHTML = '<p class="text-center text-gray-500">No breakdown data available. Adjust inputs.</p>';
+                    return;
+                }
+
+                let tableHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Area (sq ft)</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Heat Loss (BTU/hr)</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                `;
+
+                breakdown.components.forEach(comp => {
+                    if (comp.area > 0) { // Only display components with area
+                        tableHTML += `
+                            <tr>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${comp.name}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${Math.round(comp.area).toLocaleString()}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${Math.round(comp.heatLoss).toLocaleString()}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${comp.percentageOfTotalLoss.toFixed(1)}%</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                // Add a footer row for totals, excluding individual component opening/insulated areas
+                tableHTML += `
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td class="px-4 py-3 text-left text-sm font-bold text-gray-700">Total</td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(breakdown.totalArea).toLocaleString()}</td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(breakdown.totalLoss).toLocaleString()}</td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">100.0%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                `;
+
+                tableContainer.innerHTML = tableHTML;
+            }
+
+function updateChart(surfaceAreas) {
                 const tempLabels = [];
-                const heatLossData = [];
+                const datasets = [];
                 const startTemp = parseFloat(outdoorTemp.value);
+                const currentIndoorTemp = parseFloat(indoorTemp.value);
                 const maxTemp = 90;
 
-                for (let temp = startTemp; temp <= maxTemp; temp += 10) {
-                     const deltaT = Math.abs(parseFloat(indoorTemp.value) - temp);
-                     const totalSurfaceArea = calculateSurfaceArea();
-                     if (totalSurfaceArea <= 0) continue;
+                const surfaceAreas = calculateSurfaceArea(); // Get current surface areas for chart generation across temps
 
-                     const wallR = getWallRValue();
-                     const openingsR = 3;
-                     const openingsPercent = parseFloat(openingsArea.value) / 100;
-
-                     const areaOpenings = totalSurfaceArea * openingsPercent;
-                     const areaInsulated = totalSurfaceArea - areaOpenings;
-
-                     const lossInsulated = (wallR > 0) ? (areaInsulated * deltaT) / wallR : 0;
-                     const lossOpenings = (areaOpenings * deltaT) / openingsR;
-                     let totalLoss = lossInsulated + lossOpenings;
-                      if (airSealing.value === 'poor') {
-                        totalLoss *= 1.25;
+                if (surfaceAreas.total <= 0) {
+                    if (heatLossChart) {
+                        heatLossChart.data.labels = [];
+                        heatLossChart.data.datasets = [];
+                        heatLossChart.update();
                     }
-                     
-                    tempLabels.push(`${temp}°F`);
-                    heatLossData.push(Math.round(totalLoss));
+                    return;
                 }
+
+                // Define colors for different datasets
+                const colors = {
+                    total: 'rgba(54, 162, 235, 1)',
+                    walls: 'rgba(255, 99, 132, 1)',
+                    roof: 'rgba(75, 192, 192, 1)',
+                    endWalls: 'rgba(255, 206, 86, 1)',
+                    openings: 'rgba(153, 102, 255, 1)'
+                };
+                const backgroundColors = {
+                    total: 'rgba(54, 162, 235, 0.2)',
+                    walls: 'rgba(255, 99, 132, 0.2)',
+                    roof: 'rgba(75, 192, 192, 0.2)',
+                    endWalls: 'rgba(255, 206, 86, 0.2)',
+                    openings: 'rgba(153, 102, 255, 0.2)'
+                };
+
+                // Initialize data arrays for each component and total
+                let totalHeatLossData = [];
+                let wallHeatLossData = [];
+                let roofHeatLossData = [];
+                let endWallHeatLossData = [];
+                let openingsHeatLossData = []; // Combined loss from all openings
+
+                const combinedRVal = getWallRValue();
+                const openingsRVal = 3;
+                const openingsFractionVal = parseFloat(openingsArea.value) / 100;
+
+                for (let temp = startTemp; temp <= maxTemp; temp += 10) {
+                    tempLabels.push(`${temp}°F`);
+                    const deltaT = Math.abs(currentIndoorTemp - temp);
+                    let currentTotalLoss = 0;
+                    let currentWallLoss = 0;
+                    let currentRoofLoss = 0;
+                    let currentEndWallLoss = 0;
+                    let currentOpeningsLossTotal = 0;
+
+                    let currentTotalLossPrePenalty = 0;
+                    let insulatedWallLoss = 0;
+                    let insulatedRoofLoss = 0;
+                    let insulatedEndWallLoss = 0;
+                    let totalOpeningsLoss = 0;
+
+                    // Calculate loss through INSULATED portion of Walls
+                    if (surfaceAreas.wall > 0) {
+                        const wallInsulatedArea = surfaceAreas.wall * (1 - openingsFractionVal);
+                        insulatedWallLoss = (combinedRVal > 0) ? (wallInsulatedArea * deltaT) / combinedRVal : 0;
+                        wallHeatLossData.push(Math.round(airSealing.value === 'poor' ? insulatedWallLoss * 1.25 : insulatedWallLoss));
+                        currentTotalLossPrePenalty += insulatedWallLoss;
+                    } else {
+                        wallHeatLossData.push(0);
+                    }
+
+                    // Calculate loss through INSULATED portion of Roof
+                    if (surfaceAreas.roof > 0) {
+                        const roofInsulatedArea = surfaceAreas.roof * (1 - openingsFractionVal);
+                        insulatedRoofLoss = (combinedRVal > 0) ? (roofInsulatedArea * deltaT) / combinedRVal : 0;
+                        roofHeatLossData.push(Math.round(airSealing.value === 'poor' ? insulatedRoofLoss * 1.25 : insulatedRoofLoss));
+                        currentTotalLossPrePenalty += insulatedRoofLoss;
+                    } else {
+                        roofHeatLossData.push(0);
+                    }
+
+                    // Calculate loss through INSULATED portion of End Walls
+                    if (surfaceAreas.endWall > 0) {
+                        const endWallInsulatedArea = surfaceAreas.endWall * (1 - openingsFractionVal);
+                        insulatedEndWallLoss = (combinedRVal > 0) ? (endWallInsulatedArea * deltaT) / combinedRVal : 0;
+                        endWallHeatLossData.push(Math.round(airSealing.value === 'poor' ? insulatedEndWallLoss * 1.25 : insulatedEndWallLoss));
+                        currentTotalLossPrePenalty += insulatedEndWallLoss;
+                    } else {
+                        endWallHeatLossData.push(0);
+                    }
+
+                    // Calculate loss through ALL Openings (sum of openings in walls, roof, endwalls)
+                    const totalOpeningAreaOverall = surfaceAreas.total * openingsFractionVal;
+                    totalOpeningsLoss = (openingsRVal > 0 && totalOpeningAreaOverall > 0) ? (totalOpeningAreaOverall * deltaT) / openingsRVal : 0;
+                    openingsHeatLossData.push(Math.round(airSealing.value === 'poor' ? totalOpeningsLoss * 1.25 : totalOpeningsLoss));
+                    currentTotalLossPrePenalty += totalOpeningsLoss;
+
+                    // Apply air sealing penalty for the total loss line
+                    let currentTotalLossWithPenalty = currentTotalLossPrePenalty;
+                    if (airSealing.value === 'poor') {
+                        currentTotalLossWithPenalty *= 1.25;
+                    }
+                    totalHeatLossData.push(Math.round(currentTotalLossWithPenalty));
+                }
+
+                // Prepare datasets for Chart.js
+                datasets.push({
+                    label: 'Total Heat Loss', data: totalHeatLossData,
+                    borderColor: colors.total, backgroundColor: backgroundColors.total,
+                    borderWidth: 3, fill: true, tension: 0.1, type: 'line'
+                });
+                if (surfaceAreas.wall > 0) { // Only add dataset if wall area exists
+                    datasets.push({
+                        label: 'Insulated Wall Loss', data: wallHeatLossData, // Changed label
+                        borderColor: colors.walls, backgroundColor: backgroundColors.walls,
+                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
+                    });
+                }
+                if (surfaceAreas.roof > 0) { // Only add dataset if roof area exists
+                    datasets.push({
+                        label: 'Insulated Roof Loss', data: roofHeatLossData, // Changed label
+                        borderColor: colors.roof, backgroundColor: backgroundColors.roof,
+                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
+                    });
+                }
+                if (surfaceAreas.endWall > 0) { // Only add dataset if endWall area exists
+                     datasets.push({
+                        label: 'Insulated End Wall/Gable Loss', data: endWallHeatLossData, // Changed label
+                        borderColor: colors.endWalls, backgroundColor: backgroundColors.endWalls,
+                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
+                    });
+                }
+                if (openingsFractionVal > 0) { // Only add dataset if there are openings
+                    datasets.push({
+                        label: 'Total Openings Loss', data: openingsHeatLossData, // Changed label
+                        borderColor: colors.openings, backgroundColor: backgroundColors.openings,
+                        borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
+                    });
+                }
+
 
                 if (!heatLossChart) {
                     const ctx = document.getElementById('heatLossChart').getContext('2d');
                     heatLossChart = new Chart(ctx, {
-                        type: 'line',
+                        // type: 'line', // Type can be defined per dataset
                         data: {
                             labels: tempLabels,
-                            datasets: [{
-                                label: 'Estimated Heat Loss (BTU/hr)',
-                                data: heatLossData,
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.1
-                            }]
+                            datasets: datasets
                         },
                         options: {
                              responsive: true,
@@ -354,12 +611,12 @@
                              },
                              plugins: {
                                 legend: {
-                                    display: false
+                                    display: true // Will be needed for multiple datasets
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
-                                            return ` ${context.raw.toLocaleString()} BTU/hr`;
+                                            return ` ${context.dataset.label}: ${context.raw.toLocaleString()} BTU/hr`;
                                         }
                                     }
                                 }
@@ -368,25 +625,35 @@
                     });
                 } else {
                      heatLossChart.data.labels = tempLabels;
-                     heatLossChart.data.datasets[0].data = heatLossData;
+heatLossChart.data.datasets = datasets;
                      heatLossChart.update();
                 }
-
             }
 
             function attachInputListeners() {
                 const inputs = document.querySelectorAll('.input-field, input[type="number"]');
                 inputs.forEach(input => {
+                    input.removeEventListener('input', calculateAll); // Remove existing to prevent duplicates if run multiple times
+                    input.removeEventListener('change', calculateAll);
                     input.addEventListener('input', calculateAll);
                     input.addEventListener('change', calculateAll);
                 });
             }
 
             // --- Initial Setup ---
-            buildingShape.addEventListener('change', updateDimensionInputs);
-            wallAssembly.addEventListener('change', calculateAll); // Recalculate when assembly type changes
-            
-            updateDimensionInputs(); // Initial call to set default dimensions
+            buildingShape.addEventListener('change', () => {
+                updateDimensionInputs(); // This already calls calculateAll
+            });
+            wallAssembly.addEventListener('change', calculateAll);
+            customRValue.addEventListener('input', calculateAll);
+            doubleWallRValue.addEventListener('input', calculateAll);
+            openingsArea.addEventListener('change', calculateAll);
+            airSealing.addEventListener('change', calculateAll);
+            radiantBarrier.addEventListener('change', calculateAll);
+            indoorTemp.addEventListener('input', calculateAll);
+            outdoorTemp.addEventListener('input', calculateAll);
+
+            updateDimensionInputs(); // Initial call to set default dimensions and perform first calculation
         });
     </script>
 </body>
