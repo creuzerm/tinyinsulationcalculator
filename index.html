@@ -693,13 +693,15 @@ if (heatLossChart) {
                     return;
                 }
 
+                const heatLossColumnStyle = 'min-w-[140px]'; // Added constant for maintainability
+
                 let tableHTML = `
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Area (sq ft)</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Heat Loss (BTU/hr)</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider ${heatLossColumnStyle}">Heat Loss (BTU/hr)</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
                             </tr>
                         </thead>
@@ -712,7 +714,7 @@ if (heatLossChart) {
                             <tr>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${comp.name}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${Math.round(comp.area).toLocaleString()}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${Math.round(comp.heatLoss).toLocaleString()}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right ${heatLossColumnStyle}">${Math.round(comp.heatLoss).toLocaleString()}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${comp.percentageOfTotalLoss.toFixed(1)}%</td>
                             </tr>
                         `;
