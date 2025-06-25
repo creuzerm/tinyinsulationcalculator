@@ -199,6 +199,7 @@
                     <p id="resultsExplanation" class="max-w-md text-gray-500">
                         This is the approximate heating power your system needs to maintain the desired indoor temperature on the coldest day. Look for a heat pump with a capacity that meets or exceeds this value.
                     </p>
+                    <p id="tempChangeDisplay" class="text-md text-gray-600 mt-3"></p>
                 </div>
                  <div class="mt-8 heatLossChartBox">
                     <h3 class="text-xl font-semibold text-center mb-4">Heat Loss vs. Outdoor Temperature</h3>
@@ -452,6 +453,42 @@
                 return rValue;
             }
 
+            function calculateAirVolume() {
+                const shape = buildingShape.value;
+                const L = parseFloat(document.getElementById('length')?.value) || 0;
+                const W = parseFloat(document.getElementById('width')?.value) || 0;
+                const H = parseFloat(document.getElementById('height')?.value) || 0; // For rectangle, eave height. For A-frame, overall peak height.
+                const SWH = parseFloat(document.getElementById('springWallHeight')?.value) || 0; // For Gothic Arch
+
+                let volume = 0;
+
+                switch (shape) {
+                    case 'rectangle': {
+                        // Assuming H is the internal height for volume calculations.
+                        // The roof pitch complexity is for surface area, not simple volume here.
+                        volume = L * W * H;
+                        break;
+                    }
+                    case 'a-frame': {
+                        // Volume of a triangular prism: (0.5 * base * height) * length
+                        volume = 0.5 * W * H * L;
+                        break;
+                    }
+                    case 'gothic-arch': {
+                        // Volume of a half-cylinder + volume of rectangular base (if spring walls exist)
+                        const radius = W / 2;
+                        const semiCircleArea = 0.5 * Math.PI * Math.pow(radius, 2);
+                        volume = semiCircleArea * L; // Volume of the arched part
+
+                        if (SWH > 0) {
+                            volume += SWH * W * L; // Volume of the rectangular base part
+                        }
+                        break;
+                    }
+                }
+                return isNaN(volume) || volume < 0 ? 0 : volume;
+            }
+
             function calculateSurfaceArea() {
                 const shape = buildingShape.value;
                 const L = parseFloat(document.getElementById('length')?.value) || 0;
@@ -525,15 +562,20 @@
 
             function calculateAll() {
                 const surfaceAreas = calculateSurfaceArea(); // surfaceAreas is now an object: {total, wall, roof, endWall}
+                const airVolume = calculateAirVolume();
 
-                if (!surfaceAreas || surfaceAreas.total <= 0) {
+                if (!surfaceAreas || surfaceAreas.total <= 0 || airVolume <= 0) {
                     resultsDisplay.textContent = '0';
-document.getElementById('heatLossBreakdownTable').innerHTML = '<p class="text-center text-gray-500">Enter valid dimensions to see breakdown.</p>';
-if (heatLossChart) {
-    heatLossChart.data.labels = [];
-    heatLossChart.data.datasets = [];
-    heatLossChart.update();
-}
+                    const tempChangeDisplay = document.getElementById('tempChangeDisplay');
+                    if (tempChangeDisplay) {
+                        tempChangeDisplay.textContent = "Estimated 1-hr temperature drop: N/A (invalid dimensions).";
+                    }
+                    document.getElementById('heatLossBreakdownTable').innerHTML = '<p class="text-center text-gray-500">Enter valid dimensions to see breakdown.</p>';
+                    if (heatLossChart) {
+                        heatLossChart.data.labels = [];
+                        heatLossChart.data.datasets = [];
+                        heatLossChart.update();
+                    }
                     return;
                 }
 
@@ -680,8 +722,26 @@ if (heatLossChart) {
                 resultsDisplay.textContent = Math.round(breakdown.totalLoss).toLocaleString();
 
                 updateHeatLossBreakdownTable(breakdown);
-
                 updateChart(surfaceAreas); // Pass the surfaceAreas object for charting
+
+                // Calculate 1-hour temperature change
+                const SPECIFIC_HEAT_AIR_BTU_FT3_F = 0.018; // BTU per cubic foot per degree F
+                let temperatureChange_1hr = 0;
+                if (airVolume > 0 && SPECIFIC_HEAT_AIR_BTU_FT3_F > 0 && breakdown.totalLoss > 0) {
+                    temperatureChange_1hr = breakdown.totalLoss / (airVolume * SPECIFIC_HEAT_AIR_BTU_FT3_F);
+                }
+
+                // Display temperature change
+                const tempChangeDisplay = document.getElementById('tempChangeDisplay');
+                if (tempChangeDisplay) {
+                    if (airVolume > 0 && breakdown.totalLoss > 0) {
+                        tempChangeDisplay.textContent = `Estimated 1-hr temperature drop (no heat): ${temperatureChange_1hr.toFixed(1)} °F`;
+                    } else if (airVolume <= 0) {
+                        tempChangeDisplay.textContent = "Estimated 1-hr temperature drop: N/A (invalid dimensions for volume).";
+                    } else {
+                        tempChangeDisplay.textContent = "Estimated 1-hr temperature drop: 0.0 °F (no heat loss).";
+                    }
+                }
             }
 
             function updateHeatLossBreakdownTable(breakdown) {

@@ -93,6 +93,22 @@ This step accounts for heat loss due to infiltration (drafts).
 -   If Air Sealing is **"Good"**, the value is unchanged.
     -   `Total_Loss_Final = Total_Loss_Base`
 
+### Step 8: Calculate Estimated 1-Hour Temperature Change (ΔT_1hr)
+
+This value estimates how much the indoor temperature would drop in one hour if the heating system were turned off, assuming no other heat gains (solar, occupants, appliances).
+
+-   **Formula:**
+    **`ΔT_1hr (°F) = Total_Loss_Final (BTU/hr) / (Air_Volume (ft³) * Specific_Heat_Air (BTU/ft³°F))`**
+
+    Where:
+    -   **Air_Volume (ft³)**: The internal air volume of the structure, calculated based on its dimensions and shape:
+        -   Rectangle: `Length * Width * Height`
+        -   A-Frame: `0.5 * Width * Height * Length`
+        -   Gothic Arch: `(0.5 * π * (Width/2)² * Length) + (SpringWallHeight * Width * Length)`
+    -   **Specific_Heat_Air (BTU/ft³°F)**: The specific heat capacity of air, assumed to be **0.018 BTU/ft³°F**.
+
+This calculation provides an additional metric to understand the building's thermal performance beyond just the raw heat loss number. A higher ΔT_1hr indicates a faster temperature drop.
+
 ---
 
 ## 4. Reference Materials
