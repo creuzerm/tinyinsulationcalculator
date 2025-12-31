@@ -14,21 +14,23 @@
             font-family: 'Inter', sans-serif;
         }
         .input-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.0rem;
         }
         .input-label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             color: #4A5568;
             font-weight: 500;
+            font-size: 0.875rem;
         }
         .input-field {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.5rem;
             border-radius: 0.375rem;
             border: 1px solid #E2E8F0;
-            background-color: #F7FAFC;
+            background-color: #fff;
             transition: border-color 0.2s;
+            font-size: 0.9rem;
         }
         .input-field:focus {
             outline: none;
@@ -36,21 +38,36 @@
             box-shadow: 0 0 0 1px #4299E1;
         }
         .heatLossChartBox {
-            height: 600px; 
+            height: 350px; 
+            margin-bottom: 2rem;
         }
+        /* Scenario Headers */
+        .scenario-header-a { border-bottom: 3px solid #3B82F6; color: #1E40AF; }
+        .scenario-header-b { border-bottom: 3px solid #10B981; color: #065F46; }
+        .scenario-box-a { background-color: #EFF6FF; border: 1px solid #BFDBFE; }
+        .scenario-box-b { background-color: #ECFDF5; border: 1px solid #A7F3D0; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-100 text-gray-800">
 
-    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
-        <header class="text-center mb-8 relative">
+    <div class="container mx-auto p-2 md:p-6 max-w-7xl">
+        <header class="text-center mb-6 relative">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Tiny Home Heat Loss Calculator</h1>
-            <p class="text-gray-600 mt-2">Estimate the heating load for your tiny home to size your heat pump correctly.</p>
+            <p class="text-gray-600 mt-2">Estimate heating load and thermal battery capacity.</p>
+
+            <!-- A/B Toggle Switch -->
+            <div class="mt-6 flex justify-center">
+                <label class="inline-flex items-center cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                    <input type="checkbox" id="abToggle" class="sr-only peer">
+                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span class="ms-3 text-sm font-medium text-gray-700">Enable A/B Comparison</span>
+                </label>
+            </div>
 
             <!-- Hamburger Menu -->
             <div class="absolute top-0 right-0 p-4">
                 <button id="menu-btn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                     </svg>
                 </button>
@@ -61,952 +78,751 @@
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Input Controls Column -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-6 border-b pb-3">Building Specifications</h2>
-
-                <!-- Building Shape Selector -->
-                <div class="input-group">
+        <!-- SHARED PARAMETERS ROW -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Shared Building & Climate Settings</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Shape -->
+                <div>
                     <label for="buildingShape" class="input-label">Building Shape</label>
-                    <select id="buildingShape" class="input-field">
+                    <select id="buildingShape" class="input-field bg-gray-50">
                         <option value="rectangle">Simple Rectangle</option>
                         <option value="a-frame">A-Frame</option>
                         <option value="gothic-arch">Gothic Arch</option>
                     </select>
                 </div>
+                <!-- Dimensions (Placeholder for Injection) -->
+                <div id="dimensionInputs" class="contents"></div>
+            </div>
 
-                <!-- Dimension Inputs -->
-                <div id="dimensionInputs">
-                    <!-- Dynamic inputs will be injected here by JS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 pt-4 border-t border-gray-100">
+                <div>
+                    <label for="indoorTemp" class="input-label">Indoor Target (°F)</label>
+                    <input type="number" id="indoorTemp" class="input-field bg-gray-50" value="68">
                 </div>
-
-                <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Climate & Comfort</h2>
-
-                <!-- Temperature Inputs -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 input-group">
-                    <div>
-                        <label for="indoorTemp" class="input-label">Indoor Temp (°F)</label>
-                        <input type="number" id="indoorTemp" class="input-field" value="68">
-                    </div>
-                    <div>
-                        <label for="outdoorTemp" class="input-label">Outdoor Temp (°F)</label>
-                        <input type="number" id="outdoorTemp" class="input-field" value="10">
-                    </div>
+                <div>
+                    <label for="outdoorTemp" class="input-label">Design Outdoor (°F)</label>
+                    <input type="number" id="outdoorTemp" class="input-field bg-gray-50" value="10">
                 </div>
+                <div>
+                    <label for="groundTemp" class="input-label">Ground Temp (°F)</label>
+                    <input type="number" id="groundTemp" class="input-field bg-gray-50" value="50">
+                </div>
+            </div>
+        </div>
 
-                <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Construction Details</h2>
-
-                <!-- Wall Assembly Selector -->
+        <!-- SCENARIOS CONTAINER -->
+        <div id="scenariosGrid" class="grid grid-cols-1 gap-6 mb-6"> <!-- JS will toggle lg:grid-cols-2 -->
+            
+            <!-- SCENARIO A -->
+            <div id="scenarioBoxA" class="scenario-box-a p-4 rounded-lg shadow-sm">
+                <h3 id="headerA" class="text-xl font-bold mb-4 scenario-header-a pb-2">Construction Details</h3>
+                
+                <!-- Presets -->
                 <div class="input-group">
-                    <label for="wallAssembly" class="input-label">Insulation / Wall</label>
-                    <select id="wallAssembly" class="input-field">
-                        <option value="13">2x4 Walls (R-13)</option>
-                        <option value="21">2x6 Walls (R-21)</option>
-                        <option value="29">2x8 Walls (R-29)</option>
-                        <option value="4">No Insulation (Interior Wall) (R-4)</option>
-                        <option value="1">Exterior Sheathing Only (R-1)</option>
-                        <option value="custom">Custom R-Value</option>
-                        <option value="double-wall">Double Stud Wall (No Thermal Bridge)</option>
+                    <label class="input-label">Quick Preset</label>
+                    <select id="insulationPreset_A" class="input-field" onchange="applyPreset('_A')">
+                        <option value="">Select...</option>
+                        <option value="code_min" selected>Code Minimum (R-13/38/10)</option>
+                        <option value="high_perf">High Performance (R-21/50/20)</option>
+                        <option value="passive_house">Passive House (R-32/50/30)</option>
+                        <option value="uninsulated">Uninsulated Shed</option>
                     </select>
                 </div>
-                <div id="customRValueContainer" class="input-group hidden">
-                    <label for="customRValue" class="input-label">Custom Wall R-Value</label>
-                    <input type="number" id="customRValue" class="input-field" value="21">
-                </div>
-                 <div id="doubleWallContainer" class="input-group hidden">
-                    <label for="doubleWallRValue" class="input-label">Double Wall Insulation R-Value</label>
-                    <input type="number" id="doubleWallRValue" class="input-field" value="40">
+
+                <div class="grid grid-cols-3 gap-2 input-group">
+                    <div><label class="input-label">Wall R</label><input type="number" id="wallRValue_A" class="input-field" value="13"></div>
+                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_A" class="input-field" value="38"></div>
+                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_A" class="input-field" value="10"></div>
                 </div>
 
-                <!-- Openings Selector -->
                 <div class="input-group">
-                    <label for="openingsArea" class="input-label">Openings (Windows & Doors) - General Area %</label>
-                    <select id="openingsArea" class="input-field">
-                        <option value="10">10% of Surface Area (Minimal)</option>
-                        <option value="15" selected>15% of Surface Area (Common)</option>
-                        <option value="20">20% of Surface Area (Generous)</option>
-                        <option value="25">25% of Surface Area (Lots of Glass)</option>
-                        <option value="custom">Custom Areas Below</option>
+                    <label class="input-label">Openings</label>
+                    <select id="openingsArea_A" class="input-field">
+                        <option value="15" selected>15% (Standard)</option>
+                        <option value="20">20% (Generous)</option>
+                        <!-- Simplified for A/B view -->
                     </select>
-                    <small class="text-gray-500">Select 'Custom Areas Below' to input specific door/window details.</small>
+                    <div class="text-xs text-gray-500 mt-1">Assumes standard R-3 windows</div>
                 </div>
 
-                <div id="customOpeningsContainer" class="hidden">
-                    <h3 class="text-xl font-semibold mb-4 mt-6 border-b pb-2">Window Details</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
-                        <div>
-                            <label for="numWindows" class="input-label">Number of Windows</label>
-                            <input type="number" id="numWindows" class="input-field" value="3">
-                        </div>
-                        <div>
-                            <label for="windowArea" class="input-label">Area per Window (sq ft)</label>
-                            <input type="number" id="windowArea" class="input-field" value="10">
-                        </div>
-                        <div>
-                            <label for="windowRValue" class="input-label">Window R-Value</label>
-                            <input type="number" id="windowRValue" class="input-field" value="2.5">
-                        </div>
-                    </div>
-
-                    <h3 class="text-xl font-semibold mb-4 mt-6 border-b pb-2">Door Details</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
-                        <div>
-                            <label for="numDoors" class="input-label">Number of Doors</label>
-                            <input type="number" id="numDoors" class="input-field" value="1">
-                        </div>
-                        <div>
-                            <label for="doorArea" class="input-label">Area per Door (sq ft)</label>
-                            <input type="number" id="doorArea" class="input-field" value="20">
-                        </div>
-                        <div>
-                            <label for="doorRValue" class="input-label">Door R-Value</label>
-                            <input type="number" id="doorRValue" class="input-field" value="5">
-                        </div>
-                    </div>
+                 <div class="input-group">
+                    <label class="input-label">Air Sealing</label>
+                    <select id="airSealing_A" class="input-field">
+                        <option value="good">Good (Airtight)</option>
+                        <option value="poor" selected>Poor (Standard)</option>
+                    </select>
                 </div>
 
-
-                <h2 class="text-2xl font-semibold mb-6 mt-8 border-b pb-3">Qualitative Factors</h2>
-
-                <!-- Qualitative Factors -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 input-group">
-                    <div>
-                        <label for="airSealing" class="input-label">Air Sealing</label>
-                        <select id="airSealing" class="input-field">
-                            <option value="good">Good Air Barrier</option>
-                            <option value="poor">Poor Air Barrier (Drafty)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="radiantBarrier" class="input-label">Radiant Barrier</label>
-                        <select id="radiantBarrier" class="input-field">
-                            <option value="no">No Reflective Barrier</option>
-                            <option value="yes">Reflective Barrier Included</option>
-                        </select>
+                <div class="border-t border-blue-200 pt-3 mt-4">
+                    <h4 class="font-semibold text-blue-900 mb-2">Thermal Mass</h4>
+                    <div class="grid grid-cols-2 gap-2 input-group">
+                         <div>
+                            <label class="input-label">Floor Type</label>
+                            <select id="massMaterial_A" class="input-field">
+                                <option value="wood" selected>Wood Frame</option>
+                                <option value="concrete">Concrete</option>
+                                <option value="stone">Stabilized Earth</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="input-label">Thick (in)</label>
+                            <input type="number" id="slabThickness_A" class="input-field" value="1">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Results Column -->
-            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col">
-                <h2 class="text-2xl font-semibold mb-6 border-b pb-3">Estimated Heat Loss</h2>
-                <div class="flex-grow flex flex-col items-center justify-center text-center">
-                    <div id="resultsDisplay" class="mb-4">
-                        <p class="text-6xl font-bold text-blue-600">0</p>
-                        <p class="text-xl text-gray-600">BTUs/hr</p>
-                    </div>
-                    <p id="resultsExplanation" class="max-w-md text-gray-500">
-                        This is the approximate heating power your system needs to maintain the desired indoor temperature on the coldest day. Look for a heat pump with a capacity that meets or exceeds this value.
-                    </p>
+            <!-- SCENARIO B (Initially Hidden) -->
+            <div id="scenarioBoxB" class="scenario-box-b p-4 rounded-lg shadow-sm hidden">
+                <h3 class="text-xl font-bold mb-4 scenario-header-b pb-2">Scenario B (Comparison)</h3>
+                
+                <!-- Presets -->
+                <div class="input-group">
+                    <label class="input-label">Quick Preset</label>
+                    <select id="insulationPreset_B" class="input-field" onchange="applyPreset('_B')">
+                        <option value="">Select...</option>
+                        <option value="code_min">Code Minimum (R-13/38/10)</option>
+                        <option value="high_perf">High Performance (R-21/50/20)</option>
+                        <option value="passive_house" selected>Passive House (R-32/50/30)</option>
+                        <option value="uninsulated">Uninsulated Shed</option>
+                    </select>
                 </div>
-                 <div class="mt-8 heatLossChartBox">
-                    <h3 class="text-xl font-semibold text-center mb-4">Heat Loss vs. Outdoor Temperature</h3>
+
+                <div class="grid grid-cols-3 gap-2 input-group">
+                    <div><label class="input-label">Wall R</label><input type="number" id="wallRValue_B" class="input-field" value="32"></div>
+                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_B" class="input-field" value="50"></div>
+                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_B" class="input-field" value="30"></div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Openings</label>
+                    <select id="openingsArea_B" class="input-field">
+                        <option value="15" selected>15% (Standard)</option>
+                        <option value="20">20% (Generous)</option>
+                    </select>
+                     <div class="text-xs text-gray-500 mt-1">Assumes standard R-3 windows</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Air Sealing</label>
+                    <select id="airSealing_B" class="input-field">
+                        <option value="good" selected>Good (Airtight)</option>
+                        <option value="poor">Poor (Standard)</option>
+                    </select>
+                </div>
+
+                 <div class="border-t border-green-200 pt-3 mt-4">
+                    <h4 class="font-semibold text-green-900 mb-2">Thermal Mass</h4>
+                    <div class="grid grid-cols-2 gap-2 input-group">
+                         <div>
+                            <label class="input-label">Floor Type</label>
+                            <select id="massMaterial_B" class="input-field">
+                                <option value="wood">Wood Frame</option>
+                                <option value="concrete">Concrete</option>
+                                <option value="stone" selected>Stabilized Earth</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="input-label">Thick (in)</label>
+                            <input type="number" id="slabThickness_B" class="input-field" value="12">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SHARED SIMULATION SETTINGS -->
+         <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Simulation Settings (Shared)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                 <div>
+                    <label class="input-label">Duration</label>
+                    <select id="simDuration" class="input-field bg-gray-50">
+                        <option value="24">24 Hours</option>
+                        <option value="168">7 Days</option>
+                    </select>
+                </div>
+                <div>
+                     <label class="input-label">Internal Heat Gain</label>
+                     <div class="flex items-center space-x-2">
+                        <input type="number" id="simInternalGain" class="input-field bg-gray-50" value="400">
+                        <span class="text-xs text-gray-500 whitespace-nowrap">BTU/hr</span>
+                     </div>
+                </div>
+                <div>
+                    <label class="input-label">Daily Low (°F)</label>
+                    <input type="number" id="simLowTemp" class="input-field bg-gray-50" value="25">
+                </div>
+                 <div>
+                    <label class="input-label">Daily High (°F)</label>
+                    <input type="number" id="simHighTemp" class="input-field bg-gray-50" value="50">
+                </div>
+            </div>
+            
+            <!-- Quick Internal Gain Table -->
+            <details class="mt-4 border rounded bg-gray-50">
+                <summary class="p-2 text-sm text-blue-600 cursor-pointer font-medium">Show Internal Gain Calculator</summary>
+                <div class="p-4">
+                     <table class="w-full text-sm max-w-lg">
+                        <thead>
+                            <tr class="text-xs text-gray-500 text-left border-b">
+                                <th class="pb-2">Source</th>
+                                <th class="pb-2 text-right">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="py-2">Occupant (350 BTU)</td>
+                                <td class="text-right"><input type="number" id="gainCountPerson" class="w-16 border rounded text-center" value="1" oninput="updateInternalGains()"></td>
+                            </tr>
+                            <tr>
+                                <td class="py-2">Laptop/TV (150 BTU)</td>
+                                <td class="text-right"><input type="number" id="gainCountElectronics" class="w-16 border rounded text-center" value="0" oninput="updateInternalGains()"></td>
+                            </tr>
+                            <tr>
+                                <td class="py-2">LED Lights (35 BTU)</td>
+                                <td class="text-right"><input type="number" id="gainCountLight" class="w-16 border rounded text-center" value="0" oninput="updateInternalGains()"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+
+
+        <!-- RESULTS -->
+        <div id="resultsGrid" class="grid grid-cols-1 gap-6"> <!-- JS will toggle lg:grid-cols-2 -->
+            
+            <!-- Result Cards -->
+            <div id="resultBoxA" class="bg-blue-50 p-6 rounded-lg border border-blue-200 flex flex-col items-center justify-center text-center">
+                <h3 id="resultHeaderA" class="text-lg font-bold text-blue-900 mb-2">Estimated Results</h3>
+                <div class="mb-4">
+                    <p class="text-4xl font-bold text-blue-600"><span id="resultLoss_A">0</span></p>
+                    <p class="text-sm text-blue-800">Peak Heat Loss (BTU/hr)</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_A">0</span> <span class="text-sm text-gray-600">°F/hr</span></p>
+                    <p class="text-xs text-gray-500">Passive Temp Loss</p>
+                </div>
+            </div>
+
+            <div id="resultBoxB" class="bg-green-50 p-6 rounded-lg border border-green-200 flex flex-col items-center justify-center text-center hidden">
+                <h3 class="text-lg font-bold text-green-900 mb-2">Scenario B Results</h3>
+                <div class="mb-4">
+                    <p class="text-4xl font-bold text-green-600"><span id="resultLoss_B">0</span></p>
+                    <p class="text-sm text-green-800">Peak Heat Loss (BTU/hr)</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_B">0</span> <span class="text-sm text-gray-600">°F/hr</span></p>
+                    <p class="text-xs text-gray-500">Passive Temp Loss</p>
+                </div>
+            </div>
+
+            <!-- Charts (Full Width) -->
+            <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Heat Loss Analysis</h3>
+                <div class="heatLossChartBox">
                     <canvas id="heatLossChart"></canvas>
                 </div>
+            </div>
 
-                <!-- New Section for Heat Loss Breakdown Table -->
-                <div id="heatLossBreakdownContainer" class="mt-8 pt-6 border-t">
-                    <h3 class="text-xl font-semibold text-center mb-4">Heat Loss Breakdown by Surface</h3>
-                    <div id="heatLossBreakdownTable" class="overflow-x-auto">
-                        <!-- Table will be injected here by JS -->
-                        <p class="text-center text-gray-500">Calculating breakdown...</p>
-                    </div>
+            <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Passive Simulation</h3>
+                <p class="text-center text-sm text-gray-500 mb-4">Indoor temperature drift with NO supplemental heating.</p>
+                <div class="heatLossChartBox">
+                    <canvas id="simulationChart"></canvas>
                 </div>
             </div>
-        </main>
+
+        </div>
     </div>
 
     <script>
+        // Global Chart Instances
+        let heatLossChart;
+        let simulationChart;
+
+        // --- STORAGE HELPERS ---
+        function saveInputToLocalStorage(element) {
+            if (element && element.id) {
+                if(element.type === 'checkbox') {
+                     localStorage.setItem(element.id, element.checked);
+                } else {
+                     localStorage.setItem(element.id, element.value);
+                }
+            }
+        }
+
+        function loadInputFromLocalStorage(element) {
+            if (element && element.id) {
+                const savedValue = localStorage.getItem(element.id);
+                if (savedValue !== null) {
+                    if(element.type === 'checkbox') {
+                        element.checked = (savedValue === 'true');
+                    } else {
+                        element.value = savedValue;
+                    }
+                }
+            }
+        }
+
+        // Shape Templates
+        const dimensionTemplates = {
+            rectangle: `
+                <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
+                <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="10"></div>
+                <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="8"></div>
+                <div><label class="input-label">Roof Pitch</label><input type="number" id="roofPitch" class="input-field bg-gray-50" value="4"></div>
+            `,
+            'a-frame': `
+                <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
+                <div><label class="input-label">Base Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12"></div>
+                <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="15"></div>
+            `,
+            'gothic-arch': `
+                <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
+                <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12"></div>
+                <div><label class="input-label">Spring Ht</label><input type="number" id="springWallHeight" class="input-field bg-gray-50" value="2"></div>
+            `
+        };
+
+        // --- PRESET LOGIC ---
+        function applyPreset(suffix) {
+            const preset = document.getElementById(`insulationPreset${suffix}`).value;
+            if(!preset) return;
+
+            const w = document.getElementById(`wallRValue${suffix}`);
+            const r = document.getElementById(`roofRValue${suffix}`);
+            const f = document.getElementById(`floorRValue${suffix}`);
+
+            switch(preset) {
+                case 'code_min': w.value = 13; r.value = 38; f.value = 10; break;
+                case 'high_perf': w.value = 21; r.value = 50; f.value = 20; break;
+                case 'passive_house': w.value = 32; r.value = 50; f.value = 30; break;
+                case 'uninsulated': w.value = 4; r.value = 4; f.value = 1; break;
+            }
+            // Save immediately on preset apply
+            saveInputToLocalStorage(document.getElementById(`insulationPreset${suffix}`));
+            saveInputToLocalStorage(w);
+            saveInputToLocalStorage(r);
+            saveInputToLocalStorage(f);
+
+            calculateAll();
+        }
+
+        function updateInternalGains() {
+            const p = (parseFloat(document.getElementById('gainCountPerson').value)||0) * 350;
+            const e = (parseFloat(document.getElementById('gainCountElectronics').value)||0) * 150;
+            const l = (parseFloat(document.getElementById('gainCountLight').value)||0) * 35;
+            document.getElementById('simInternalGain').value = p + e + l;
+            // Note: internal gain hidden field doesn't need explicit saving if we save the counts
+            calculateAll();
+        }
+
+        function updateDimensions() {
+            const shape = document.getElementById('buildingShape').value;
+            const container = document.getElementById('dimensionInputs');
+            container.innerHTML = dimensionTemplates[shape];
+            
+            // Re-bind listeners & Load Saved Data for these dynamic inputs
+            container.querySelectorAll('input').forEach(i => {
+                loadInputFromLocalStorage(i); // Restore persisted values
+                i.addEventListener('input', (e) => {
+                    saveInputToLocalStorage(e.target);
+                    calculateAll();
+                });
+            });
+            calculateAll();
+        }
+
+        // --- TOGGLE LOGIC ---
+        function toggleABMode() {
+            const isEnabled = document.getElementById('abToggle').checked;
+            
+            const scenariosGrid = document.getElementById('scenariosGrid');
+            const scenarioB = document.getElementById('scenarioBoxB');
+            const headerA = document.getElementById('headerA');
+            
+            const resultsGrid = document.getElementById('resultsGrid');
+            const resultB = document.getElementById('resultBoxB');
+            const resultHeaderA = document.getElementById('resultHeaderA');
+            const chartContainers = document.querySelectorAll('.lg\\:col-span-2-dynamic');
+
+            if(isEnabled) {
+                // Turn ON Comparison
+                scenariosGrid.classList.add('lg:grid-cols-2');
+                scenarioB.classList.remove('hidden');
+                headerA.textContent = "Scenario A (Standard)";
+                
+                resultsGrid.classList.add('lg:grid-cols-2');
+                resultB.classList.remove('hidden');
+                resultHeaderA.textContent = "Scenario A Results";
+
+                chartContainers.forEach(el => el.classList.add('lg:col-span-2'));
+            } else {
+                // Turn OFF Comparison
+                scenariosGrid.classList.remove('lg:grid-cols-2');
+                scenarioB.classList.add('hidden');
+                headerA.textContent = "Construction Details";
+                
+                resultsGrid.classList.remove('lg:grid-cols-2');
+                resultB.classList.add('hidden');
+                resultHeaderA.textContent = "Estimated Results";
+
+                chartContainers.forEach(el => el.classList.remove('lg:col-span-2'));
+            }
+            calculateAll();
+        }
+
+
+        // --- CALCULATION LOGIC ---
+
+        function getSurfaceAreas() {
+            const shape = document.getElementById('buildingShape').value;
+            const L = parseFloat(document.getElementById('length')?.value) || 0;
+            const W = parseFloat(document.getElementById('width')?.value) || 0;
+            const H = parseFloat(document.getElementById('height')?.value) || 0;
+            
+            let areas = { wall:0, roof:0, floor:0, total:0 };
+
+            if(shape === 'rectangle') {
+                const pitch = parseFloat(document.getElementById('roofPitch')?.value) || 0;
+                areas.wall = (2*L*H) + (2*W*H);
+                areas.floor = L*W;
+                if(pitch === 0) {
+                    areas.roof = L*W;
+                } else {
+                    const rise = (W/2) * (pitch/12);
+                    const slope = Math.sqrt((W/2)**2 + rise**2);
+                    areas.roof = L * slope * 2;
+                    // Add gable ends to wall
+                    areas.wall += (W * rise);
+                }
+            } else if (shape === 'a-frame') {
+                 const slope = Math.sqrt((W/2)**2 + H**2);
+                 areas.roof = 2 * L * slope;
+                 areas.wall = W * H; // Two triangle ends combined
+                 areas.floor = L * W;
+            } else if (shape === 'gothic-arch') {
+                const spring = parseFloat(document.getElementById('springWallHeight')?.value) || 0;
+                const r = W/2;
+                areas.floor = L * W;
+                areas.wall = (2*L*spring) + (Math.PI * r**2); // Ends
+                areas.roof = L * (Math.PI * r); // Arch top
+            }
+            
+            areas.total = areas.wall + areas.roof;
+            return areas;
+        }
+
+        function getScenarioData(suffix) {
+            // R-Values
+            const rWall = parseFloat(document.getElementById(`wallRValue${suffix}`).value) || 1;
+            const rRoof = parseFloat(document.getElementById(`roofRValue${suffix}`).value) || 1;
+            const rFloor = parseFloat(document.getElementById(`floorRValue${suffix}`).value) || 1;
+            
+            // Openings
+            const pctOpen = parseFloat(document.getElementById(`openingsArea${suffix}`).value) || 15;
+            
+            // Air Sealing
+            const sealing = document.getElementById(`airSealing${suffix}`).value;
+
+            // Mass
+            const massMat = document.getElementById(`massMaterial${suffix}`).value;
+            const thickness = parseFloat(document.getElementById(`slabThickness${suffix}`).value) || 1;
+
+            return { rWall, rRoof, rFloor, pctOpen, sealing, massMat, thickness };
+        }
+
+        function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
+            const openArea = areas.total * (data.pctOpen / 100);
+            const netWall = (areas.wall / areas.total) * (areas.total - openArea);
+            const netRoof = (areas.roof / areas.total) * (areas.total - openArea);
+
+            // Conductive Loss (UA)
+            let ua = 0;
+            ua += (netWall / data.rWall);
+            ua += (netRoof / data.rRoof);
+            ua += (openArea / 3); // Assume R-3 windows
+
+            // Sealing Penalty
+            if(data.sealing === 'poor') ua *= 1.25;
+
+            // Floor Loss (Separate delta T)
+            const floorLoss = (areas.floor / data.rFloor) * deltaT_Ground;
+            const uaFloor = (areas.floor / data.rFloor);
+
+            const totalLoss = (ua * deltaT_Air) + floorLoss;
+            
+            return { totalLoss, ua, uaFloor };
+        }
+
+        function calculateMassCapacity(areas, data) {
+            let density = 145, specHeat = 0.2; // Concrete
+            if(data.massMat === 'stone') { density = 135; specHeat = 0.2; }
+            if(data.massMat === 'wood') { density = 30; specHeat = 0.4; }
+
+            const vol = areas.floor * (data.thickness / 12);
+            const mass = vol * density;
+            const floorCapacity = mass * specHeat;
+            
+            // Add Structure Mass (Approximation)
+            // Even a light shed has wall mass (~1.5 BTU/sf/F).
+            // This baseline stability mass prevents division by near-zero errors.
+            const structureCapacity = areas.total * 1.5; 
+            
+            return floorCapacity + structureCapacity;
+        }
+
+        function calculateAll() {
+            const isAB = document.getElementById('abToggle').checked;
+
+            // 1. Common Data
+            const areas = getSurfaceAreas();
+            if(areas.total <= 0) return;
+
+            const tIn = parseFloat(document.getElementById('indoorTemp').value);
+            const tOut = parseFloat(document.getElementById('outdoorTemp').value);
+            const tGround = parseFloat(document.getElementById('groundTemp').value);
+            const dtAir = Math.max(0, tIn - tOut);
+            const dtGround = Math.max(0, tIn - tGround);
+
+            // 2. Scenario A
+            const dataA = getScenarioData('_A');
+            const lossA = calculateHeatLoss(areas, dataA, dtAir, dtGround);
+            const capA = calculateMassCapacity(areas, dataA);
+            
+            // Update A UI
+            document.getElementById('resultLoss_A').textContent = Math.round(lossA.totalLoss).toLocaleString();
+            const dropA = lossA.totalLoss / Math.max(capA, 1);
+            document.getElementById('resultDrop_A').textContent = dropA.toFixed(2);
+
+            let lossB = null, capB = null, dataB = null;
+
+            if(isAB) {
+                dataB = getScenarioData('_B');
+                lossB = calculateHeatLoss(areas, dataB, dtAir, dtGround);
+                capB = calculateMassCapacity(areas, dataB);
+
+                // Update B UI
+                document.getElementById('resultLoss_B').textContent = Math.round(lossB.totalLoss).toLocaleString();
+                const dropB = lossB.totalLoss / Math.max(capB, 1);
+                document.getElementById('resultDrop_B').textContent = dropB.toFixed(2);
+            }
+
+            // 6. Update Charts
+            updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB);
+            updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround);
+        }
+
+        function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
+            const ctx = document.getElementById('heatLossChart').getContext('2d');
+            const labels = [];
+            const d_A = [];
+            const d_B = [];
+
+            // Dynamic Chart Range logic based on Design Temps
+            const currentOutdoor = parseFloat(document.getElementById('outdoorTemp').value);
+            // Ensure we cover from roughly 20 below coldest to 20 above hottest, or at least 0-60 baseline
+            const minT = Math.min(0, currentOutdoor - 10, tIn - 30);
+            const maxT = Math.max(60, currentOutdoor + 10, tIn + 10);
+            
+            // Round to nearest 5 for clean ticks
+            const startT = Math.floor(minT / 5) * 5;
+            const endT = Math.ceil(maxT / 5) * 5;
+
+            for(let t=startT; t<=endT; t+=5) {
+                labels.push(`${t}°F`);
+                const dt = Math.max(0, tIn - t);
+                const dtG = Math.max(0, tIn - tGround);
+                
+                const rA = calculateHeatLoss(areas, dataA, dt, dtG);
+                d_A.push(rA.totalLoss);
+                
+                if(isAB) {
+                    const rB = calculateHeatLoss(areas, dataB, dt, dtG);
+                    d_B.push(rB.totalLoss);
+                }
+            }
+
+            const datasets = [
+                { label: isAB ? 'Scenario A' : 'Heat Loss', data: d_A, borderColor: '#3B82F6', tension: 0.3, fill: false }
+            ];
+
+            if(isAB) {
+                datasets.push({ label: 'Scenario B', data: d_B, borderColor: '#10B981', tension: 0.3, fill: false });
+            }
+
+            if(heatLossChart) heatLossChart.destroy();
+            heatLossChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: { title: {display:true, text: 'Heat Loss (BTU/hr)'} },
+                        x: { title: {display:true, text: 'Outdoor Temp (°F)'} }
+                    }
+                }
+            });
+        }
+
+        function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
+            const ctx = document.getElementById('simulationChart').getContext('2d');
+            
+            const duration = parseInt(document.getElementById('simDuration').value);
+            const low = parseFloat(document.getElementById('simLowTemp').value);
+            const high = parseFloat(document.getElementById('simHighTemp').value);
+            const iGain = parseFloat(document.getElementById('simInternalGain').value);
+            const sGain = 1000; // Simplified average solar for A/B demo
+
+            const labels = [];
+            const simA = [];
+            const simB = [];
+            const simOut = [];
+
+            let currA = tIn;
+            let currB = tIn;
+
+            // Sub-step configuration for stability
+            const stepsPerHour = 60; // 1-minute steps
+            const dt = 1 / stepsPerHour; 
+
+            for(let h=0; h<=duration; h++) {
+                // Time Label
+                if(h%24 === 0) labels.push(`Day ${h/24 + 1}`);
+                else labels.push('');
+
+                // Outdoor Temp (Sinusoidal)
+                const avg = (high+low)/2;
+                const amp = (high-low)/2;
+                const hDay = h%24;
+                const tOut = avg - amp * Math.cos(Math.PI * (hDay-4)/12); // Low at 4am
+                simOut.push(tOut);
+
+                // Solar (Simple Step)
+                let sol = (hDay >= 9 && hDay <= 16) ? sGain : 0;
+                
+                // Net Gains
+                const gains = iGain + sol;
+
+                // --- INTEGRATION LOOP ---
+                // Run 60 mini-steps for every hour to prevent oscillation
+                for(let m=0; m<stepsPerHour; m++) {
+                    // Step A
+                    // loss.ua is the conductance. Rate of change = (Gains - ConductiveLoss) / Capacity
+                    const loadA = (lossA.ua * (currA - tOut)) + (lossA.uaFloor * (currA - tGround));
+                    const rateA = (gains - loadA) / Math.max(capA, 50); // Clamp min capacity to 50
+                    currA += rateA * dt;
+
+                    if(isAB) {
+                        // Step B
+                        const loadB = (lossB.ua * (currB - tOut)) + (lossB.uaFloor * (currB - tGround));
+                        const rateB = (gains - loadB) / Math.max(capB, 50);
+                        currB += rateB * dt;
+                    }
+                }
+
+                simA.push(currA);
+                if(isAB) simB.push(currB);
+            }
+
+            const datasets = [
+                { label: isAB ? 'Indoor A' : 'Indoor Temp', data: simA, borderColor: '#3B82F6', tension: 0.4, pointRadius: 0 },
+                { label: 'Outdoor', data: simOut, borderColor: '#9CA3AF', borderDash: [5,5], pointRadius: 0, borderWidth: 1 }
+            ];
+
+            if(isAB) {
+                datasets.splice(1, 0, { label: 'Indoor B', data: simB, borderColor: '#10B981', tension: 0.4, pointRadius: 0 });
+            }
+
+             if(simulationChart) simulationChart.destroy();
+            simulationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: { title: {display:true, text: 'Temperature (°F)'} },
+                        x: { ticks: { autoSkip: true, maxTicksLimit: 8 } }
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Element References ---
-            const buildingShape = document.getElementById('buildingShape');
-            const dimensionInputsContainer = document.getElementById('dimensionInputs');
-            const indoorTemp = document.getElementById('indoorTemp');
-            const outdoorTemp = document.getElementById('outdoorTemp');
-            const wallAssembly = document.getElementById('wallAssembly');
-            const customRValueContainer = document.getElementById('customRValueContainer');
-            const customRValue = document.getElementById('customRValue');
-            const doubleWallContainer = document.getElementById('doubleWallContainer');
-            const doubleWallRValue = document.getElementById('doubleWallRValue');
-            const openingsArea = document.getElementById('openingsArea');
-            const airSealing = document.getElementById('airSealing');
-            const radiantBarrier = document.getElementById('radiantBarrier');
-            const resultsDisplay = document.getElementById('resultsDisplay').querySelector('p:first-child');
-            const customOpeningsContainer = document.getElementById('customOpeningsContainer');
-            const numWindows = document.getElementById('numWindows');
-            const windowArea = document.getElementById('windowArea');
-            const windowRValue = document.getElementById('windowRValue');
-            const numDoors = document.getElementById('numDoors');
-            const doorArea = document.getElementById('doorArea');
-            const doorRValue = document.getElementById('doorRValue');
-
-            let heatLossChart;
-
-            // --- Dimension Templates ---
-            const dimensionTemplates = {
-                rectangle: `
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
-                        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field" value="20"></div>
-                        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field" value="10"></div>
-                        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field" value="8"></div>
-                    </div>
-                    <div class="input-group">
-                        <label for="roofPitch" class="input-label">Roof Pitch (e.g., 4 for 4/12)</label>
-                        <input type="number" id="roofPitch" class="input-field" value="4">
-                        <small class="text-gray-500">For under-roof insulation calculation.</small>
-                    </div>
-                `,
-                'a-frame': `
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
-                        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field" value="20"></div>
-                        <div><label class="input-label">Base Width (ft)</label><input type="number" id="width" class="input-field" value="12"></div>
-                        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field" value="15"></div>
-                    </div>
-                `,
-                'gothic-arch': `
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 input-group">
-                        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field" value="20"></div>
-                        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field" value="12"></div>
-                         <div><label class="input-label">Spring Wall Ht (ft)</label><input type="number" id="springWallHeight" class="input-field" value="2"></div>
-                    </div>
-                `
+            
+            // Helper to attach listeners AND load data
+            const attachAndLoad = (id) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    loadInputFromLocalStorage(el); // Load on start
+                    el.addEventListener('input', (e) => {
+                        saveInputToLocalStorage(e.target);
+                        calculateAll();
+                    });
+                    el.addEventListener('change', (e) => {
+                         saveInputToLocalStorage(e.target);
+                         calculateAll();
+                    });
+                    // Specific handler for gain counts
+                    if(id.startsWith('gainCount')) {
+                        el.addEventListener('input', updateInternalGains);
+                    }
+                }
             };
 
-            // --- Functions ---
-
-            // Function to save input value to localStorage
-            function saveInputToLocalStorage(element) {
-                if (element && element.id) {
-                    try {
-                        localStorage.setItem(element.id, element.value);
-                    } catch (e) {
-                        console.error('Failed to save to localStorage:', e);
-                    }
-                }
-            }
-
-            // Function to load input value from localStorage
-            function loadInputFromLocalStorage(element) {
-                if (element && element.id) {
-                    try {
-                        const savedValue = localStorage.getItem(element.id);
-                        if (savedValue !== null) {
-                            element.value = savedValue;
-                        }
-                    } catch (e) {
-                        console.error('Failed to load from localStorage:', e);
-                    }
-                }
-            }
-
-            function toggleCustomOpenings() {
-                if (openingsArea.value === 'custom') {
-                    customOpeningsContainer.classList.remove('hidden');
-                } else {
-                    customOpeningsContainer.classList.add('hidden');
-                }
-                calculateAll(); // Recalculate when toggling
-            }
-
-
-            function calculateHeatLossForTemperature(deltaT, surfaceAreas, wallRVal, openingsData, airSealingValue) {
-                // openingsData can be:
-                // 1. { type: "percentage", fraction: 0.15, rValue: 3 }
-                // 2. { type: "custom", windows: { area: X, rValue: Y }, doors: { area: Z, rValue: A } }
-
-                let componentLosses = {
-                    totalLoss: 0,
-                    wallLoss: 0, // Insulated part of walls
-                    roofLoss: 0, // Insulated part of roof
-                    endWallLoss: 0, // Insulated part of end walls
-                    windowLoss: 0,
-                    doorLoss: 0,
-                    genericOpeningsLoss: 0 // Used if openingsData.type is "percentage"
-                };
-
-                let currentTotalLossPrePenalty = 0;
-                let totalActualOpeningArea = 0;
-
-                if (openingsData.type === 'custom') {
-                    totalActualOpeningArea = (openingsData.windows?.area || 0) + (openingsData.doors?.area || 0);
-                } else { // percentage
-                    totalActualOpeningArea = surfaceAreas.total * openingsData.fraction;
-                }
-
-                // Ensure opening area does not exceed total surface area (important for custom inputs)
-                if (totalActualOpeningArea > surfaceAreas.total) {
-                    totalActualOpeningArea = surfaceAreas.total; // Cap it
-                }
-
-
-                // Calculate effective opaque surface area (total surface area - actual opening area)
-                // This opaque area is what's covered by general wall/roof/endwall insulation.
-                const totalOpaqueArea = Math.max(0, surfaceAreas.total - totalActualOpeningArea);
-
-                // Distribute this opaque area proportionally to walls, roof, end-walls
-                // if total surface area is not zero, otherwise opaque areas are zero.
-                let opaqueWallArea = 0;
-                let opaqueRoofArea = 0;
-                let opaqueEndWallArea = 0;
-
-                if (surfaceAreas.total > 0) {
-                    opaqueWallArea = (surfaceAreas.wall / surfaceAreas.total) * totalOpaqueArea;
-                    opaqueRoofArea = (surfaceAreas.roof / surfaceAreas.total) * totalOpaqueArea;
-                    opaqueEndWallArea = (surfaceAreas.endWall / surfaceAreas.total) * totalOpaqueArea;
-                }
-
-
-                // Loss through INSULATED portion of Walls
-                if (opaqueWallArea > 0 && wallRVal > 0) {
-                    const loss = (opaqueWallArea * deltaT) / wallRVal;
-                    componentLosses.wallLoss = loss;
-                    currentTotalLossPrePenalty += loss;
-                }
-
-                // Loss through INSULATED portion of Roof
-                // Assuming roof has same R-value as walls for simplicity in this model
-                if (opaqueRoofArea > 0 && wallRVal > 0) {
-                    const loss = (opaqueRoofArea * deltaT) / wallRVal;
-                    componentLosses.roofLoss = loss;
-                    currentTotalLossPrePenalty += loss;
-                }
-
-                // Loss through INSULATED portion of End Walls
-                // Assuming end walls have same R-value as main walls
-                if (opaqueEndWallArea > 0 && wallRVal > 0) {
-                    const loss = (opaqueEndWallArea * deltaT) / wallRVal;
-                    componentLosses.endWallLoss = loss;
-                    currentTotalLossPrePenalty += loss;
-                }
-
-
-                // Loss through Openings
-                if (openingsData.type === 'custom') {
-                    if (openingsData.windows && openingsData.windows.area > 0 && openingsData.windows.rValue > 0) {
-                        const loss = (openingsData.windows.area * deltaT) / openingsData.windows.rValue;
-                        componentLosses.windowLoss = loss;
-                        currentTotalLossPrePenalty += loss;
-                    }
-                    if (openingsData.doors && openingsData.doors.area > 0 && openingsData.doors.rValue > 0) {
-                        const loss = (openingsData.doors.area * deltaT) / openingsData.doors.rValue;
-                        componentLosses.doorLoss = loss;
-                        currentTotalLossPrePenalty += loss;
-                    }
-                } else { // percentage based
-                    if (totalActualOpeningArea > 0 && openingsData.rValue > 0) {
-                        const loss = (totalActualOpeningArea * deltaT) / openingsData.rValue;
-                        componentLosses.genericOpeningsLoss = loss;
-                        currentTotalLossPrePenalty += loss;
-                    }
-                }
-
-                // Apply air sealing penalty to all calculated losses
-                if (airSealingValue === 'poor') {
-                    componentLosses.wallLoss *= 1.25;
-                    componentLosses.roofLoss *= 1.25;
-                    componentLosses.endWallLoss *= 1.25;
-                    componentLosses.windowLoss *= 1.25;
-                    componentLosses.doorLoss *= 1.25;
-                    componentLosses.genericOpeningsLoss *= 1.25;
-                    currentTotalLossPrePenalty *= 1.25; // Apply to the sum for totalLoss
-                }
-
-                componentLosses.totalLoss = currentTotalLossPrePenalty;
-
-                // Round all losses
-                for (let key in componentLosses) {
-                    componentLosses[key] = Math.round(componentLosses[key]);
-                }
-                return componentLosses;
-            }
-
-
-            function updateDimensionInputs() {
-                dimensionInputsContainer.innerHTML = dimensionTemplates[buildingShape.value];
-                // Load values for newly created dynamic inputs
-                const dynamicInputs = dimensionInputsContainer.querySelectorAll('.input-field, input[type="number"]');
-                dynamicInputs.forEach(input => loadInputFromLocalStorage(input));
-                attachInputListeners(); // Attaches listeners which also handle saving
-                calculateAll(); // Recalculate based on potentially loaded values
-            }
-
-            function getWallRValue() {
-                let rValue = parseFloat(wallAssembly.value);
-                if (wallAssembly.value === 'custom') {
-                    customRValueContainer.classList.remove('hidden');
-                    doubleWallContainer.classList.add('hidden');
-                    rValue = parseFloat(customRValue.value) || 0;
-                } else if (wallAssembly.value === 'double-wall') {
-                    customRValueContainer.classList.add('hidden');
-                    doubleWallContainer.classList.remove('hidden');
-                    rValue = parseFloat(doubleWallRValue.value) || 0;
-                } else {
-                    customRValueContainer.classList.add('hidden');
-                    doubleWallContainer.classList.add('hidden');
-                }
-
-                if (radiantBarrier.value === 'yes') {
-                    rValue += 3;
-                }
-                return rValue;
-            }
-
-            function calculateSurfaceArea() {
-                const shape = buildingShape.value;
-                const L = parseFloat(document.getElementById('length')?.value) || 0;
-                const W = parseFloat(document.getElementById('width')?.value) || 0;
-                const H = parseFloat(document.getElementById('height')?.value) || 0; // For rectangle, eave height. For A-frame, overall peak height.
-                const SWH = parseFloat(document.getElementById('springWallHeight')?.value) || 0; // For Gothic Arch
-
-                let areas = {
-                    total: 0,
-                    wall: 0,        // Vertical walls (rectangle main walls, gothic spring walls)
-                    roof: 0,        // Pitched/flat roof (rectangle), sloped surfaces (a-frame main), curved roof (gothic)
-                    endWall: 0,     // Gable ends (rectangle), triangular ends (a-frame), semi-circular ends (gothic)
-                                    // Note: For A-frame, 'roof' includes the primary sloped surfaces that function as walls+roof.
-                                    // 'endWall' is for the typically triangular end caps.
-                };
-
-                switch (shape) {
-                    case 'rectangle': {
-                        const roofPitchValue = parseFloat(document.getElementById('roofPitch')?.value);
-                        const roofPitch = !isNaN(roofPitchValue) && roofPitchValue >= 0 ? roofPitchValue : 0;
-
-                        // Vertical walls (sum of 2*L*H and 2*W*H)
-                        areas.wall = (2 * L * H) + (2 * W * H);
-
-                        if (roofPitch === 0) { // Flat roof
-                            areas.roof = L * W;
-                            areas.endWall = 0; // No gables for a truly flat roof from these definitions
-                        } else { // Pitched roof
-                            const gableHeight = (W / 2) * (roofPitch / 12);
-                            const rafterLength = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(gableHeight, 2));
-                            areas.roof = L * rafterLength * 2;
-                            // Gable end walls (triangular part above the main H of the end walls)
-                            // These are part of the 'endWall' category, distinct from the main 'wall' area.
-                            areas.endWall = 2 * (0.5 * W * gableHeight);
-                        }
-                        break;
-                    }
-                    case 'a-frame': {
-                        // H is the total height from base to peak. W is base width.
-                        const slopeHeight = Math.sqrt(Math.pow(W / 2, 2) + Math.pow(H, 2));
-                        areas.roof = 2 * L * slopeHeight; // These are the main sloped surfaces (roof/wall combined)
-
-                        areas.endWall = 2 * (0.5 * W * H); // Triangular end walls
-                        areas.wall = 0; // No separate vertical 'side' walls in a pure A-frame.
-                        break;
-                    }
-                    case 'gothic-arch': {
-                        // W is the full width of the arch base. SWH is height of vertical spring walls.
-                        const radius = W / 2;
-
-                        const archPerimeterSegment = Math.PI * radius; // Length of the arch (half circumference)
-                        areas.roof = L * archPerimeterSegment; // Curved roof surface area
-
-                        areas.endWall = Math.PI * Math.pow(radius, 2); // Area of two semi-circular end walls = one full circle
-
-                        areas.wall = 2 * L * SWH; // Area of vertical spring walls (if SWH > 0)
-                        break;
-                    }
-                }
-
-                // Ensure all components are numbers and sum them for the total
-                areas.wall = isNaN(areas.wall) ? 0 : areas.wall;
-                areas.roof = isNaN(areas.roof) ? 0 : areas.roof;
-                areas.endWall = isNaN(areas.endWall) ? 0 : areas.endWall;
-
-                areas.total = areas.wall + areas.roof + areas.endWall;
-                if (isNaN(areas.total)) areas.total = 0;
-
-                return areas;
-            }
-
-            function calculateAll() {
-                const surfaceAreas = calculateSurfaceArea(); // surfaceAreas is now an object: {total, wall, roof, endWall}
-
-                if (!surfaceAreas || surfaceAreas.total <= 0) {
-                    resultsDisplay.textContent = '0';
-document.getElementById('heatLossBreakdownTable').innerHTML = '<p class="text-center text-gray-500">Enter valid dimensions to see breakdown.</p>';
-if (heatLossChart) {
-    heatLossChart.data.labels = [];
-    heatLossChart.data.datasets = [];
-    heatLossChart.update();
-}
-                    return;
-                }
-
-                const deltaT = Math.abs(parseFloat(indoorTemp.value) - parseFloat(outdoorTemp.value));
-                const wallRVal = getWallRValue();
-                const airSealingValue = airSealing.value;
-
-                let openingsData = {};
-                let totalCustomOpeningsArea = 0;
-
-                if (openingsArea.value === 'custom') {
-                    const numWin = parseFloat(numWindows.value) || 0;
-                    const areaPerWin = parseFloat(windowArea.value) || 0;
-                    const rValWin = parseFloat(windowRValue.value) || 0;
-                    const numDr = parseFloat(numDoors.value) || 0;
-                    const areaPerDr = parseFloat(doorArea.value) || 0;
-                    const rValDr = parseFloat(doorRValue.value) || 0;
-
-                    const totalWindowArea = numWin * areaPerWin;
-                    const totalDoorArea = numDr * areaPerDr;
-                    totalCustomOpeningsArea = totalWindowArea + totalDoorArea;
-
-                    openingsData = {
-                        type: "custom",
-                        windows: { area: totalWindowArea, rValue: rValWin },
-                        doors: { area: totalDoorArea, rValue: rValDr }
-                    };
-                } else {
-                    openingsData = {
-                        type: "percentage",
-                        fraction: parseFloat(openingsArea.value) / 100,
-                        rValue: 3 // Default R-value for percentage-based openings
-                    };
-                    totalCustomOpeningsArea = surfaceAreas.total * openingsData.fraction;
-                }
-
-
-                const heatLosses = calculateHeatLossForTemperature(
-                    deltaT,
-                    surfaceAreas,
-                    wallRVal,
-                    openingsData,
-                    airSealingValue
-                );
-
-                let breakdown = {
-                    components: [],
-                    totalLoss: heatLosses.totalLoss,
-                    totalArea: surfaceAreas.total, // This is total building envelope area
-                    totalOpaqueArea: 0, // Will be calculated based on openings
-                    totalOpeningsAreaUsed: 0 // Actual opening area used in calculation
-                };
-
-                // Calculate actual opaque and opening areas based on what calculateHeatLossForTemperature used
-                let actualTotalOpeningArea = 0;
-                if (openingsData.type === 'custom') {
-                    actualTotalOpeningArea = (openingsData.windows?.area || 0) + (openingsData.doors?.area || 0);
-                } else {
-                    actualTotalOpeningArea = surfaceAreas.total * openingsData.fraction;
-                }
-                // Cap actual opening area if it exceeded total surface area
-                actualTotalOpeningArea = Math.min(actualTotalOpeningArea, surfaceAreas.total);
-                breakdown.totalOpeningsAreaUsed = actualTotalOpeningArea;
-                breakdown.totalOpaqueArea = Math.max(0, surfaceAreas.total - actualTotalOpeningArea);
-
-
-                // Populate breakdown.components
-                // The areas for walls, roof, endwall should now be their *opaque* portions.
-                // The heatLoss values are already adjusted for air sealing by calculateHeatLossForTemperature.
-
-                let opaqueWallArea = 0;
-                let opaqueRoofArea = 0;
-                let opaqueEndWallArea = 0;
-
-                if (surfaceAreas.total > 0) { // Avoid division by zero if total area is 0
-                    opaqueWallArea = (surfaceAreas.wall / surfaceAreas.total) * breakdown.totalOpaqueArea;
-                    opaqueRoofArea = (surfaceAreas.roof / surfaceAreas.total) * breakdown.totalOpaqueArea;
-                    opaqueEndWallArea = (surfaceAreas.endWall / surfaceAreas.total) * breakdown.totalOpaqueArea;
-                }
-
-
-                if (opaqueWallArea > 0) { // Check against derived opaque area
-                    breakdown.components.push({
-                        name: "Insulated Walls",
-                        area: opaqueWallArea,
-                        heatLoss: heatLosses.wallLoss,
-                        percentageOfTotalLoss: 0
-                    });
-                }
-                if (opaqueRoofArea > 0) {
-                    breakdown.components.push({
-                        name: "Insulated Roof",
-                        area: opaqueRoofArea,
-                        heatLoss: heatLosses.roofLoss,
-                        percentageOfTotalLoss: 0
-                    });
-                }
-                if (opaqueEndWallArea > 0) {
-                    breakdown.components.push({
-                        name: "Insulated End Walls/Gables",
-                        area: opaqueEndWallArea,
-                        heatLoss: heatLosses.endWallLoss,
-                        percentageOfTotalLoss: 0
-                    });
-                }
-
-                if (openingsData.type === 'custom') {
-                    if (openingsData.windows && openingsData.windows.area > 0) {
-                        breakdown.components.push({
-                            name: "Custom Windows",
-                            area: openingsData.windows.area,
-                            heatLoss: heatLosses.windowLoss,
-                            percentageOfTotalLoss: 0
-                        });
-                    }
-                    if (openingsData.doors && openingsData.doors.area > 0) {
-                        breakdown.components.push({
-                            name: "Custom Doors",
-                            area: openingsData.doors.area,
-                            heatLoss: heatLosses.doorLoss,
-                            percentageOfTotalLoss: 0
-                        });
-                    }
-                } else { // Percentage based
-                    if (actualTotalOpeningArea > 0) { // Use actualTotalOpeningArea here
-                         breakdown.components.push({
-                            name: "Openings (General)",
-                            area: actualTotalOpeningArea,
-                            heatLoss: heatLosses.genericOpeningsLoss,
-                            percentageOfTotalLoss: 0
-                        });
-                    }
-                }
-
-                // Calculate percentageOfTotalLoss for each component
-                if (breakdown.totalLoss > 0) {
-                    breakdown.components.forEach(comp => {
-                        comp.percentageOfTotalLoss = (comp.heatLoss / breakdown.totalLoss) * 100;
-                    });
-                } else {
-                     breakdown.components.forEach(comp => comp.percentageOfTotalLoss = 0);
-                }
-
-                resultsDisplay.textContent = Math.round(breakdown.totalLoss).toLocaleString();
-
-                updateHeatLossBreakdownTable(breakdown);
-
-                updateChart(surfaceAreas); // Pass the surfaceAreas object for charting
-            }
-
-            function updateHeatLossBreakdownTable(breakdown) {
-                const tableContainer = document.getElementById('heatLossBreakdownTable');
-                if (!tableContainer) return;
-
-                if (!breakdown || !breakdown.components || breakdown.components.length === 0) {
-                    tableContainer.innerHTML = '<p class="text-center text-gray-500">No breakdown data available. Adjust inputs.</p>';
-                    return;
-                }
-
-                const heatLossColumnStyle = 'min-w-[140px]'; // Added constant for maintainability
-
-                let tableHTML = `
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Area (sq ft)</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider ${heatLossColumnStyle}">Heat Loss (BTU/hr)</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                `;
-
-                breakdown.components.forEach(comp => {
-                    if (comp.area > 0) { // Only display components with area
-                        tableHTML += `
-                            <tr>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${comp.name}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${Math.round(comp.area).toLocaleString()}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right ${heatLossColumnStyle}">${Math.round(comp.heatLoss).toLocaleString()}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">${comp.percentageOfTotalLoss.toFixed(1)}%</td>
-                            </tr>
-                        `;
-                    }
-                });
-
-                // Add a footer row for totals.
-                // The total area displayed here is the sum of individual component areas shown in the table,
-                // which should equal surfaceAreas.total (envelope area).
-                let sumOfDisplayedAreas = 0;
-                breakdown.components.forEach(comp => sumOfDisplayedAreas += comp.area);
-
-                tableHTML += `
-                        </tbody>
-                        <tfoot class="bg-gray-50">
-                            <tr>
-                                <td class="px-4 py-3 text-left text-sm font-bold text-gray-700">Total</td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(sumOfDisplayedAreas).toLocaleString()} sq ft</td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${Math.round(breakdown.totalLoss).toLocaleString()} BTU/hr</td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-700">${breakdown.totalLoss > 0 ? '100.0%' : 'N/A'}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                `;
-
-                tableContainer.innerHTML = tableHTML;
-            }
-
-function updateChart(surfaceAreas) {
-                const tempLabels = [];
-                const datasets = [];
-                const startTemp = parseFloat(outdoorTemp.value); // Use current outdoor temp as start for chart
-                const currentIndoorTemp = parseFloat(indoorTemp.value);
-                const maxTemp = Math.max(startTemp + 50, currentIndoorTemp + 20); // Ensure chart covers a reasonable range
-
-                if (!surfaceAreas || surfaceAreas.total <= 0) {
-                    if (heatLossChart) {
-                        heatLossChart.data.labels = [];
-                        heatLossChart.data.datasets = [];
-                        heatLossChart.update();
-                    }
-                    return;
-                }
-
-                const colors = {
-                    total: 'rgba(54, 162, 235, 1)',     // Blue
-                    walls: 'rgba(255, 99, 132, 1)',    // Red
-                    roof: 'rgba(75, 192, 192, 1)',     // Green
-                    endWalls: 'rgba(255, 206, 86, 1)', // Yellow
-                    windows: 'rgba(153, 102, 255, 1)', // Purple
-                    doors: 'rgba(255, 159, 64, 1)',    // Orange
-                    genericOpenings: 'rgba(130, 130, 130, 1)' // Grey
-                };
-                const backgroundColors = { // Lighter versions for fill
-                    total: 'rgba(54, 162, 235, 0.2)',
-                    walls: 'rgba(255, 99, 132, 0.2)',
-                    roof: 'rgba(75, 192, 192, 0.2)',
-                    endWalls: 'rgba(255, 206, 86, 0.2)',
-                    windows: 'rgba(153, 102, 255, 0.2)',
-                    doors: 'rgba(255, 159, 64, 0.2)',
-                    genericOpenings: 'rgba(130, 130, 130, 0.2)'
-                };
-
-                let totalHeatLossData = [];
-                let wallHeatLossData = [];
-                let roofHeatLossData = [];
-                let endWallHeatLossData = [];
-                let windowHeatLossData = [];
-                let doorHeatLossData = [];
-                let genericOpeningsHeatLossData = [];
-
-                const wallRVal = getWallRValue();
-                const airSealingValue = airSealing.value;
-                // Determine current openings configuration for the chart
-                let openingsDataForChart = {};
-                 if (openingsArea.value === 'custom') {
-                    const numWin = parseFloat(numWindows.value) || 0;
-                    const areaPerWin = parseFloat(windowArea.value) || 0;
-                    const rValWin = parseFloat(windowRValue.value) || 0;
-                    const numDr = parseFloat(numDoors.value) || 0;
-                    const areaPerDr = parseFloat(doorArea.value) || 0;
-                    const rValDr = parseFloat(doorRValue.value) || 0;
-                    openingsDataForChart = {
-                        type: "custom",
-                        windows: { area: numWin * areaPerWin, rValue: rValWin },
-                        doors: { area: numDr * areaPerDr, rValue: rValDr }
-                    };
-                } else {
-                    openingsDataForChart = {
-                        type: "percentage",
-                        fraction: parseFloat(openingsArea.value) / 100,
-                        rValue: 3 // Default R-value
-                    };
-                }
-
-
-                for (let temp = Math.min(startTemp, currentIndoorTemp - 20) ; temp <= maxTemp; temp += 5) { // Chart across various outdoor temps
-                    tempLabels.push(`${temp}°F`);
-                    const deltaT = Math.abs(currentIndoorTemp - temp);
-
-                    const heatLosses = calculateHeatLossForTemperature(
-                        deltaT,
-                        surfaceAreas,
-                        wallRVal,
-                        openingsDataForChart,
-                        airSealingValue
-                    );
-
-                    totalHeatLossData.push(heatLosses.totalLoss);
-                    wallHeatLossData.push(heatLosses.wallLoss);
-                    roofHeatLossData.push(heatLosses.roofLoss);
-                    endWallHeatLossData.push(heatLosses.endWallLoss);
-                    windowHeatLossData.push(heatLosses.windowLoss);
-                    doorHeatLossData.push(heatLosses.doorLoss);
-                    genericOpeningsHeatLossData.push(heatLosses.genericOpeningsLoss);
-                }
-
-                datasets.push({
-                    label: 'Total Heat Loss', data: totalHeatLossData,
-                    borderColor: colors.total, backgroundColor: backgroundColors.total,
-                    borderWidth: 3, fill: true, tension: 0.1, type: 'line'
-                });
-
-                // Helper to add dataset if its corresponding data array has non-zero sum
-                const addDatasetIfRelevant = (label, dataArray, color, bgColor) => {
-                    if (dataArray.some(val => val > 0)) {
-                        datasets.push({
-                            label: label, data: dataArray,
-                            borderColor: color, backgroundColor: bgColor,
-                            borderWidth: 1.5, fill: false, tension: 0.1, type: 'line', hidden: true
-                        });
-                    }
-                };
-
-                // Calculate actual opaque areas for labeling, similar to breakdown table logic
-                let actualTotalOpeningAreaForChart = 0;
-                if (openingsDataForChart.type === 'custom') {
-                    actualTotalOpeningAreaForChart = (openingsDataForChart.windows?.area || 0) + (openingsDataForChart.doors?.area || 0);
-                } else {
-                    actualTotalOpeningAreaForChart = surfaceAreas.total * openingsDataForChart.fraction;
-                }
-                actualTotalOpeningAreaForChart = Math.min(actualTotalOpeningAreaForChart, surfaceAreas.total);
-                const totalOpaqueAreaForChart = Math.max(0, surfaceAreas.total - actualTotalOpeningAreaForChart);
-
-                let opaqueWallAreaForChart = 0;
-                let opaqueRoofAreaForChart = 0;
-                let opaqueEndWallAreaForChart = 0;
-
-                if(surfaceAreas.total > 0){
-                    opaqueWallAreaForChart = (surfaceAreas.wall / surfaceAreas.total) * totalOpaqueAreaForChart;
-                    opaqueRoofAreaForChart = (surfaceAreas.roof / surfaceAreas.total) * totalOpaqueAreaForChart;
-                    opaqueEndWallAreaForChart = (surfaceAreas.endWall / surfaceAreas.total) * totalOpaqueAreaForChart;
-                }
-
-
-                if (opaqueWallAreaForChart > 0) addDatasetIfRelevant('Insulated Wall Loss', wallHeatLossData, colors.walls, backgroundColors.walls);
-                if (opaqueRoofAreaForChart > 0) addDatasetIfRelevant('Insulated Roof Loss', roofHeatLossData, colors.roof, backgroundColors.roof);
-                if (opaqueEndWallAreaForChart > 0) addDatasetIfRelevant('Insulated End Wall/Gable Loss', endWallHeatLossData, colors.endWalls, backgroundColors.endWalls);
-
-                if (openingsDataForChart.type === 'custom') {
-                    if (openingsDataForChart.windows && openingsDataForChart.windows.area > 0) {
-                        addDatasetIfRelevant('Window Loss', windowHeatLossData, colors.windows, backgroundColors.windows);
-                    }
-                    if (openingsDataForChart.doors && openingsDataForChart.doors.area > 0) {
-                        addDatasetIfRelevant('Door Loss', doorHeatLossData, colors.doors, backgroundColors.doors);
-                    }
-                } else { // Percentage based
-                     if (actualTotalOpeningAreaForChart > 0) {
-                        addDatasetIfRelevant('Generic Openings Loss', genericOpeningsHeatLossData, colors.genericOpenings, backgroundColors.genericOpenings);
-                     }
-                }
-
-                if (!heatLossChart) {
-                    const ctx = document.getElementById('heatLossChart').getContext('2d');
-                    heatLossChart = new Chart(ctx, {
-                        // type: 'line', // Type can be defined per dataset
-                        data: {
-                            labels: tempLabels,
-                            datasets: datasets
-                        },
-                        options: {
-                             responsive: true,
-                             maintainAspectRatio: false,
-                             scales: {
-                                 y: {
-                                     beginAtZero: true,
-                                     title: { display: true, text: 'BTU/hr' }
-                                 },
-                                 x: {
-                                      title: { display: true, text: 'Outdoor Temperature' }
-                                 }
-                             },
-                             plugins: {
-                                legend: {
-                                    display: true // Will be needed for multiple datasets
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return ` ${context.dataset.label}: ${context.raw.toLocaleString()} BTU/hr`;
-                                        }
-                                    }
-                                }
-                             }
-                        }
-                    });
-                } else {
-                     heatLossChart.data.labels = tempLabels;
-heatLossChart.data.datasets = datasets;
-                     heatLossChart.update();
-                }
-            }
-
-            function attachInputListeners() {
-                const inputs = document.querySelectorAll('.input-field, input[type="number"]');
-                inputs.forEach(input => {
-                    // Remove existing to prevent duplicates if run multiple times
-                    input.removeEventListener('input', handleInputChange);
-                    input.removeEventListener('change', handleInputChange);
-                    // Add new combined listener
-                    input.addEventListener('input', handleInputChange);
-                    input.addEventListener('change', handleInputChange);
-                });
-            }
-
-            function handleInputChange(event) {
-                saveInputToLocalStorage(event.target);
+            // 1. Toggle Switch
+            const toggle = document.getElementById('abToggle');
+            loadInputFromLocalStorage(toggle);
+            toggle.addEventListener('change', (e) => {
+                saveInputToLocalStorage(e.target);
+                toggleABMode();
                 calculateAll();
-            }
-
-            function handleSelectChange(event) {
-                saveInputToLocalStorage(event.target);
-                // Specific actions for certain selects
-                if (event.target.id === 'buildingShape') {
-                    updateDimensionInputs(); // This calls calculateAll internally
-                } else if (event.target.id === 'openingsArea') {
-                    toggleCustomOpenings(); // This calls calculateAll internally
-                } else {
-                    calculateAll();
-                }
-            }
-
-            // --- Initial Setup ---
-            // Static inputs that trigger recalculation and save their state
-            [buildingShape, wallAssembly, openingsArea, airSealing, radiantBarrier].forEach(selectElement => {
-                selectElement.removeEventListener('change', handleSelectChange); // Remove if re-running
-                selectElement.addEventListener('change', handleSelectChange);
             });
 
-            [customRValue, doubleWallRValue, indoorTemp, outdoorTemp, numWindows, windowArea, windowRValue, numDoors, doorArea, doorRValue].forEach(inputElement => {
-                inputElement.removeEventListener('input', handleInputChange); // Remove if re-running
-                inputElement.addEventListener('input', handleInputChange);
+            // 2. Shape Selector (triggers dimension update)
+            const shapeEl = document.getElementById('buildingShape');
+            loadInputFromLocalStorage(shapeEl);
+            shapeEl.addEventListener('change', (e) => {
+                saveInputToLocalStorage(e.target);
+                updateDimensions();
             });
 
-            // updateDimensionInputs also calls attachInputListeners, which sets up saving for dynamic fields.
-            // toggleCustomOpenings is called by openingsArea change listener.
+            // 3. Update Dimensions first (to inject inputs)
+            updateDimensions(); 
 
-            // --- Load all static inputs from localStorage first ---
-            const allStaticInputElements = [
-                buildingShape, indoorTemp, outdoorTemp, wallAssembly, customRValue, doubleWallRValue,
-                openingsArea, airSealing, radiantBarrier, numWindows, windowArea, windowRValue,
-                numDoors, doorArea, doorRValue
-            ];
-            allStaticInputElements.forEach(el => loadInputFromLocalStorage(el));
+            // 4. Attach to Shared Inputs
+            ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp','gainCountPerson','gainCountElectronics','gainCountLight'].forEach(attachAndLoad);
 
-            // --- Initial UI setup and calculation ---
-            // Call updateDimensionInputs AFTER loading static inputs, especially buildingShape,
-            // as it determines which dynamic inputs are created.
-            // updateDimensionInputs itself will then load values for those dynamic inputs.
-            updateDimensionInputs();
-
-            // Call toggleCustomOpenings AFTER loading static inputs, especially openingsArea.
-            toggleCustomOpenings();
-
-            // Final calculation based on all loaded values
-            // calculateAll(); // This is already called by updateDimensionInputs and toggleCustomOpenings
-
-            // Hamburger menu toggle
-            const menuBtn = document.getElementById('menu-btn');
-            const menuDropdown = document.getElementById('menu-dropdown');
-
-            menuBtn.addEventListener('click', () => {
-                menuDropdown.classList.toggle('hidden');
+            // 5. Attach to Scenario Inputs
+            ['_A','_B'].forEach(s => {
+                ['insulationPreset','wallRValue','roofRValue','floorRValue','openingsArea','airSealing','massMaterial','slabThickness'].forEach(base => {
+                    attachAndLoad(base+s);
+                });
             });
 
-            // Close dropdown if clicking outside
-            document.addEventListener('click', (event) => {
-                if (!menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
-                    menuDropdown.classList.add('hidden');
-                }
+            // 6. Initial State Setters
+            updateInternalGains();
+            toggleABMode();
+            calculateAll();
+            
+            // Menu
+            document.getElementById('menu-btn').addEventListener('click', () => {
+                document.getElementById('menu-dropdown').classList.toggle('hidden');
             });
         });
+
     </script>
 </body>
 </html>
