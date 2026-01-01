@@ -2,6 +2,73 @@
 let heatLossChart;
 let simulationChart;
 
+const CONFIG_FIELDS = [
+    // Shared
+    'buildingShape', 'indoorTemp', 'outdoorTemp', 'groundTemp', 'abToggle',
+    // Dimensions (all potential ones, though some might not exist depending on shape)
+    'length', 'width', 'height', 'roofPitch', 'springWallHeight',
+    // Scenario A
+    'insulationPreset_A', 'wallRValue_A', 'roofRValue_A', 'floorRValue_A',
+    'openingsArea_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
+    // Scenario B
+    'insulationPreset_B', 'wallRValue_B', 'roofRValue_B', 'floorRValue_B',
+    'openingsArea_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
+    // Simulation
+    'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
+    'gainCountPerson', 'gainCountElectronics', 'gainCountLight'
+];
+
+function serializeConfiguration() {
+    const params = new URLSearchParams();
+    CONFIG_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            let value;
+            if (el.type === 'checkbox') {
+                value = el.checked ? '1' : '0';
+            } else {
+                value = el.value;
+            }
+            params.set(id, value);
+        }
+    });
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+}
+
+function deserializeConfiguration() {
+    const params = new URLSearchParams(window.location.search);
+    if ([...params].length === 0) return false;
+
+    // 1. Set Building Shape First (to trigger dimension inputs)
+    if (params.has('buildingShape')) {
+        const shape = params.get('buildingShape');
+        const shapeEl = document.getElementById('buildingShape');
+        if (shapeEl) {
+            shapeEl.value = shape;
+            saveInputToLocalStorage(shapeEl);
+            updateDimensions(); // This creates the specific dimension inputs
+        }
+    }
+
+    // 2. Set All Fields
+    CONFIG_FIELDS.forEach(id => {
+        if (params.has(id)) {
+            const el = document.getElementById(id);
+            if (el) {
+                const val = params.get(id);
+                if (el.type === 'checkbox') {
+                    el.checked = (val === '1');
+                } else {
+                    el.value = val;
+                }
+                saveInputToLocalStorage(el); // Persist immediately
+            }
+        }
+    });
+
+    return true; // Config loaded
+}
+
 // --- STORAGE HELPERS ---
 function saveInputToLocalStorage(element) {
     if (element && element.id) {
@@ -488,6 +555,58 @@ function init() {
         menuBtn.addEventListener('click', () => {
             document.getElementById('menu-dropdown').classList.toggle('hidden');
         });
+    }
+
+    // Share Button Logic
+    const shareBtn = document.getElementById('shareBtn');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+    if (navigator.share) {
+        shareBtn.classList.remove('hidden');
+        shareBtn.addEventListener('click', async () => {
+            const url = serializeConfiguration();
+            try {
+                await navigator.share({
+                    title: 'Tiny Home Heat Loss Calculator',
+                    text: 'Check out this tiny home energy configuration!',
+                    url: url
+                });
+            } catch (err) {
+                console.error('Error sharing:', err);
+            }
+        });
+    }
+
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', () => {
+            const url = serializeConfiguration();
+            navigator.clipboard.writeText(url).then(() => {
+                const originalText = copyLinkBtn.innerHTML;
+                copyLinkBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    copyLinkBtn.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy URL to clipboard');
+            });
+        });
+    }
+
+    // Load from URL (High Priority)
+    const loadedFromUrl = deserializeConfiguration();
+    // If not loaded from URL, we rely on the localStorage loaded in attachAndLoad steps above.
+    // However, deserializeConfiguration calls saveInputToLocalStorage, so we are good.
+    // We just need to ensure calculateAll is called.
+    if(loadedFromUrl) {
+         // Re-run setup that depends on loaded values
+         toggleABMode();
+         updateDimensions(); // Ensure correct shape is rendered again if needed
+         updateInternalGains();
+         calculateAll();
     }
 }
 
