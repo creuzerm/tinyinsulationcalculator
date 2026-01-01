@@ -50,9 +50,9 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="roofRValue_A" value="10">
             <input type="number" id="floorRValue_A" value="10">
             <input type="number" id="windowArea_A" value="0">
-            <input type="number" id="windowU_A" value="0.30">
+            <input type="number" id="windowR_A" value="3">
             <input type="number" id="doorArea_A" value="0">
-            <input type="number" id="doorU_A" value="0.30">
+            <input type="number" id="doorR_A" value="3">
             <select id="airSealing_A"><option value="good" selected>Good</option></select>
             <select id="massMaterial_A"><option value="wood" selected>Wood</option></select>
             <input type="number" id="slabThickness_A" value="1">
@@ -70,9 +70,9 @@ describe('Tiny Home Heat Loss Calculator', () => {
                     <input type="number" id="roofRValue_B" value="10">
                     <input type="number" id="floorRValue_B" value="10">
                     <input type="number" id="windowArea_B" value="0">
-                    <input type="number" id="windowU_B" value="0.30">
+                    <input type="number" id="windowR_B" value="3">
                     <input type="number" id="doorArea_B" value="0">
-                    <input type="number" id="doorU_B" value="0.30">
+                    <input type="number" id="doorR_B" value="3">
                     <select id="airSealing_B"><option value="good" selected>Good</option></select>
                     <select id="massMaterial_B"><option value="wood" selected>Wood</option></select>
                     <input type="number" id="slabThickness_B" value="1">
@@ -179,13 +179,13 @@ describe('Tiny Home Heat Loss Calculator', () => {
 
              // Add a window
              document.getElementById('windowArea_A').value = 50; // 50 sqft window
-             document.getElementById('windowU_A').value = 0.5; // U-0.5
+             document.getElementById('windowR_A').value = 2; // R-2 (U=0.5)
 
              calculateAll();
 
              // Wall Area Total: 600. Net Wall: 550.
              // Wall Loss: (550 / 10) * 50 = 2750
-             // Window Loss: (50 * 0.5) * 50 = 1250
+             // Window Loss: (50 / 2) * 50 = 25 * 50 = 1250
 
              const breakdownHTML = document.getElementById('breakdown_A').innerHTML;
              expect(breakdownHTML).toContain('Wall');

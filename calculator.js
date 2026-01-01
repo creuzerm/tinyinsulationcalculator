@@ -10,10 +10,10 @@ const CONFIG_FIELDS = [
     'length', 'width', 'height', 'roofPitch', 'springWallHeight',
     // Scenario A
     'insulationPreset_A', 'wallRValue_A', 'roofRValue_A', 'floorRValue_A',
-    'windowArea_A', 'windowU_A', 'doorArea_A', 'doorU_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
+    'windowArea_A', 'windowR_A', 'doorArea_A', 'doorR_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
     // Scenario B
     'insulationPreset_B', 'wallRValue_B', 'roofRValue_B', 'floorRValue_B',
-    'windowArea_B', 'windowU_B', 'doorArea_B', 'doorU_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
+    'windowArea_B', 'windowR_B', 'doorArea_B', 'doorR_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
     // Simulation
     'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
     'gainCountPerson', 'gainCountElectronics', 'gainCountLight'
@@ -138,6 +138,46 @@ function applyPreset(suffix) {
     calculateAll();
 }
 
+function applyGlazingPreset(suffix) {
+    const preset = document.getElementById(`glazingPreset${suffix}`).value;
+    if(!preset) return; // Custom
+
+    const areas = getSurfaceAreas();
+    const floor = areas.floor; // Use floor area as base
+
+    let winPct = 0;
+    let doorArea = 20;
+
+    switch(preset) {
+        case 'minimal':
+            winPct = 0.10;
+            doorArea = 20;
+            break;
+        case 'common':
+            winPct = 0.20;
+            doorArea = 20;
+            break;
+        case 'generous':
+            winPct = 0.35;
+            doorArea = 40;
+            break;
+    }
+
+    const wArea = document.getElementById(`windowArea${suffix}`);
+    const dArea = document.getElementById(`doorArea${suffix}`);
+
+    if(floor > 0) {
+        wArea.value = Math.round(floor * winPct);
+    }
+    dArea.value = doorArea;
+
+    saveInputToLocalStorage(document.getElementById(`glazingPreset${suffix}`));
+    saveInputToLocalStorage(wArea);
+    saveInputToLocalStorage(dArea);
+
+    calculateAll();
+}
+
 function updateInternalGains() {
     const p = (parseFloat(document.getElementById('gainCountPerson').value)||0) * 350;
     const e = (parseFloat(document.getElementById('gainCountElectronics').value)||0) * 150;
@@ -252,9 +292,9 @@ function getScenarioData(suffix) {
 
     // Windows & Doors
     const wArea = parseFloat(document.getElementById(`windowArea${suffix}`).value) || 0;
-    const wU = parseFloat(document.getElementById(`windowU${suffix}`).value) || 0.30;
+    const wR = parseFloat(document.getElementById(`windowR${suffix}`).value) || 1;
     const dArea = parseFloat(document.getElementById(`doorArea${suffix}`).value) || 0;
-    const dU = parseFloat(document.getElementById(`doorU${suffix}`).value) || 0.30;
+    const dR = parseFloat(document.getElementById(`doorR${suffix}`).value) || 1;
 
     // Air Sealing
     const sealing = document.getElementById(`airSealing${suffix}`).value;
@@ -263,7 +303,7 @@ function getScenarioData(suffix) {
     const massMat = document.getElementById(`massMaterial${suffix}`).value;
     const thickness = parseFloat(document.getElementById(`slabThickness${suffix}`).value) || 1;
 
-    return { rWall, rRoof, rFloor, wArea, wU, dArea, dU, sealing, massMat, thickness };
+    return { rWall, rRoof, rFloor, wArea, wR, dArea, dR, sealing, massMat, thickness };
 }
 
 function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
@@ -277,19 +317,24 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     }
     netRoof = Math.max(0, netRoof);
 
+    // Ensure R-values are not zero
+    const safeR = (r) => Math.max(r, 0.1);
+    const rW_win = safeR(data.wR);
+    const rD_door = safeR(data.dR);
+
     // Conductive Losses
     const lossWall = (netWall / data.rWall) * deltaT_Air;
     const lossRoof = (netRoof / data.rRoof) * deltaT_Air;
-    const lossWindow = (data.wArea * data.wU) * deltaT_Air;
-    const lossDoor = (data.dArea * data.dU) * deltaT_Air;
+    const lossWindow = (data.wArea / rW_win) * deltaT_Air;
+    const lossDoor = (data.dArea / rD_door) * deltaT_Air;
     const lossFloor = (areas.floor / data.rFloor) * deltaT_Ground;
 
     // UA (Conductance) for Simulation
     let ua = 0;
     ua += (netWall / data.rWall);
     ua += (netRoof / data.rRoof);
-    ua += (data.wArea * data.wU);
-    ua += (data.dArea * data.dU);
+    ua += (data.wArea / rW_win);
+    ua += (data.dArea / rD_door);
 
     // Sealing Penalty (Infiltration)
     // Simplified: Add % to total UA
@@ -636,7 +681,7 @@ function init() {
 
     // 5. Attach to Scenario Inputs
     ['_A','_B'].forEach(s => {
-        ['insulationPreset','wallRValue','roofRValue','floorRValue','windowArea','windowU','doorArea','doorU','airSealing','massMaterial','slabThickness'].forEach(base => {
+        ['insulationPreset','glazingPreset','wallRValue','roofRValue','floorRValue','windowArea','windowR','doorArea','doorR','airSealing','massMaterial','slabThickness'].forEach(base => {
             attachAndLoad(base+s);
         });
     });
@@ -721,6 +766,7 @@ if (typeof module !== 'undefined') {
         calculateAll,
         updateDimensions,
         toggleABMode,
-        init
+        init,
+        applyGlazingPreset
     };
 }
