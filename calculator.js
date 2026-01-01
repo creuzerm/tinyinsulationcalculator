@@ -726,6 +726,44 @@ function init() {
         });
     }
 
+    // Help Modal Logic
+    const helpLink = document.getElementById('help-link');
+    const helpModal = document.getElementById('helpModal');
+    const closeHelpModal = document.getElementById('closeHelpModal');
+    const helpContent = document.getElementById('helpContent');
+
+    if (helpLink && helpModal) {
+        helpLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('menu-dropdown').classList.add('hidden'); // Close menu
+            helpModal.classList.remove('hidden');
+
+            // Fetch README if not already loaded
+            if (helpContent.innerHTML.includes('Loading...')) {
+                fetch('README.md')
+                    .then(response => response.text())
+                    .then(text => {
+                        helpContent.innerHTML = marked.parse(text);
+                    })
+                    .catch(err => {
+                        helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
+                        console.error(err);
+                    });
+            }
+        });
+
+        closeHelpModal.addEventListener('click', () => {
+            helpModal.classList.add('hidden');
+        });
+
+        // Close on outside click
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.add('hidden');
+            }
+        });
+    }
+
     // Share Button Logic
     const shareBtn = document.getElementById('shareBtn');
     const copyLinkBtn = document.getElementById('copyLinkBtn');

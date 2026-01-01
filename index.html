@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tiny Home Heat Loss Calculator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -86,6 +87,7 @@
                 <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
                     <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tiny Home Calculator</a>
                     <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Existing Building Estimator</a>
+                    <a href="#" id="help-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Help / Documentation</a>
                 </div>
             </div>
         </header>
@@ -408,8 +410,22 @@
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Help / Documentation</h3>
+                <button id="closeHelpModal" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="helpContent" class="prose max-w-none text-sm text-gray-700">
+                <!-- Content will be loaded here -->
+                <p class="text-center text-gray-500">Loading...</p>
+            </div>
+        </div>
+    </div>
 
-    </script>
     <script src="calculator.js"></script>
 </body>
 </html>
