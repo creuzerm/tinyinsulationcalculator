@@ -37,47 +37,67 @@ function renderGainTable() {
     const container = document.getElementById('gainInputsContainer');
     if (!container || !gainData) return;
 
-    let html = '';
+    container.innerHTML = ''; // Clear existing
 
-    // helper to build rows
-    const buildRow = (item, type) => `
-        <tr class="border-b border-gray-100 last:border-0">
-            <td class="py-2 pl-2">
-                <div class="font-medium text-gray-700">${item.name}</div>
-                <div class="text-xs text-gray-400">
-                    ${type === 'appliance'
-                        ? `${item.watts_sensible}W Sensible / ${item.duty_cycle_hours}h daily`
-                        : `${item.watts_sensible}W Sensible Heat`}
-                </div>
-            </td>
-            <td class="text-right pr-2">
-                <input type="number"
-                       id="gain_qty_${item.id}"
-                       data-sensible="${item.watts_sensible}"
-                       data-duty="${item.duty_cycle_hours || 24}"
-                       class="w-16 border border-gray-300 rounded text-center p-1 focus:ring-blue-500 focus:border-blue-500"
-                       value="${item.default_qty}"
-                       min="0"
-                       oninput="calculateDetailedGains()">
-            </td>
-        </tr>
-    `;
+    // Helper to build a section
+    const buildSection = (title, items, type, sectionId) => {
+        const details = document.createElement('details');
+        details.className = 'border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden group';
+        details.open = true; // Default open
 
-    // Occupants Section
-    html += `<tr><td colspan="2" class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider py-1 pl-2">Occupants</td></tr>`;
-    gainData.occupants.forEach(item => html += buildRow(item, 'occupant'));
+        const summary = document.createElement('summary');
+        summary.className = 'p-3 bg-gray-50 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center';
+        summary.innerHTML = `
+            <span>${title}</span>
+            <span id="gain_summary_${sectionId}" class="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">0 BTU/hr</span>
+        `;
 
-    // Appliances Section
-    html += `<tr><td colspan="2" class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider py-1 pl-2 mt-2">Appliances & Infrastructure</td></tr>`;
-    gainData.appliances.forEach(item => html += buildRow(item, 'appliance'));
+        const table = document.createElement('table');
+        table.className = 'w-full text-sm';
 
-    container.innerHTML = html;
+        let rows = '';
+        items.forEach(item => {
+            rows += `
+                <tr class="border-b border-gray-100 last:border-0">
+                    <td class="py-2 pl-3">
+                        <div class="font-medium text-gray-700">${item.name}</div>
+                        <div class="text-xs text-gray-400">
+                            ${type === 'appliance'
+                                ? `${item.watts_sensible}W Sensible / ${item.duty_cycle_hours}h daily`
+                                : `${item.watts_sensible}W Sensible Heat`}
+                        </div>
+                    </td>
+                    <td class="text-right pr-3">
+                        <input type="number"
+                            id="gain_qty_${item.id}"
+                            data-sensible="${item.watts_sensible}"
+                            data-duty="${item.duty_cycle_hours || 24}"
+                            data-section="${sectionId}"
+                            class="w-16 border border-gray-300 rounded text-center p-1 focus:ring-blue-500 focus:border-blue-500"
+                            value="${item.default_qty}"
+                            min="0"
+                            oninput="calculateDetailedGains()">
+                    </td>
+                </tr>
+            `;
+        });
+
+        table.innerHTML = `<tbody class="divide-y divide-gray-100">${rows}</tbody>`;
+
+        details.appendChild(summary);
+        details.appendChild(table);
+        container.appendChild(details);
+    };
+
+    buildSection('Occupants', gainData.occupants, 'occupant', 'occupants');
+    buildSection('Appliances & Infrastructure', gainData.appliances, 'appliance', 'appliances');
 }
 
 function calculateDetailedGains() {
     if (!gainData) return;
 
     let totalBTUPerHour = 0;
+    const sectionTotals = { occupants: 0, appliances: 0 };
 
     // Loop through all generated inputs
     const inputs = document.querySelectorAll('input[id^="gain_qty_"]');
@@ -86,6 +106,7 @@ function calculateDetailedGains() {
         const qty = parseFloat(input.value) || 0;
         const wattsSensible = parseFloat(input.dataset.sensible);
         const dutyHours = parseFloat(input.dataset.duty);
+        const section = input.dataset.section;
 
         if (qty > 0) {
             // 1. Calculate Daily Watt-Hours (Sensible Only)
@@ -98,8 +119,18 @@ function calculateDetailedGains() {
             const btuHr = avgWatts * 3.412;
 
             totalBTUPerHour += btuHr;
+
+            if(section && sectionTotals[section] !== undefined) {
+                sectionTotals[section] += btuHr;
+            }
         }
     });
+
+    // Update Section Summaries
+    for(const [key, val] of Object.entries(sectionTotals)) {
+        const el = document.getElementById(`gain_summary_${key}`);
+        if(el) el.textContent = `${Math.round(val)} BTU/hr`;
+    }
 
     // Update the main simulation input
     const simInput = document.getElementById('simInternalGain');
