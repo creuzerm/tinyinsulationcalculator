@@ -6,7 +6,15 @@ const {
     calculateAll,
     updateDimensions,
     toggleABMode,
-    init
+    init,
+    loadGainData,
+    calculateDetailedGains,
+    renderGainTable,
+    addCustomGain,
+    removeCustomGain,
+    updateCustomGain,
+    syncCustomGainsFromDOM,
+    renderCustomGains
 } = require('./calculator');
 
 describe('Tiny Home Heat Loss Calculator', () => {
@@ -39,10 +47,9 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="simLowTemp" value="25">
             <input type="number" id="simHighTemp" value="50">
 
-             <!-- Gain Counts -->
-            <input type="number" id="gainCountPerson" value="1">
-            <input type="number" id="gainCountElectronics" value="0">
-            <input type="number" id="gainCountLight" value="0">
+             <!-- Gain Container -->
+            <div id="gainInputsContainer"></div>
+            <input type="hidden" id="customGainsData">
 
             <!-- Scenario A -->
             <select id="insulationPreset_A"><option value="">Select</option></select>
@@ -102,6 +109,20 @@ describe('Tiny Home Heat Loss Calculator', () => {
             destroy: jest.fn()
         }));
 
+        // Mock Fetch
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                json: () => Promise.resolve({
+                    occupants: [
+                        { id: 'person', name: 'Person', watts_sensible: 75, duty_cycle_hours: 24, default_qty: 1 }
+                    ],
+                    appliances: [
+                        { id: 'fridge', name: 'Fridge', watts_sensible: 45, duty_cycle_hours: 8, default_qty: 0 }
+                    ]
+                }),
+            })
+        );
+
         // Mock LocalStorage
         const localStorageMock = (function() {
             let store = {};
@@ -117,7 +138,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
                 }
             };
         })();
-        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+        Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
     });
 
     afterEach(() => {
@@ -125,6 +146,103 @@ describe('Tiny Home Heat Loss Calculator', () => {
     });
 
     // --- TESTS ---
+
+    describe('Internal Gains Calculator', () => {
+        test('loadGainData fetches and renders table', async () => {
+            await loadGainData();
+
+            expect(global.fetch).toHaveBeenCalledWith('internal_gains.json');
+
+            const container = document.getElementById('gainInputsContainer');
+            // Should contain Person and Fridge
+            expect(container.innerHTML).toContain('Person');
+            expect(container.innerHTML).toContain('Fridge');
+            expect(container.innerHTML).toContain('Custom / Additional Sources');
+        });
+
+        test('calculateDetailedGains computes correctly', async () => {
+             await loadGainData();
+
+             // Person: 1 * 75W * 24h = 1800Wh / 24 = 75W.
+             // Fridge: 0 * 45W * 8h = 0.
+             // Total = 75W * 3.412 = 255.9 BTU/hr.
+
+             // Initial calc is triggered by loadGainData
+             let simInput = document.getElementById('simInternalGain');
+             expect(parseInt(simInput.value)).toBe(256); // 255.9 rounded
+
+             // Update Fridge Count
+             // Note: loadGainData generates IDs like gain_qty_fridge
+             const fridgeInput = document.getElementById('gain_qty_fridge');
+             fridgeInput.value = 1;
+
+             // Trigger update manually (event listener not auto-bound in Jest unless dispatched)
+             calculateDetailedGains();
+
+             // Fridge: 1 * 45 * 8 = 360Wh / 24 = 15W.
+             // Total W = 75 + 15 = 90W.
+             // BTU = 90 * 3.412 = 307.08
+
+             expect(parseInt(simInput.value)).toBe(307);
+        });
+
+        test('Custom Gains Management', async () => {
+            await loadGainData(); // setup structure
+
+            // Add
+            addCustomGain(); // Default: New Source, 100W, 24h, 1qty
+
+            // Rendered?
+            const container = document.getElementById('gainInputsContainer');
+            expect(container.innerHTML).toContain('New Source');
+
+            // Calc?
+            // Base (Person 1) = 256
+            // Custom: 100W * 24 * 1 = 2400Wh / 24 = 100W. 100 * 3.412 = 341.2
+            // Total = 255.9 + 341.2 = 597.1 -> 597
+
+            let simInput = document.getElementById('simInternalGain');
+            expect(parseInt(simInput.value)).toBe(597);
+
+            // Update
+            // Custom gains array is index 0.
+            updateCustomGain(0, 'watts', 200);
+
+            // 200W -> 682.4 BTU
+            // Total = 255.9 + 682.4 = 938.3 -> 938
+            expect(parseInt(simInput.value)).toBe(938);
+
+            // Remove
+            removeCustomGain(0);
+            expect(container.innerHTML).not.toContain('New Source');
+            expect(parseInt(simInput.value)).toBe(256); // Back to base
+        });
+
+        test('Custom Gains Persistence', () => {
+            // Simulate saved data in hidden input
+            const savedData = [{ name: 'Test Stove', watts: 1000, duty: 5, qty: 1 }];
+            const hidden = document.getElementById('customGainsData');
+            hidden.value = JSON.stringify(savedData);
+
+            // Sync
+            syncCustomGainsFromDOM();
+
+            // Render
+            renderCustomGains();
+
+            const container = document.getElementById('gainInputsContainer');
+            expect(container.innerHTML).toContain('Test Stove');
+
+            // Calculate should include it
+            // 1000 * 5 * 1 = 5000 / 24 = 208.33 W
+            // 208.33 * 3.412 = 710.8
+            // Note: gainData is null so standard items aren't calculated, returns only custom total
+
+            calculateDetailedGains();
+            let simInput = document.getElementById('simInternalGain');
+            expect(parseInt(simInput.value)).toBe(711);
+        });
+    });
 
     describe('Scenario A: The "Shoebox" Baseline', () => {
         test('Calculates basic Heat Loss (UA) correctly', () => {
