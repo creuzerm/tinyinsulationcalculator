@@ -15,11 +15,14 @@ const CONFIG_FIELDS = [
     'insulationPreset_B', 'wallRValue_B', 'roofRValue_B', 'floorRValue_B',
     'windowArea_B', 'windowR_B', 'doorArea_B', 'doorR_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
     // Simulation
-    'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp'
+    'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
+    // Custom Data
+    'customGainsData'
 ];
 
 // Global variable to store the loaded data
 let gainData = null;
+let customGains = [];
 
 async function loadGainData() {
     try {
@@ -91,13 +94,145 @@ function renderGainTable() {
 
     buildSection('Occupants', gainData.occupants, 'occupant', 'occupants');
     buildSection('Appliances & Infrastructure', gainData.appliances, 'appliance', 'appliances');
+
+    renderCustomGains();
+}
+
+function renderCustomGains() {
+    const container = document.getElementById('gainInputsContainer');
+    if(!container) return;
+
+    // Remove existing custom section if any (re-render strategy)
+    const existing = document.getElementById('details_custom_gains');
+    if(existing) existing.remove();
+
+    const details = document.createElement('details');
+    details.id = 'details_custom_gains';
+    details.className = 'border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden group';
+    details.open = true;
+
+    const summary = document.createElement('summary');
+    summary.className = 'p-3 bg-gray-50 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center';
+    summary.innerHTML = `
+        <span>Custom / Additional Sources</span>
+        <span id="gain_summary_custom" class="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">0 BTU/hr</span>
+    `;
+
+    const content = document.createElement('div');
+    content.className = 'p-3 bg-gray-50/50';
+
+    // Rows
+    if(customGains.length > 0) {
+        const table = document.createElement('table');
+        table.className = 'w-full text-sm mb-3';
+        let rows = '';
+        customGains.forEach((item, index) => {
+            rows += `
+                <tr class="border-b border-gray-200 last:border-0 bg-white">
+                    <td class="p-2">
+                        <input type="text"
+                            class="w-full border border-gray-300 rounded px-2 py-1 text-gray-700 focus:ring-blue-500 focus:border-blue-500 mb-1"
+                            placeholder="Source Name"
+                            value="${item.name}"
+                            oninput="updateCustomGain(${index}, 'name', this.value)">
+                        <div class="flex space-x-2">
+                            <div class="flex items-center space-x-1">
+                                <input type="number"
+                                    class="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                                    placeholder="Watts"
+                                    value="${item.watts}"
+                                    oninput="updateCustomGain(${index}, 'watts', this.value)">
+                                <span class="text-xs text-gray-400">W</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <input type="number"
+                                    class="w-12 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                                    placeholder="Hrs"
+                                    value="${item.duty}"
+                                    max="24"
+                                    oninput="updateCustomGain(${index}, 'duty', this.value)">
+                                <span class="text-xs text-gray-400">h/day</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-2 text-right align-top">
+                        <div class="flex flex-col items-end space-y-2">
+                            <input type="number"
+                                class="w-12 border border-gray-300 rounded px-1 py-1 text-center"
+                                value="${item.qty}"
+                                min="0"
+                                oninput="updateCustomGain(${index}, 'qty', this.value)">
+                            <button onclick="removeCustomGain(${index})" class="text-xs text-red-500 hover:text-red-700 underline">Remove</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        table.innerHTML = `<tbody class="divide-y divide-gray-200 border border-gray-200 rounded">${rows}</tbody>`;
+        content.appendChild(table);
+    }
+
+    // Add Button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm font-medium';
+    addBtn.textContent = '+ Add Custom Source';
+    addBtn.onclick = addCustomGain;
+    content.appendChild(addBtn);
+
+    details.appendChild(summary);
+    details.appendChild(content);
+    container.appendChild(details);
+
+    // Update summaries just in case (e.g. on load)
+    calculateDetailedGains();
+}
+
+function addCustomGain() {
+    customGains.push({ name: 'New Source', watts: 100, duty: 24, qty: 1 });
+    saveCustomGains();
+    renderCustomGains();
+}
+
+function removeCustomGain(index) {
+    customGains.splice(index, 1);
+    saveCustomGains();
+    renderCustomGains();
+}
+
+function updateCustomGain(index, field, value) {
+    if(customGains[index]) {
+        if(field === 'name') customGains[index].name = value;
+        else customGains[index][field] = parseFloat(value) || 0;
+        saveCustomGains();
+        calculateDetailedGains();
+    }
+}
+
+function saveCustomGains() {
+    const el = document.getElementById('customGainsData');
+    if(el) {
+        el.value = JSON.stringify(customGains);
+        saveInputToLocalStorage(el);
+    }
+}
+
+function syncCustomGainsFromDOM() {
+    const el = document.getElementById('customGainsData');
+    if(el && el.value) {
+        try {
+            customGains = JSON.parse(el.value);
+        } catch(e) {
+            console.error('Failed to parse custom gains', e);
+            customGains = [];
+        }
+    }
 }
 
 function calculateDetailedGains() {
     if (!gainData) return;
 
     let totalBTUPerHour = 0;
-    const sectionTotals = { occupants: 0, appliances: 0 };
+    const sectionTotals = { occupants: 0, appliances: 0, custom: 0 };
 
     // Loop through all generated inputs
     const inputs = document.querySelectorAll('input[id^="gain_qty_"]');
@@ -123,6 +258,21 @@ function calculateDetailedGains() {
             if(section && sectionTotals[section] !== undefined) {
                 sectionTotals[section] += btuHr;
             }
+        }
+    });
+
+    // Custom Gains Calculation
+    customGains.forEach(item => {
+        const qty = parseFloat(item.qty) || 0;
+        const watts = parseFloat(item.watts) || 0;
+        const duty = parseFloat(item.duty) || 0;
+
+        if(qty > 0) {
+             const dailyWh = watts * duty * qty;
+             const avgWatts = dailyWh / 24;
+             const btuHr = avgWatts * 3.412;
+             totalBTUPerHour += btuHr;
+             sectionTotals.custom += btuHr;
         }
     });
 
@@ -790,7 +940,7 @@ function init() {
     updateDimensions();
 
     // 4. Attach to Shared Inputs
-    ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp'].forEach(attachAndLoad);
+    ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp','customGainsData'].forEach(attachAndLoad);
 
     // 5. Attach to Scenario Inputs
     ['_A','_B'].forEach(s => {
@@ -827,7 +977,10 @@ function init() {
         applyGlazingPreset(s);
     });
 
-    loadGainData();
+    // Load custom gains from storage/URL (via the hidden input value set by loadInput/deserialize)
+    syncCustomGainsFromDOM();
+
+    loadGainData(); // This renders everything
     toggleABMode();
     calculateAll();
 
@@ -925,7 +1078,11 @@ function init() {
          // Re-run setup that depends on loaded values
          toggleABMode();
          updateDimensions(); // Ensure correct shape is rendered again if needed
-         updateInternalGains();
+
+         // Re-sync and re-render custom gains because URL might have new data
+         syncCustomGainsFromDOM();
+         renderCustomGains();
+
          calculateAll();
     }
 }
@@ -948,6 +1105,11 @@ if (typeof module !== 'undefined') {
         applyGlazingPreset,
         loadGainData,
         calculateDetailedGains,
-        renderGainTable
+        renderGainTable,
+        addCustomGain,
+        removeCustomGain,
+        updateCustomGain,
+        syncCustomGainsFromDOM,
+        renderCustomGains
     };
 }
