@@ -15,9 +15,100 @@ const CONFIG_FIELDS = [
     'insulationPreset_B', 'wallRValue_B', 'roofRValue_B', 'floorRValue_B',
     'windowArea_B', 'windowR_B', 'doorArea_B', 'doorR_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
     // Simulation
-    'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
-    'gainCountPerson', 'gainCountElectronics', 'gainCountLight'
+    'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp'
 ];
+
+// Global variable to store the loaded data
+let gainData = null;
+
+async function loadGainData() {
+    try {
+        const response = await fetch('internal_gains.json');
+        gainData = await response.json();
+        renderGainTable(); // Generate the UI inputs
+        calculateDetailedGains(); // Initial calc
+    } catch (error) {
+        console.error("Failed to load gain data:", error);
+        // Fallback to hardcoded or show error
+    }
+}
+
+function renderGainTable() {
+    const container = document.getElementById('gainInputsContainer');
+    if (!container || !gainData) return;
+
+    let html = '';
+
+    // helper to build rows
+    const buildRow = (item, type) => `
+        <tr class="border-b border-gray-100 last:border-0">
+            <td class="py-2 pl-2">
+                <div class="font-medium text-gray-700">${item.name}</div>
+                <div class="text-xs text-gray-400">
+                    ${type === 'appliance'
+                        ? `${item.watts_sensible}W Sensible / ${item.duty_cycle_hours}h daily`
+                        : `${item.watts_sensible}W Sensible Heat`}
+                </div>
+            </td>
+            <td class="text-right pr-2">
+                <input type="number"
+                       id="gain_qty_${item.id}"
+                       data-sensible="${item.watts_sensible}"
+                       data-duty="${item.duty_cycle_hours || 24}"
+                       class="w-16 border border-gray-300 rounded text-center p-1 focus:ring-blue-500 focus:border-blue-500"
+                       value="${item.default_qty}"
+                       min="0"
+                       oninput="calculateDetailedGains()">
+            </td>
+        </tr>
+    `;
+
+    // Occupants Section
+    html += `<tr><td colspan="2" class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider py-1 pl-2">Occupants</td></tr>`;
+    gainData.occupants.forEach(item => html += buildRow(item, 'occupant'));
+
+    // Appliances Section
+    html += `<tr><td colspan="2" class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider py-1 pl-2 mt-2">Appliances & Infrastructure</td></tr>`;
+    gainData.appliances.forEach(item => html += buildRow(item, 'appliance'));
+
+    container.innerHTML = html;
+}
+
+function calculateDetailedGains() {
+    if (!gainData) return;
+
+    let totalBTUPerHour = 0;
+
+    // Loop through all generated inputs
+    const inputs = document.querySelectorAll('input[id^="gain_qty_"]');
+
+    inputs.forEach(input => {
+        const qty = parseFloat(input.value) || 0;
+        const wattsSensible = parseFloat(input.dataset.sensible);
+        const dutyHours = parseFloat(input.dataset.duty);
+
+        if (qty > 0) {
+            // 1. Calculate Daily Watt-Hours (Sensible Only)
+            const dailyWh = wattsSensible * dutyHours * qty;
+
+            // 2. Convert to Average Watts (Continuous equivalent)
+            const avgWatts = dailyWh / 24;
+
+            // 3. Convert Watts to BTU/hr (1 Watt = 3.412 BTU/hr)
+            const btuHr = avgWatts * 3.412;
+
+            totalBTUPerHour += btuHr;
+        }
+    });
+
+    // Update the main simulation input
+    const simInput = document.getElementById('simInternalGain');
+    if (simInput) {
+        simInput.value = Math.round(totalBTUPerHour);
+        // Trigger the main calculation
+        if (typeof calculateAll === 'function') calculateAll();
+    }
+}
 
 function serializeConfiguration() {
     const params = new URLSearchParams();
@@ -175,15 +266,6 @@ function applyGlazingPreset(suffix) {
     saveInputToLocalStorage(wArea);
     saveInputToLocalStorage(dArea);
 
-    calculateAll();
-}
-
-function updateInternalGains() {
-    const p = (parseFloat(document.getElementById('gainCountPerson').value)||0) * 350;
-    const e = (parseFloat(document.getElementById('gainCountElectronics').value)||0) * 150;
-    const l = (parseFloat(document.getElementById('gainCountLight').value)||0) * 35;
-    document.getElementById('simInternalGain').value = p + e + l;
-    // Note: internal gain hidden field doesn't need explicit saving if we save the counts
     calculateAll();
 }
 
@@ -677,7 +759,7 @@ function init() {
     updateDimensions();
 
     // 4. Attach to Shared Inputs
-    ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp','gainCountPerson','gainCountElectronics','gainCountLight'].forEach(attachAndLoad);
+    ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp'].forEach(attachAndLoad);
 
     // 5. Attach to Scenario Inputs
     ['_A','_B'].forEach(s => {
@@ -714,7 +796,7 @@ function init() {
         applyGlazingPreset(s);
     });
 
-    updateInternalGains();
+    loadGainData();
     toggleABMode();
     calculateAll();
 
@@ -832,6 +914,9 @@ if (typeof module !== 'undefined') {
         updateDimensions,
         toggleABMode,
         init,
-        applyGlazingPreset
+        applyGlazingPreset,
+        loadGainData,
+        calculateDetailedGains,
+        renderGainTable
     };
 }

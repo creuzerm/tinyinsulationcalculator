@@ -62,7 +62,8 @@ The tool runs a time-step simulation to model temperature drift.
 
   * **Outdoor Temp:** Sinusoidal curve between User-defined Daily High and Low.
 
-  * **Internal Gains:** Sum of Occupants (350 BTU), Electronics (150 BTU), Lighting, and Custom inputs.
+  * **Internal Gains:** Dynamically calculated based on Occupants and Appliances (loaded from `internal_gains.json`).
+    * *Note:* Only **Sensible Heat** is included in the simulation. Latent heat (moisture from breathing, cooking, etc.) is excluded.
 
   * **Solar Gains:** Applied during "Daylight Hours" (roughly 9 AM - 5 PM).
 
