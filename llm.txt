@@ -1,0 +1,21 @@
+# Tiny Home Heat Loss & Passive Performance Calculator
+
+## Description
+This web application is a tool for estimating the heating load and passive thermal performance of small structures like tiny homes, sheds, and cabins. It features heat loss calculation using the UA method, A/B scenario testing, a thermal battery calculator, and passive temperature simulation.
+
+## Key Files
+- index.html: Main application for the heat loss calculator.
+- existing_building_estimator.html: Tool for estimating R-values of existing buildings.
+- calculator.js: Core logic for the main calculator.
+- README.md: Detailed documentation of methodologies and usage.
+
+## Methodologies
+- **Heat Loss (UA Method):** Calculates envelope and floor loss.
+- **Thermal Mass:** Estimates thermal inertia of floor systems (concrete, earth, wood).
+- **Passive Simulation:** Simulates temperature drift over time considering internal and solar gains.
+
+## Usage
+- Open `index.html` to use the main calculator.
+- Open `existing_building_estimator.html` for R-value estimation.
+- Supports "A/B Comparison" to test different construction scenarios.
+- Inputs are persisted in local storage.
