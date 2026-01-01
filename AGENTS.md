@@ -119,6 +119,7 @@ $$
 * $\Delta t$**:** $1/60$ (one minute).
 
 * $Q_{gains}$**:** Internal Gains + Solar Gains (Solar applied only between 9 AM and 5 PM).
+  * **Internal Gains Note:** The calculator loads occupant and appliance data from `internal_gains.json`. Only **Sensible Heat** is summed for the thermal model; Latent heat (moisture) is excluded as it does not directly raise air temperature.
 
 * $Q_{loss}$**:** Calculated dynamically at every minute step based on current $T_{in}$ and interpolated $T_{out}$.
 

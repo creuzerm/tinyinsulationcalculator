@@ -326,33 +326,20 @@
                     <input type="number" id="simHighTemp" class="input-field bg-gray-50" value="50">
                 </div>
             </div>
+
+            <!-- Hidden Input for Custom Gains Persistence -->
+            <input type="hidden" id="customGainsData">
             
             <!-- Quick Internal Gain Table -->
-            <details class="mt-4 border rounded bg-gray-50">
-                <summary class="p-2 text-sm text-blue-600 cursor-pointer font-medium">Show Internal Gain Calculator</summary>
-                <div class="p-4">
-                     <table class="w-full text-sm max-w-lg">
-                        <thead>
-                            <tr class="text-xs text-gray-500 text-left border-b">
-                                <th class="pb-2">Source</th>
-                                <th class="pb-2 text-right">Count</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <tr>
-                                <td class="py-2">Occupant (350 BTU)</td>
-                                <td class="text-right"><input type="number" id="gainCountPerson" class="w-16 border rounded text-center" value="1" oninput="updateInternalGains()"></td>
-                            </tr>
-                            <tr>
-                                <td class="py-2">Laptop/TV (150 BTU)</td>
-                                <td class="text-right"><input type="number" id="gainCountElectronics" class="w-16 border rounded text-center" value="0" oninput="updateInternalGains()"></td>
-                            </tr>
-                            <tr>
-                                <td class="py-2">LED Lights (35 BTU)</td>
-                                <td class="text-right"><input type="number" id="gainCountLight" class="w-16 border rounded text-center" value="0" oninput="updateInternalGains()"></td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <details class="mt-4 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden">
+                <summary class="p-3 bg-gray-50 text-sm font-medium text-blue-600 cursor-pointer hover:bg-gray-100 transition-colors">
+                    Show Detailed Loads (Occupants & Appliances)
+                </summary>
+                <div id="gainInputsContainer" class="max-h-96 overflow-y-auto p-2 space-y-2">
+                    <div class="text-center text-gray-400 py-4">Loading data...</div>
+                </div>
+                <div class="p-2 bg-yellow-50 text-xs text-yellow-800 border-t border-yellow-100">
+                    <strong>Note:</strong> Only sensible heat (temp rise) is calculated. Latent heat (moisture) is excluded from this thermal model.
                 </div>
             </details>
         </div>

@@ -1,0 +1,149 @@
+{
+  "occupants": [
+    {
+      "id": "adult_male",
+      "name": "Adult Male",
+      "watts_sensible": 75,
+      "watts_latent": 40,
+      "default_qty": 1,
+      "source_id": "5"
+    },
+    {
+      "id": "adult_female",
+      "name": "Adult Female",
+      "watts_sensible": 65,
+      "watts_latent": 30,
+      "default_qty": 0,
+      "source_id": "7"
+    },
+    {
+      "id": "child",
+      "name": "Child (Age 8)",
+      "watts_sensible": 50,
+      "watts_latent": 25,
+      "default_qty": 0,
+      "source_id": "3"
+    },
+    {
+      "id": "dog_large",
+      "name": "Dog (Large - 35kg)",
+      "watts_sensible": 40,
+      "watts_latent": 28,
+      "default_qty": 0,
+      "source_id": "12"
+    },
+    {
+      "id": "dog_med",
+      "name": "Dog (Med - 20kg)",
+      "watts_sensible": 27,
+      "watts_latent": 18,
+      "default_qty": 0,
+      "source_id": "9"
+    },
+    {
+      "id": "cat",
+      "name": "Cat",
+      "watts_sensible": 9,
+      "watts_latent": 3,
+      "default_qty": 0,
+      "source_id": "12"
+    }
+  ],
+  "appliances": [
+    {
+      "id": "fridge_dc",
+      "name": "Fridge 12V DC (50L)",
+      "watts_sensible": 45,
+      "watts_latent": 0,
+      "duty_cycle_hours": 8.0,
+      "note": "Sensible heat = energy consumed",
+      "default_qty": 0
+    },
+    {
+      "id": "fridge_ac",
+      "name": "Fridge AC (10 cu ft)",
+      "watts_sensible": 150,
+      "watts_latent": 0,
+      "duty_cycle_hours": 9.0,
+      "default_qty": 0
+    },
+    {
+      "id": "cook_ind",
+      "name": "Induction Cooktop",
+      "watts_sensible": 630,
+      "watts_latent": 280,
+      "duty_cycle_hours": 0.5,
+      "note": "45% of 1400W is sensible radiant heat",
+      "default_qty": 0
+    },
+    {
+      "id": "cook_lpg",
+      "name": "Propane Cooktop (1 Burner)",
+      "watts_sensible": 1560,
+      "watts_latent": 1040,
+      "duty_cycle_hours": 0.5,
+      "note": "Based on 9000 BTU burner",
+      "default_qty": 0
+    },
+    {
+      "id": "microwave",
+      "name": "Microwave",
+      "watts_sensible": 525,
+      "watts_latent": 0,
+      "duty_cycle_hours": 0.25,
+      "note": "35% of 1500W Input is sensible heat",
+      "default_qty": 0
+    },
+    {
+      "id": "instant_pot",
+      "name": "Instant Pot",
+      "watts_sensible": 100,
+      "watts_latent": 50,
+      "duty_cycle_hours": 0.5,
+      "default_qty": 0
+    },
+    {
+      "id": "kettle",
+      "name": "Electric Kettle",
+      "watts_sensible": 1350,
+      "watts_latent": 150,
+      "duty_cycle_hours": 0.15,
+      "default_qty": 0
+    },
+    {
+      "id": "wash_dry",
+      "name": "Washer/Dryer (Condensing)",
+      "watts_sensible": 1000,
+      "watts_latent": 100,
+      "duty_cycle_hours": 1.5,
+      "note": "Rejects ~100% of energy as heat into room",
+      "default_qty": 0
+    },
+    {
+      "id": "dehum_30",
+      "name": "Dehumidifier (30pt)",
+      "watts_sensible": 420,
+      "watts_latent": -300,
+      "duty_cycle_hours": 8.0,
+      "note": "Sensible = Input(300W) + Latent Recovered(~120W)",
+      "default_qty": 0
+    },
+    {
+      "id": "starlink_g2",
+      "name": "Starlink Gen 2 (Router)",
+      "watts_sensible": 20,
+      "watts_latent": 0,
+      "duty_cycle_hours": 24.0,
+      "note": "Only internal router heat (30% of total)",
+      "default_qty": 0
+    },
+    {
+      "id": "inverter_idle",
+      "name": "Inverter Idle (3kW)",
+      "watts_sensible": 25,
+      "watts_latent": 0,
+      "duty_cycle_hours": 24.0,
+      "default_qty": 0
+    }
+  ]
+}
