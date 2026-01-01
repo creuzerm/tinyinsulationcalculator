@@ -1,6 +1,7 @@
 // Global Chart Instances
 let heatLossChart;
 let simulationChart;
+let breakdownChart;
 
 const CONFIG_FIELDS = [
     // Shared
@@ -9,10 +10,10 @@ const CONFIG_FIELDS = [
     'length', 'width', 'height', 'roofPitch', 'springWallHeight',
     // Scenario A
     'insulationPreset_A', 'wallRValue_A', 'roofRValue_A', 'floorRValue_A',
-    'openingsArea_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
+    'windowArea_A', 'windowU_A', 'doorArea_A', 'doorU_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
     // Scenario B
     'insulationPreset_B', 'wallRValue_B', 'roofRValue_B', 'floorRValue_B',
-    'openingsArea_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
+    'windowArea_B', 'windowU_B', 'doorArea_B', 'doorU_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
     // Simulation
     'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
     'gainCountPerson', 'gainCountElectronics', 'gainCountLight'
@@ -249,9 +250,11 @@ function getScenarioData(suffix) {
     const rRoof = parseFloat(document.getElementById(`roofRValue${suffix}`).value) || 1;
     const rFloor = parseFloat(document.getElementById(`floorRValue${suffix}`).value) || 1;
 
-    // Openings
-    let pctOpen = parseFloat(document.getElementById(`openingsArea${suffix}`).value);
-    if (isNaN(pctOpen)) pctOpen = 15;
+    // Windows & Doors
+    const wArea = parseFloat(document.getElementById(`windowArea${suffix}`).value) || 0;
+    const wU = parseFloat(document.getElementById(`windowU${suffix}`).value) || 0.30;
+    const dArea = parseFloat(document.getElementById(`doorArea${suffix}`).value) || 0;
+    const dU = parseFloat(document.getElementById(`doorU${suffix}`).value) || 0.30;
 
     // Air Sealing
     const sealing = document.getElementById(`airSealing${suffix}`).value;
@@ -260,30 +263,57 @@ function getScenarioData(suffix) {
     const massMat = document.getElementById(`massMaterial${suffix}`).value;
     const thickness = parseFloat(document.getElementById(`slabThickness${suffix}`).value) || 1;
 
-    return { rWall, rRoof, rFloor, pctOpen, sealing, massMat, thickness };
+    return { rWall, rRoof, rFloor, wArea, wU, dArea, dU, sealing, massMat, thickness };
 }
 
 function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
-    const openArea = areas.total * (data.pctOpen / 100);
-    const netWall = (areas.wall / areas.total) * (areas.total - openArea);
-    const netRoof = (areas.roof / areas.total) * (areas.total - openArea);
+    // Subtract openings from wall first, then roof if needed
+    let netWall = areas.wall - (data.wArea + data.dArea);
+    let netRoof = areas.roof;
 
-    // Conductive Loss (UA)
+    if (netWall < 0) {
+        netRoof += netWall; // Subtract excess from roof
+        netWall = 0;
+    }
+    netRoof = Math.max(0, netRoof);
+
+    // Conductive Losses
+    const lossWall = (netWall / data.rWall) * deltaT_Air;
+    const lossRoof = (netRoof / data.rRoof) * deltaT_Air;
+    const lossWindow = (data.wArea * data.wU) * deltaT_Air;
+    const lossDoor = (data.dArea * data.dU) * deltaT_Air;
+    const lossFloor = (areas.floor / data.rFloor) * deltaT_Ground;
+
+    // UA (Conductance) for Simulation
     let ua = 0;
     ua += (netWall / data.rWall);
     ua += (netRoof / data.rRoof);
-    ua += (openArea / 3); // Assume R-3 windows
+    ua += (data.wArea * data.wU);
+    ua += (data.dArea * data.dU);
 
-    // Sealing Penalty
-    if(data.sealing === 'poor') ua *= 1.25;
+    // Sealing Penalty (Infiltration)
+    // Simplified: Add % to total UA
+    let infiltrationLoss = 0;
+    if(data.sealing === 'poor') {
+         // Approx 25% of conductive load
+         infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
+         ua *= 1.25;
+    }
 
-    // Floor Loss (Separate delta T)
-    const floorLoss = (areas.floor / data.rFloor) * deltaT_Ground;
+    const totalLoss = lossWall + lossRoof + lossWindow + lossDoor + lossFloor + infiltrationLoss;
     const uaFloor = (areas.floor / data.rFloor);
 
-    const totalLoss = (ua * deltaT_Air) + floorLoss;
-
-    return { totalLoss, ua, uaFloor };
+    return {
+        totalLoss, ua, uaFloor,
+        breakdown: {
+            Wall: lossWall,
+            Roof: lossRoof,
+            Window: lossWindow,
+            Door: lossDoor,
+            Floor: lossFloor,
+            Infiltration: infiltrationLoss
+        }
+    };
 }
 
 function calculateMassCapacity(areas, data) {
@@ -325,6 +355,7 @@ function calculateAll() {
     document.getElementById('resultLoss_A').textContent = Math.round(lossA.totalLoss).toLocaleString();
     const dropA = lossA.totalLoss / Math.max(capA, 1);
     document.getElementById('resultDrop_A').textContent = dropA.toFixed(2);
+    updateBreakdownUI('breakdown_A', lossA.breakdown);
 
     let lossB = null, capB = null, dataB = null;
 
@@ -337,11 +368,77 @@ function calculateAll() {
         document.getElementById('resultLoss_B').textContent = Math.round(lossB.totalLoss).toLocaleString();
         const dropB = lossB.totalLoss / Math.max(capB, 1);
         document.getElementById('resultDrop_B').textContent = dropB.toFixed(2);
+        updateBreakdownUI('breakdown_B', lossB.breakdown);
     }
 
     // 6. Update Charts
     updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB);
     updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround);
+    updateBreakdownChart(isAB, lossA, lossB);
+}
+
+function updateBreakdownUI(elementId, breakdown) {
+    const el = document.getElementById(elementId);
+    if(!el) return;
+
+    let html = '<ul class="space-y-1">';
+    for(const [key, val] of Object.entries(breakdown)) {
+        if(val > 0) {
+            html += `<li class="flex justify-between"><span>${key}:</span> <span>${Math.round(val).toLocaleString()} BTU/hr</span></li>`;
+        }
+    }
+    html += '</ul>';
+    el.innerHTML = html;
+}
+
+function updateBreakdownChart(isAB, lossA, lossB) {
+    const ctx = document.getElementById('breakdownChart').getContext('2d');
+
+    // Data Preparation
+    const labels = Object.keys(lossA.breakdown);
+    const dataA = Object.values(lossA.breakdown);
+    const dataB = isAB && lossB ? Object.values(lossB.breakdown) : [];
+
+    const datasets = [{
+        label: 'Scenario A',
+        data: dataA,
+        backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1
+    }];
+
+    if(isAB) {
+        datasets.push({
+            label: 'Scenario B',
+            data: dataB,
+            backgroundColor: 'rgba(16, 185, 129, 0.7)', // Green
+            borderColor: 'rgba(16, 185, 129, 1)',
+            borderWidth: 1
+        });
+    }
+
+    if(breakdownChart) breakdownChart.destroy();
+
+    breakdownChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, title: {display:true, text: 'Heat Loss (BTU/hr)'} }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Heat Loss Components (Design Temp)'
+                }
+            }
+        }
+    });
 }
 
 function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
@@ -539,7 +636,7 @@ function init() {
 
     // 5. Attach to Scenario Inputs
     ['_A','_B'].forEach(s => {
-        ['insulationPreset','wallRValue','roofRValue','floorRValue','openingsArea','airSealing','massMaterial','slabThickness'].forEach(base => {
+        ['insulationPreset','wallRValue','roofRValue','floorRValue','windowArea','windowU','doorArea','doorU','airSealing','massMaterial','slabThickness'].forEach(base => {
             attachAndLoad(base+s);
         });
     });

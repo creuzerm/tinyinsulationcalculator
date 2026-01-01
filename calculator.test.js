@@ -49,7 +49,10 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="wallRValue_A" value="10">
             <input type="number" id="roofRValue_A" value="10">
             <input type="number" id="floorRValue_A" value="10">
-            <select id="openingsArea_A"><option value="0" selected>0%</option></select>
+            <input type="number" id="windowArea_A" value="0">
+            <input type="number" id="windowU_A" value="0.30">
+            <input type="number" id="doorArea_A" value="0">
+            <input type="number" id="doorU_A" value="0.30">
             <select id="airSealing_A"><option value="good" selected>Good</option></select>
             <select id="massMaterial_A"><option value="wood" selected>Wood</option></select>
             <input type="number" id="slabThickness_A" value="1">
@@ -57,6 +60,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <!-- Result A -->
             <div id="resultLoss_A"></div>
             <div id="resultDrop_A"></div>
+            <div id="breakdown_A"></div>
 
              <!-- Scenario B -->
              <div id="scenariosGrid">
@@ -65,7 +69,10 @@ describe('Tiny Home Heat Loss Calculator', () => {
                     <input type="number" id="wallRValue_B" value="20">
                     <input type="number" id="roofRValue_B" value="10">
                     <input type="number" id="floorRValue_B" value="10">
-                    <select id="openingsArea_B"><option value="0" selected>0%</option></select>
+                    <input type="number" id="windowArea_B" value="0">
+                    <input type="number" id="windowU_B" value="0.30">
+                    <input type="number" id="doorArea_B" value="0">
+                    <input type="number" id="doorU_B" value="0.30">
                     <select id="airSealing_B"><option value="good" selected>Good</option></select>
                     <select id="massMaterial_B"><option value="wood" selected>Wood</option></select>
                     <input type="number" id="slabThickness_B" value="1">
@@ -77,6 +84,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
                 <div id="resultBoxB" class="hidden">
                     <div id="resultLoss_B"></div>
                     <div id="resultDrop_B"></div>
+                    <div id="breakdown_B"></div>
                 </div>
             </div>
 
@@ -86,6 +94,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <!-- Charts (Mock Canvas) -->
             <canvas id="heatLossChart"></canvas>
             <canvas id="simulationChart"></canvas>
+            <canvas id="breakdownChart"></canvas>
         `;
 
         // Mock Chart.js
@@ -133,12 +142,9 @@ describe('Tiny Home Heat Loss Calculator', () => {
             document.getElementById('roofRValue_A').value = 10;
             document.getElementById('floorRValue_A').value = 10;
 
-            // Note: AGENTS.md says "Openings: 0% (Custom > 0 windows, 0 doors)" but calculation logic uses pctOpen.
-            // If I set 0%, then openArea is 0.
-            // However, calculateHeatLoss calculates openArea = areas.total * (pctOpen / 100).
-            // We need to set the value of the select element.
-            document.getElementById('openingsArea_A').innerHTML = '<option value="0" selected>0</option>';
-            document.getElementById('openingsArea_A').value = "0";
+            // No openings
+            document.getElementById('windowArea_A').value = 0;
+            document.getElementById('doorArea_A').value = 0;
             document.getElementById('airSealing_A').value = 'good';
 
             // Trigger calc
@@ -148,8 +154,6 @@ describe('Tiny Home Heat Loss Calculator', () => {
             // Floor: 200 sqft
             // Roof: 200 sqft
             // Walls: 2(20*10) + 2(10*10) = 400 + 200 = 600 sqft
-            // Total Area: 800 sqft + 200 floor = 1000? No, areas.total = wall + roof = 800.
-            // Floor is separate.
 
             // Losses:
             // Wall: (600 / 10) * (70 - 20) = 60 * 50 = 3000
@@ -159,6 +163,35 @@ describe('Tiny Home Heat Loss Calculator', () => {
 
             const resultText = document.getElementById('resultLoss_A').textContent.replace(/,/g, '');
             expect(parseInt(resultText)).toBe(4400);
+        });
+
+        test('Calculates breakdown correctly', () => {
+             document.getElementById('length').value = 20;
+             document.getElementById('width').value = 10;
+             document.getElementById('height').value = 10;
+             document.getElementById('roofPitch').value = 0;
+
+             document.getElementById('indoorTemp').value = 70;
+             document.getElementById('outdoorTemp').value = 20;
+
+             document.getElementById('wallRValue_A').value = 10;
+             document.getElementById('roofRValue_A').value = 10;
+
+             // Add a window
+             document.getElementById('windowArea_A').value = 50; // 50 sqft window
+             document.getElementById('windowU_A').value = 0.5; // U-0.5
+
+             calculateAll();
+
+             // Wall Area Total: 600. Net Wall: 550.
+             // Wall Loss: (550 / 10) * 50 = 2750
+             // Window Loss: (50 * 0.5) * 50 = 1250
+
+             const breakdownHTML = document.getElementById('breakdown_A').innerHTML;
+             expect(breakdownHTML).toContain('Wall');
+             expect(breakdownHTML).toContain('2,750 BTU/hr');
+             expect(breakdownHTML).toContain('Window');
+             expect(breakdownHTML).toContain('1,250 BTU/hr');
         });
     });
 
@@ -174,8 +207,6 @@ describe('Tiny Home Heat Loss Calculator', () => {
             document.getElementById('slabThickness_A').value = 6;
 
             // Trigger calc
-            // I need to access the internal calculation or check a side effect.
-            // calculateMassCapacity is exported, let's test it directly first.
             const areas = { floor: 100, total: 600 }; // derived from 10x10x10 box
             const data = { massMat: 'concrete', thickness: 6 };
 
@@ -214,15 +245,16 @@ describe('Tiny Home Heat Loss Calculator', () => {
             document.getElementById('wallRValue_A').value = 10;
             document.getElementById('roofRValue_A').value = 10;
             document.getElementById('floorRValue_A').value = 10;
-            document.getElementById('openingsArea_A').innerHTML = '<option value="0" selected>0</option>';
+            document.getElementById('windowArea_A').value = 0;
+            document.getElementById('doorArea_A').value = 0;
             document.getElementById('airSealing_A').value = 'good';
 
             // Scenario B: Change Wall R to 20
             document.getElementById('wallRValue_B').value = 20;
             document.getElementById('roofRValue_B').value = 10;
             document.getElementById('floorRValue_B').value = 10;
-            document.getElementById('openingsArea_B').innerHTML = '<option value="0" selected>0</option>';
-            document.getElementById('openingsArea_B').value = "0";
+            document.getElementById('windowArea_B').value = 0;
+            document.getElementById('doorArea_B').value = 0;
             document.getElementById('airSealing_B').value = 'good';
 
             calculateAll();
@@ -255,8 +287,8 @@ describe('Tiny Home Heat Loss Calculator', () => {
             document.getElementById('wallRValue_A').value = 20;
             document.getElementById('roofRValue_A').value = 40;
             document.getElementById('floorRValue_A').value = 20;
-            document.getElementById('openingsArea_A').innerHTML = '<option value="0" selected>0</option>';
-            document.getElementById('openingsArea_A').value = "0";
+            document.getElementById('windowArea_A').value = 0;
+            document.getElementById('doorArea_A').value = 0;
 
             calculateAll();
 
