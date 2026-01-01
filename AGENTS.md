@@ -218,7 +218,22 @@ Agents should run these scenarios to verify the integrity of the calculator afte
 
    * **Total B:** 2,900 BTU/hr.
 
-## 4. Verification Instructions for Agents
+## 4. Development and Testing
+
+### 4.1 Running Tests
+
+The project includes a Jest-based test suite. The JavaScript logic has been extracted to `calculator.js` to facilitate testing.
+
+To run the tests:
+```bash
+npm test
+```
+
+### 4.2 CI/CD
+
+Tests are automatically run on push and pull request via GitHub Actions.
+
+## 5. Verification Instructions for Agents
 
 When verifying the tool via code interpretation or DOM manipulation:
 

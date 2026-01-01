@@ -1,0 +1,26 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "This project is an exploration tool designed to estimate the heating load and passive thermal performance of small structures (Tiny Homes, Sheds, Cabins). Unlike simple R-value calculators, this tool integrates **Thermal Mass (The \"Battery\")** and **Passive Simulation** to visualize how a building behaves over time without supplemental heating.",
+  "main": "calculator.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/creuzerm/tinyinsulationcalculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/creuzerm/tinyinsulationcalculator/issues"
+  },
+  "homepage": "https://github.com/creuzerm/tinyinsulationcalculator#readme",
+  "devDependencies": {
+    "canvas": "^3.2.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
+  }
+}
