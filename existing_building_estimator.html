@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>R-Value Estimator</title>
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -59,6 +60,7 @@
             <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-20 py-1">
                 <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Tiny Home Calculator</a>
                 <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Existing Building Estimator</a>
+                <a href="#" id="help-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Help / Documentation</a>
             </div>
         </div>
 
@@ -195,6 +197,23 @@
             <p class="result-text mb-4 hidden" id="materialRValueSIRow">Estimated Material R-Value (Surface-to-Surface, SI): <span id="rValueSIMaterial">--</span> (m&sup2;&middot;K/W)</p>
             <p class="text-sm text-gray-700 mt-4"><em>Disclaimer: This is an estimation based on steady-state assumptions and your inputs, and relies on assumed typical U-values for other building components. Real-world conditions can vary significantly, especially if internal/solar gains are present or the assumed U-values are not representative.</em></p>
         </div>
+
+        <!-- Help Modal -->
+        <div id="helpModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-900">Help / Documentation</h3>
+                    <button id="closeHelpModal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div id="helpContent" class="prose max-w-none text-sm text-gray-700">
+                    <!-- Content will be loaded here -->
+                    <p class="text-center text-gray-500">Loading...</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -212,6 +231,44 @@
             document.addEventListener('click', (event) => {
                 if (!menuDropdown.classList.contains('hidden') && !menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
                     menuDropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        // Help Modal Logic
+        const helpLink = document.getElementById('help-link');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpModal = document.getElementById('closeHelpModal');
+        const helpContent = document.getElementById('helpContent');
+
+        if (helpLink && helpModal) {
+            helpLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('menu-dropdown').classList.add('hidden'); // Close menu
+                helpModal.classList.remove('hidden');
+
+                // Fetch README if not already loaded
+                if (helpContent.innerHTML.includes('Loading...')) {
+                    fetch('README.md')
+                        .then(response => response.text())
+                        .then(text => {
+                            helpContent.innerHTML = marked.parse(text);
+                        })
+                        .catch(err => {
+                            helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
+                            console.error(err);
+                        });
+                }
+            });
+
+            closeHelpModal.addEventListener('click', () => {
+                helpModal.classList.add('hidden');
+            });
+
+            // Close on outside click
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) {
+                    helpModal.classList.add('hidden');
                 }
             });
         }
