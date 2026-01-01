@@ -140,7 +140,7 @@ function applyPreset(suffix) {
 
 function applyGlazingPreset(suffix) {
     const preset = document.getElementById(`glazingPreset${suffix}`).value;
-    if(!preset) return; // Custom
+    if(!preset || preset === 'custom') return;
 
     const areas = getSurfaceAreas();
     const floor = areas.floor; // Use floor area as base
@@ -524,9 +524,6 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
         datasets.push({ label: 'Scenario B', data: d_B, borderColor: '#10B981', tension: 0.3, fill: false });
     }
 
-    console.log('HeatLossChart Data A:', d_A);
-    console.log('HeatLossChart Data B:', d_B);
-
     if(heatLossChart) heatLossChart.destroy();
     heatLossChart = new Chart(ctx, {
         type: 'line',
@@ -687,9 +684,36 @@ function init() {
         ['insulationPreset','glazingPreset','wallRValue','roofRValue','floorRValue','windowArea','windowR','doorArea','doorR','airSealing','massMaterial','slabThickness'].forEach(base => {
             attachAndLoad(base+s);
         });
+
+        // Reverse Binding: If manual edits occur, clear presets
+        ['wallRValue','roofRValue','floorRValue'].forEach(k => {
+            const el = document.getElementById(k+s);
+            if(el) {
+                el.addEventListener('input', () => {
+                    const pre = document.getElementById('insulationPreset'+s);
+                    if(pre) { pre.value = ''; saveInputToLocalStorage(pre); }
+                });
+            }
+        });
+
+        ['windowArea','doorArea'].forEach(k => {
+             const el = document.getElementById(k+s);
+             if(el) {
+                el.addEventListener('input', () => {
+                    const pre = document.getElementById('glazingPreset'+s);
+                    if(pre) { pre.value = 'custom'; saveInputToLocalStorage(pre); }
+                });
+             }
+        });
     });
 
     // 6. Initial State Setters
+    // Apply defaults (if presets are selected)
+    ['_A', '_B'].forEach(s => {
+        applyPreset(s);
+        applyGlazingPreset(s);
+    });
+
     updateInternalGains();
     toggleABMode();
     calculateAll();
