@@ -513,6 +513,17 @@ function applyPreset(suffix) {
             }
             if(r) r.value = 12; // Approx 2 inches of thinsulate/foam
             if(f) f.value = 5;  // Approx 1 inch of foam
+
+            const massMat = document.getElementById(`massMaterial${suffix}`);
+            if(massMat) {
+                massMat.value = 'metal';
+                saveInputToLocalStorage(massMat);
+            }
+            const massThick = document.getElementById(`slabThickness${suffix}`);
+            if(massThick) {
+                massThick.value = 0.1; // Thin sheet metal skin
+                saveInputToLocalStorage(massThick);
+            }
             break;
         case 'uninsulated':
             // Stick, 2x4, 16oc, None
@@ -864,6 +875,7 @@ function calculateMassCapacity(areas, data) {
     let density = 145, specHeat = 0.2;
     if(data.massMat === 'stone') { density = 135; specHeat = 0.2; }
     if(data.massMat === 'wood') { density = 30; specHeat = 0.4; }
+    if(data.massMat === 'metal') { density = 490; specHeat = 0.12; }
 
     const vol = areas.floor * (data.thickness / 12);
     const mass = vol * density;

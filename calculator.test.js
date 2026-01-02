@@ -85,7 +85,10 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="doorArea_A" value="0">
             <input type="number" id="doorR_A" value="3">
             <select id="airSealing_A"><option value="good" selected>Good</option></select>
-            <select id="massMaterial_A"><option value="wood" selected>Wood</option></select>
+            <select id="massMaterial_A">
+                <option value="wood" selected>Wood</option>
+                <option value="metal">Metal</option>
+            </select>
             <input type="number" id="slabThickness_A" value="1">
 
             <!-- Result A -->
@@ -346,6 +349,27 @@ describe('Tiny Home Heat Loss Calculator', () => {
         });
     });
 
+    describe('Mass Capacity Calculation', () => {
+        test('Calculates Metal Floor Mass Correctly', () => {
+             // Area = 100 sqft. Thickness = 0.1 inch.
+             // Volume = 100 * (0.1/12) = 0.8333 ft3
+             // Mass = 0.8333 * 490 = 408.33 lbs
+             // Capacity = 408.33 * 0.12 = 49.0 BTU/F
+
+             // Structure Baseline = Total Envelope * 1.5
+             // Assume box 10x10x10. Floor=100. Roof=100. Walls=400. Total=600.
+             // Baseline = 600 * 1.5 = 900.
+
+             // Total = 949.0
+
+             const areas = { floor: 100, total: 600 };
+             const data = { massMat: 'metal', thickness: 0.1 };
+
+             const cap = calculateMassCapacity(areas, data);
+             expect(cap).toBeCloseTo(949.0, 0);
+        });
+    });
+
     describe('Scenario A: The "Shoebox" Baseline', () => {
         test('Calculates basic Heat Loss (UA) correctly', () => {
              // Inputs from AGENTS.md Scenario A
@@ -403,6 +427,9 @@ describe('Tiny Home Heat Loss Calculator', () => {
              expect(document.getElementById('wallCavityInsulation_A').value).toBe('thinsulate_sm600');
              expect(document.getElementById('roofRValue_A').value).toBe('12');
              expect(document.getElementById('floorRValue_A').value).toBe('5');
+
+             expect(document.getElementById('massMaterial_A').value).toBe('metal');
+             expect(document.getElementById('slabThickness_A').value).toBe('0.1');
         });
     });
 });
