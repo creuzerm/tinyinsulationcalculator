@@ -42,6 +42,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="indoorTemp" value="70">
             <input type="number" id="outdoorTemp" value="10">
             <input type="number" id="groundTemp" value="50">
+            <select id="vehicleColor"><option value="light">Light</option></select>
 
             <select id="simDuration"><option value="24" selected>24</option></select>
             <input type="number" id="simInternalGain" value="400">
