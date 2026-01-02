@@ -5,7 +5,7 @@ let breakdownChart;
 
 const CONFIG_FIELDS = [
     // Shared
-    'buildingShape', 'indoorTemp', 'outdoorTemp', 'groundTemp', 'abToggle',
+    'buildingShape', 'indoorTemp', 'outdoorTemp', 'groundTemp', 'vehicleColor', 'abToggle',
     // Dimensions
     'length', 'width', 'height', 'roofPitch', 'springWallHeight',
     // Scenario A
@@ -47,7 +47,19 @@ const MATERIALS = {
     cellulose: { r_inch: 3.7 },
     spray_foam_open: { r_inch: 3.6 },
     spray_foam_closed: { r_inch: 6.5 },
+
+    // Van Life Specifics
+    havelock_wool: { r_inch: 3.6 }, // Common sheep wool insulation
+    thinsulate_sm600: { r_inch: 5.2 }, // 3M Thinsulate (approximate based on thickness)
+    xps_foam_board: { r_inch: 5.0 }, // Rigid foam for floors
+    armaflex_foam: { r_inch: 4.0 }, // Black flexible foam
+    polyiso_board: { r_inch: 6.0 }, // High R-value rigid board
+
     none: { r_inch: 0 },
+
+    // Vehicle Structure
+    sheet_metal_skin: { r_total: 0.001 }, // Effectively zero
+    auto_glass_single: { r_total: 0.9 },
 
     // Air Films
     air_film_int: { r_total: 0.68 },
@@ -69,6 +81,9 @@ const STEEL_CORRECTION_FACTORS = {
     '2x8': { // Extrapolated / Approx
         '16': 0.30,
         '24': 0.35
+    },
+    'van_ribs': {
+        'default': 0.25 // Highly severe penalty. R-10 becomes R-2.5 effectively if ribs aren't covered.
     }
 };
 
@@ -421,6 +436,11 @@ const dimensionTemplates = {
         <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
         <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12"></div>
         <div><label class="input-label">Spring Ht</label><input type="number" id="springWallHeight" class="input-field bg-gray-50" value="2"></div>
+    `,
+    'cargo-van': `
+        <div><label class="input-label">Cargo Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="12"></div>
+        <div><label class="input-label">Floor Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="6"></div>
+        <div><label class="input-label">Int. Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="6.3"></div>
     `
 };
 
@@ -477,6 +497,33 @@ function applyPreset(suffix) {
             setAssembly('stick', '2x6', '24', 'mineral_wool', '15');
             if(r) r.value = 60;
             if(f) f.value = 30;
+            break;
+        case 'van_build':
+            // Stick, 2x4 (approx depth), Van Ribs, 24oc, Thinsulate, 0 CI
+            // Note: 2x4 is 3.5" deep, Thinsulate is R-5.2/in.
+            // Effective R will be heavily penalized by van_ribs factor (0.25).
+            setAssembly('stick', '2x4', '24', 'thinsulate_sm600', '0');
+            // We need to override the material to van_ribs, but setAssembly defaults to wood for stick.
+            // We'll manually set it after calling setAssembly, or update setAssembly.
+            // Let's update the element directly here to be safe and simple.
+            const matEl = document.getElementById(`wallStudMaterial${suffix}`);
+            if(matEl) {
+                matEl.value = 'van_ribs';
+                saveInputToLocalStorage(matEl);
+            }
+            if(r) r.value = 12; // Approx 2 inches of thinsulate/foam
+            if(f) f.value = 5;  // Approx 1 inch of foam
+
+            const massMat = document.getElementById(`massMaterial${suffix}`);
+            if(massMat) {
+                massMat.value = 'metal';
+                saveInputToLocalStorage(massMat);
+            }
+            const massThick = document.getElementById(`slabThickness${suffix}`);
+            if(massThick) {
+                massThick.value = 0.1; // Thin sheet metal skin
+                saveInputToLocalStorage(massThick);
+            }
             break;
         case 'uninsulated':
             // Stick, 2x4, 16oc, None
@@ -620,6 +667,13 @@ function getSurfaceAreas() {
         areas.floor = L * W;
         areas.wall = (2*L*spring) + (Math.PI * r**2);
         areas.roof = L * (Math.PI * r);
+    } else if (shape === 'cargo-van') {
+        // User inputs: L (Cargo Length), W (Floor Width), H (Interior Height)
+        const H = parseFloat(document.getElementById('height')?.value) || 0;
+        areas.floor = L * W;
+        areas.roof = L * W;
+        // Walls + Sliding Door + Rear Doors approximation
+        areas.wall = (2 * L * H) + (2 * W * H);
     }
 
     areas.total = areas.wall + areas.roof;
@@ -654,9 +708,11 @@ function calculateEffectiveR(assembly) {
             const factor = STEEL_CORRECTION_FACTORS[sizeKey]?.[spaceKey] || 0.46; // Fallback to 0.46 if not found
 
             // Effective Cavity R = Nominal Cavity R * Factor
-            // NOTE: Steel stud assembly essentially bypasses parallel path math in this simplified model
-            // by derating the cavity R-value directly which accounts for the bridge.
-            // The stud itself is not added in parallel because the factor accounts for the composite performance.
+            r_total += (r_cavity * factor);
+
+        } else if (mat === 'van_ribs') {
+            // Van Ribs: Severe thermal bridging
+            const factor = STEEL_CORRECTION_FACTORS['van_ribs'].default;
             r_total += (r_cavity * factor);
 
         } else {
@@ -774,11 +830,18 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     const rW_win = safeR(data.wR);
     const rD_door = safeR(data.dR);
 
+    // DETECT VEHICLE CONTEXT
+    const shape = document.getElementById('buildingShape')?.value;
+    const isVehicle = (shape === 'cargo-van');
+
+    // If it's a vehicle, the floor is exposed to Outside Air, not Ground
+    const floorDeltaT = isVehicle ? deltaT_Air : deltaT_Ground;
+
     const lossWall = (netWall / safeR(data.rWall)) * deltaT_Air;
     const lossRoof = (netRoof / safeR(data.rRoof)) * deltaT_Air;
     const lossWindow = (data.wArea / rW_win) * deltaT_Air;
     const lossDoor = (data.dArea / rD_door) * deltaT_Air;
-    const lossFloor = (areas.floor / safeR(data.rFloor)) * deltaT_Ground;
+    const lossFloor = (areas.floor / safeR(data.rFloor)) * floorDeltaT;
 
     let ua = 0;
     ua += (netWall / safeR(data.rWall));
@@ -812,6 +875,7 @@ function calculateMassCapacity(areas, data) {
     let density = 145, specHeat = 0.2;
     if(data.massMat === 'stone') { density = 135; specHeat = 0.2; }
     if(data.massMat === 'wood') { density = 30; specHeat = 0.4; }
+    if(data.massMat === 'metal') { density = 490; specHeat = 0.12; }
 
     const vol = areas.floor * (data.thickness / 12);
     const mass = vol * density;
@@ -985,7 +1049,13 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
     const low = parseFloat(document.getElementById('simLowTemp').value);
     const high = parseFloat(document.getElementById('simHighTemp').value);
     const iGain = parseFloat(document.getElementById('simInternalGain').value);
-    const sGain = 1000;
+    const sGainBase = 1000;
+
+    const shape = document.getElementById('buildingShape').value;
+    const isVehicle = (shape === 'cargo-van');
+    const vColor = document.getElementById('vehicleColor').value;
+    const solarMult = (isVehicle && vColor === 'dark') ? 1.5 : 1.0;
+    const sGain = sGainBase * solarMult;
 
     const labels = [];
     const simA = [];
@@ -1251,6 +1321,7 @@ if (typeof module !== 'undefined') {
         updateDimensions,
         toggleABMode,
         init,
+        applyPreset,
         applyGlazingPreset,
         loadGainData,
         calculateDetailedGains,

@@ -291,3 +291,123 @@ To ensure the application is usable by vision impaired users, all development mu
 6.  **Screen Reader Compatibility:**
     *   Charts must have a text fallback or be described via ARIA.
     *   Status updates (results) should be announced dynamically.
+
+## 8. Feature Roadmap: Van Life Support
+
+The following roadmap details the technical changes required to support "Van Life" and camper builds.
+
+### 1. The Core Physics Challenge: The Floor
+
+In the current code (`calculator.js`), the floor is "Ground Coupled" (using `groundTemp`), assuming the building sits on soil. A van or truck camper sits on tires, meaning the floor is "Air Coupled" (air flows underneath it).
+
+**Required Change:**
+You must modify `calculateHeatLoss` in `calculator.js` to treat the floor as an air-coupled surface when a vehicle shape is selected.
+
+**Code Logic Update:**
+
+```javascript
+// In calculator.js -> calculateHeatLoss function
+function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
+    // ... existing setup ...
+
+    // DETECT VEHICLE CONTEXT
+    const shape = document.getElementById('buildingShape').value;
+    const isVehicle = (shape === 'cargo-van' || shape === 'camper-shell');
+
+    // If it's a vehicle, the floor is exposed to Outside Air, not Ground
+    const floorDeltaT = isVehicle ? deltaT_Air : deltaT_Ground;
+
+    // ... existing calculations ...
+    const lossFloor = (areas.floor / safeR(data.rFloor)) * floorDeltaT;
+
+    // ... return results ...
+}
+```
+
+### 2. New Geometry: "Cargo Van" Shape
+
+You need to add a new shape to `getSurfaceAreas` that approximates the curved walls and lower volume of a van.
+
+**Required Change:**
+Add a "Cargo Van" option that accepts standard wheelbase dimensions (e.g., Sprinter 144", Ford Transit 148").
+
+**Code Logic Update:**
+
+```javascript
+// In calculator.js -> getSurfaceAreas function
+} else if (shape === 'cargo-van') {
+    // User inputs: L (Cargo Length), W (Floor Width), H (Interior Height)
+    // Approximation: Van walls are slightly curved, but a box is a close enough estimate for UA
+    areas.floor = L * W;
+    areas.roof = L * W;
+
+    // Walls + Sliding Door + Rear Doors
+    areas.wall = (2 * L * H) + (2 * W * H);
+
+    // Total surface area is usually 100% metal skin
+    areas.total = areas.wall + areas.roof;
+}
+```
+
+### 3. Material Database Expansion
+
+The current `MATERIALS` object in `calculator.js` lacks the specific insulation used in automotive builds (closed-cell foam, wool, Thinsulate).
+
+**Required Change:**
+Update `MATERIALS` in `calculator.js`:
+
+```javascript
+const MATERIALS = {
+    // ... existing materials ...
+
+    // Van Life Specifics
+    havelock_wool: { r_inch: 3.6 }, // Common sheep wool insulation
+    thinsulate_sm600: { r_inch: 5.2 }, // 3M Thinsulate (approximate based on thickness)
+    xps_foam_board: { r_inch: 5.0 }, // Rigid foam for floors
+    armaflex_foam: { r_inch: 4.0 }, // Black flexible foam
+    polyiso_board: { r_inch: 6.0 }, // High R-value rigid board
+
+    // Vehicle Structure
+    sheet_metal_skin: { r_total: 0.001 }, // Effectively zero
+    auto_glass_single: { r_total: 0.9 },
+};
+```
+
+### 4. Handling Thermal Bridging (The "Rib" Problem)
+
+Your `methods.md` file correctly identifies that steel conducts heat ~400x faster than wood. In a van, the structural "ribs" are massive thermal bridges.
+
+The current tool handles architectural steel studs using `STEEL_CORRECTION_FACTORS`. You can reuse this logic but should add a "Vehicle Ribs" category which is even more severe than architectural steel studs because the outer skin is also metal (conductive).
+
+**Required Change:**
+Add a specific correction factor for "Van Ribs" where the insulation is interrupted by metal ribs.
+
+```javascript
+// In calculator.js
+const STEEL_CORRECTION_FACTORS = {
+    // ... existing ...
+    'van_ribs': {
+        'default': 0.25 // Highly severe penalty. R-10 becomes R-2.5 effectively if ribs aren't covered.
+    }
+};
+```
+
+### 5. Internal Gains (Existing Compatibility)
+
+Your `internal_gains.json` file is already perfectly set up for this. It includes:
+
+* `fridge_dc`: "Fridge 12V DC (50L)" — This is standard Van Life gear.
+* `dog_med`: Standard travel companion.
+* `cook_lpg`: "Propane Cooktop" — Standard camper gear.
+
+**Recommendation:** No changes needed here, but you could add "Diesel Heater" as a heat *source* (though the calculator focuses on heat *loss*, understanding the heater output required is the goal).
+
+### 6. Solar Gain "Oven Effect"
+
+The current `README.md` notes that "Solar gain is treated as a fixed 'on/off' block". For a metal vehicle, this is insufficient. A dark grey van in the sun behaves differently than a white van.
+
+**Simple Feature Add:**
+Add a toggle in `index.html` for **"Vehicle Color"** (Light vs. Dark).
+
+* **Light:** Keep current solar gain logic.
+* **Dark:** Multiply `simInternalGain` or solar input by 1.5x during daylight hours to simulate the radiant heat transfer of the metal skin.

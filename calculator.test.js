@@ -15,7 +15,8 @@ const {
     updateCustomGain,
     syncCustomGainsFromDOM,
     renderCustomGains,
-    calculateEffectiveR
+    calculateEffectiveR,
+    applyPreset
 } = require('./calculator');
 
 describe('Tiny Home Heat Loss Calculator', () => {
@@ -42,6 +43,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="indoorTemp" value="70">
             <input type="number" id="outdoorTemp" value="10">
             <input type="number" id="groundTemp" value="50">
+            <select id="vehicleColor"><option value="light">Light</option></select>
 
             <select id="simDuration"><option value="24" selected>24</option></select>
             <input type="number" id="simInternalGain" value="400">
@@ -57,10 +59,17 @@ describe('Tiny Home Heat Loss Calculator', () => {
 
             <select id="wallAssemblyType_A"><option value="stick">Stick</option><option value="mass">Mass</option></select>
             <div id="group_stick_A">
-                <select id="wallStudMaterial_A"><option value="wood">Wood</option><option value="steel">Steel</option></select>
+                <select id="wallStudMaterial_A">
+                    <option value="wood">Wood</option>
+                    <option value="steel">Steel</option>
+                    <option value="van_ribs">Van Ribs</option>
+                </select>
                 <select id="wallStudSize_A"><option value="2x4">2x4</option></select>
-                <select id="wallStudSpacing_A"><option value="16">16</option></select>
-                <select id="wallCavityInsulation_A"><option value="fiberglass_batt">Fiberglass</option></select>
+                <select id="wallStudSpacing_A"><option value="16">16</option><option value="24">24</option></select>
+                <select id="wallCavityInsulation_A">
+                    <option value="fiberglass_batt">Fiberglass</option>
+                    <option value="thinsulate_sm600">Thinsulate</option>
+                </select>
                 <input type="number" id="wallContinuousInsulation_A" value="0">
             </div>
             <div id="group_mass_A">
@@ -76,7 +85,10 @@ describe('Tiny Home Heat Loss Calculator', () => {
             <input type="number" id="doorArea_A" value="0">
             <input type="number" id="doorR_A" value="3">
             <select id="airSealing_A"><option value="good" selected>Good</option></select>
-            <select id="massMaterial_A"><option value="wood" selected>Wood</option></select>
+            <select id="massMaterial_A">
+                <option value="wood" selected>Wood</option>
+                <option value="metal">Metal</option>
+            </select>
             <input type="number" id="slabThickness_A" value="1">
 
             <!-- Result A -->
@@ -337,6 +349,27 @@ describe('Tiny Home Heat Loss Calculator', () => {
         });
     });
 
+    describe('Mass Capacity Calculation', () => {
+        test('Calculates Metal Floor Mass Correctly', () => {
+             // Area = 100 sqft. Thickness = 0.1 inch.
+             // Volume = 100 * (0.1/12) = 0.8333 ft3
+             // Mass = 0.8333 * 490 = 408.33 lbs
+             // Capacity = 408.33 * 0.12 = 49.0 BTU/F
+
+             // Structure Baseline = Total Envelope * 1.5
+             // Assume box 10x10x10. Floor=100. Roof=100. Walls=400. Total=600.
+             // Baseline = 600 * 1.5 = 900.
+
+             // Total = 949.0
+
+             const areas = { floor: 100, total: 600 };
+             const data = { massMat: 'metal', thickness: 0.1 };
+
+             const cap = calculateMassCapacity(areas, data);
+             expect(cap).toBeCloseTo(949.0, 0);
+        });
+    });
+
     describe('Scenario A: The "Shoebox" Baseline', () => {
         test('Calculates basic Heat Loss (UA) correctly', () => {
              // Inputs from AGENTS.md Scenario A
@@ -373,7 +406,30 @@ describe('Tiny Home Heat Loss Calculator', () => {
             expect(val).toBeGreaterThan(4350);
             expect(val).toBeLessThan(4500);
         });
-    });
 
-    // ... (Keep existing B, C, Core, Surface tests if valid, updating input IDs where necessary)
+        test('Applies Van Build Preset correctly', () => {
+             // Setup Scenario A
+             const preset = document.getElementById('insulationPreset_A');
+
+             const opt = document.createElement('option');
+             opt.value = 'van_build';
+             preset.appendChild(opt);
+             preset.value = 'van_build';
+
+             // Setup other inputs that applyPreset reads/writes
+             document.getElementById('wallStudMaterial_A').value = 'wood'; // Should change to van_ribs
+
+             applyPreset('_A');
+
+             expect(document.getElementById('wallAssemblyType_A').value).toBe('stick');
+             expect(document.getElementById('wallStudSize_A').value).toBe('2x4');
+             expect(document.getElementById('wallStudMaterial_A').value).toBe('van_ribs');
+             expect(document.getElementById('wallCavityInsulation_A').value).toBe('thinsulate_sm600');
+             expect(document.getElementById('roofRValue_A').value).toBe('12');
+             expect(document.getElementById('floorRValue_A').value).toBe('5');
+
+             expect(document.getElementById('massMaterial_A').value).toBe('metal');
+             expect(document.getElementById('slabThickness_A').value).toBe('0.1');
+        });
+    });
 });
