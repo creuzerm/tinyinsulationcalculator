@@ -462,23 +462,27 @@ function applyPreset(suffix) {
         case 'code_min':
             // Stick Frame, 2x4, 16oc, Fiberglass, No CI. Result ~R-13 nominal, Eff ~11
             setAssembly('stick', '2x4', '16', 'fiberglass_batt', '0');
-            r.value = 38; f.value = 10;
+            if(r) r.value = 38;
+            if(f) f.value = 10;
             break;
         case 'high_perf':
             // Stick Frame, 2x6, 24oc, Mineral Wool, R-5 CI. Result ~R-23 nominal + 5
             setAssembly('stick', '2x6', '24', 'mineral_wool', '5');
-            r.value = 50; f.value = 20;
+            if(r) r.value = 50;
+            if(f) f.value = 20;
             break;
         case 'passive_house':
             // Double Stud or Thick Mass? Let's do 2x8 + R-10 CI for simulation or similar
             // Or better: Stick, 2x6, 24oc, Mineral Wool, R-15 CI
             setAssembly('stick', '2x6', '24', 'mineral_wool', '15');
-            r.value = 60; f.value = 30;
+            if(r) r.value = 60;
+            if(f) f.value = 30;
             break;
         case 'uninsulated':
             // Stick, 2x4, 16oc, None
             setAssembly('stick', '2x4', '16', 'none', '0');
-            r.value = 4; f.value = 1;
+            if(r) r.value = 4;
+            if(f) f.value = 1;
             break;
     }
 
@@ -726,16 +730,32 @@ function getScenarioData(suffix) {
         rWall = parseFloat(document.getElementById(`wallRValue${suffix}`)?.value) || 13;
     }
 
-    const rRoof = parseFloat(document.getElementById(`roofRValue${suffix}`).value) || 1;
-    const rFloor = parseFloat(document.getElementById(`floorRValue${suffix}`).value) || 1;
+    const rRoofEl = document.getElementById(`roofRValue${suffix}`);
+    const rRoof = rRoofEl ? (parseFloat(rRoofEl.value) || 1) : 1;
 
-    const wArea = parseFloat(document.getElementById(`windowArea${suffix}`).value) || 0;
-    const wR = parseFloat(document.getElementById(`windowR${suffix}`).value) || 1;
-    const dArea = parseFloat(document.getElementById(`doorArea${suffix}`).value) || 0;
-    const dR = parseFloat(document.getElementById(`doorR${suffix}`).value) || 1;
-    const sealing = document.getElementById(`airSealing${suffix}`).value;
-    const massMat = document.getElementById(`massMaterial${suffix}`).value;
-    const thickness = parseFloat(document.getElementById(`slabThickness${suffix}`).value) || 1;
+    const rFloorEl = document.getElementById(`floorRValue${suffix}`);
+    const rFloor = rFloorEl ? (parseFloat(rFloorEl.value) || 1) : 1;
+
+    const wAreaEl = document.getElementById(`windowArea${suffix}`);
+    const wArea = wAreaEl ? (parseFloat(wAreaEl.value) || 0) : 0;
+
+    const wREl = document.getElementById(`windowR${suffix}`);
+    const wR = wREl ? (parseFloat(wREl.value) || 1) : 1;
+
+    const dAreaEl = document.getElementById(`doorArea${suffix}`);
+    const dArea = dAreaEl ? (parseFloat(dAreaEl.value) || 0) : 0;
+
+    const dREl = document.getElementById(`doorR${suffix}`);
+    const dR = dREl ? (parseFloat(dREl.value) || 1) : 1;
+
+    const sealingEl = document.getElementById(`airSealing${suffix}`);
+    const sealing = sealingEl ? sealingEl.value : 'poor';
+
+    const massMatEl = document.getElementById(`massMaterial${suffix}`);
+    const massMat = massMatEl ? massMatEl.value : 'wood';
+
+    const thicknessEl = document.getElementById(`slabThickness${suffix}`);
+    const thickness = thicknessEl ? (parseFloat(thicknessEl.value) || 1) : 1;
 
     return { rWall, rRoof, rFloor, wArea, wR, dArea, dR, sealing, massMat, thickness };
 }
