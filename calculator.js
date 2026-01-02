@@ -830,12 +830,13 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     const rW_win = safeR(data.wR);
     const rD_door = safeR(data.dR);
 
-    // DETECT VEHICLE CONTEXT
+    // DETECT FLOOR COUPLING CONTEXT
     const shape = document.getElementById('buildingShape')?.value;
-    const isVehicle = (shape === 'cargo-van');
+    // Floor is Air Coupled if it is a vehicle OR if the user selected a raised floor type (Wood/Metal)
+    // Concrete and Stone (Earth) are assumed to be Ground Coupled (Slab on Grade)
+    const isAirCoupled = (shape === 'cargo-van') || (data.massMat === 'wood' || data.massMat === 'metal');
 
-    // If it's a vehicle, the floor is exposed to Outside Air, not Ground
-    const floorDeltaT = isVehicle ? deltaT_Air : deltaT_Ground;
+    const floorDeltaT = isAirCoupled ? deltaT_Air : deltaT_Ground;
 
     const lossWall = (netWall / safeR(data.rWall)) * deltaT_Air;
     const lossRoof = (netRoof / safeR(data.rRoof)) * deltaT_Air;
@@ -849,6 +850,11 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     ua += (data.wArea / rW_win);
     ua += (data.dArea / rD_door);
 
+    // If air coupled, the floor conductance contributes to the Air UA, not the Ground UA
+    if (isAirCoupled) {
+        ua += (areas.floor / safeR(data.rFloor));
+    }
+
     let infiltrationLoss = 0;
     if(data.sealing === 'poor') {
          infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
@@ -856,7 +862,10 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     }
 
     const totalLoss = lossWall + lossRoof + lossWindow + lossDoor + lossFloor + infiltrationLoss;
-    const uaFloor = (areas.floor / safeR(data.rFloor));
+
+    // uaFloor represents the conductance to the GROUND.
+    // If air coupled, this is 0.
+    const uaFloor = isAirCoupled ? 0 : (areas.floor / safeR(data.rFloor));
 
     return {
         totalLoss, ua, uaFloor,

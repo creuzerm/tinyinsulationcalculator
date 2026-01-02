@@ -403,8 +403,11 @@ describe('Tiny Home Heat Loss Calculator', () => {
 
             const resultText = document.getElementById('resultLoss_A').textContent.replace(/,/g, '');
             const val = parseInt(resultText);
-            expect(val).toBeGreaterThan(4350);
-            expect(val).toBeLessThan(4500);
+            // Updated expectation: Wood Frame floor is now Air Coupled.
+            // Winter DeltaT (Air) = 50. DeltaT (Ground) = 20.
+            // Heat loss increases significantly (approx 4400 -> 5000)
+            expect(val).toBeGreaterThan(4900);
+            expect(val).toBeLessThan(5100);
         });
 
         test('Applies Van Build Preset correctly', () => {
