@@ -243,7 +243,28 @@ npm test
 
 Tests are automatically run on push and pull request via GitHub Actions.
 
-## 5. Verification Instructions for Agents
+## 5. Skinning & Extension Architecture
+
+To allow for white-labeling and customization without forking the core logic, this repository maintains a strict separation of structure, style, and private extensions.
+
+### 5.1 Architecture Directives
+**Do not revert these structural elements.** They are required for the private build process.
+
+1.  **Externalized Styles (`styles.css`):**
+    *   The core CSS must remain in `styles.css`, not in `index.html`.
+    *   This allows the private repo to overwrite `styles.css` with a branded version during the build.
+    *   `index.html` must link to `styles.css` and `skin.css`.
+
+2.  **Skin Hooks (`skin.css` & `skin.js`):**
+    *   These files must exist in the root but remain empty in the public repo.
+    *   `skin.css` is loaded *after* `styles.css` to allow overrides.
+    *   `skin.js` is loaded at the end of the `<body>` to allow UI injection (e.g., adding a custom navbar or footer).
+
+3.  **Assets Directory (`assets/`):**
+    *   All static images (logos, icons) must reside in the `assets/` folder.
+    *   Do not place images in the root. This allows the private repo to overwrite assets cleanly.
+
+## 6. Verification Instructions for Agents
 
 When verifying the tool via code interpretation or DOM manipulation:
 
