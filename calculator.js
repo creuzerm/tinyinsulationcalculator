@@ -6,19 +6,71 @@ let breakdownChart;
 const CONFIG_FIELDS = [
     // Shared
     'buildingShape', 'indoorTemp', 'outdoorTemp', 'groundTemp', 'abToggle',
-    // Dimensions (all potential ones, though some might not exist depending on shape)
+    // Dimensions
     'length', 'width', 'height', 'roofPitch', 'springWallHeight',
     // Scenario A
-    'insulationPreset_A', 'wallRValue_A', 'roofRValue_A', 'floorRValue_A',
+    'insulationPreset_A',
+    // Wall Assembly A
+    'wallAssemblyType_A', 'wallStudSize_A', 'wallStudMaterial_A', 'wallStudSpacing_A', 'wallCavityInsulation_A', 'wallContinuousInsulation_A',
+    'wallMassMaterial_A', 'wallMassThickness_A', 'wallMassInsulation_A',
+    // Other A
+    'roofRValue_A', 'floorRValue_A',
     'windowArea_A', 'windowR_A', 'doorArea_A', 'doorR_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
     // Scenario B
-    'insulationPreset_B', 'wallRValue_B', 'roofRValue_B', 'floorRValue_B',
+    'insulationPreset_B',
+    // Wall Assembly B
+    'wallAssemblyType_B', 'wallStudSize_B', 'wallStudMaterial_B', 'wallStudSpacing_B', 'wallCavityInsulation_B', 'wallContinuousInsulation_B',
+    'wallMassMaterial_B', 'wallMassThickness_B', 'wallMassInsulation_B',
+    // Other B
+    'roofRValue_B', 'floorRValue_B',
     'windowArea_B', 'windowR_B', 'doorArea_B', 'doorR_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
     // Simulation
     'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
     // Custom Data
     'customGainsData'
 ];
+
+const MATERIALS = {
+    // Framing
+    wood_stud: { r_inch: 1.25, type: 'framing' },
+    steel_stud: { type: 'framing' },
+
+    // Mass / Solid
+    cmu_standard: { r_total: 1.11, type: 'mass' },
+    aircrete: { r_inch: 2.4, type: 'mass_solid' },
+    concrete: { r_inch: 0.1, type: 'mass_solid' },
+    brick: { r_inch: 0.2, type: 'mass_solid' },
+
+    // Insulation (Cavity)
+    fiberglass_batt: { r_inch: 3.2 },
+    mineral_wool: { r_inch: 4.2 },
+    cellulose: { r_inch: 3.7 },
+    spray_foam_open: { r_inch: 3.6 },
+    spray_foam_closed: { r_inch: 6.5 },
+    none: { r_inch: 0 },
+
+    // Air Films
+    air_film_int: { r_total: 0.68 },
+    air_film_ext: { r_total: 0.17 }
+};
+
+// ASHRAE 90.1 / IECC Correction Factors for Steel Stud Walls
+// Factor multiplies the Cavity Insulation R-Value.
+// Format: [StudDepth][Spacing]
+const STEEL_CORRECTION_FACTORS = {
+    '2x4': {
+        '16': 0.46, // R-13 becomes ~R-6
+        '24': 0.55
+    },
+    '2x6': {
+        '16': 0.37, // R-19 becomes ~R-7.1
+        '24': 0.45
+    },
+    '2x8': { // Extrapolated / Approx
+        '16': 0.30,
+        '24': 0.35
+    }
+};
 
 // Global variable to store the loaded data
 let gainData = null;
@@ -32,7 +84,6 @@ async function loadGainData() {
         calculateDetailedGains(); // Initial calc
     } catch (error) {
         console.error("Failed to load gain data:", error);
-        // Fallback to hardcoded or show error
     }
 }
 
@@ -244,13 +295,8 @@ function calculateDetailedGains() {
         const section = input.dataset.section;
 
         if (qty > 0) {
-            // 1. Calculate Daily Watt-Hours (Sensible Only)
             const dailyWh = wattsSensible * dutyHours * qty;
-
-            // 2. Convert to Average Watts (Continuous equivalent)
             const avgWatts = dailyWh / 24;
-
-            // 3. Convert Watts to BTU/hr (1 Watt = 3.412 BTU/hr)
             const btuHr = avgWatts * 3.412;
 
             totalBTUPerHour += btuHr;
@@ -261,7 +307,6 @@ function calculateDetailedGains() {
         }
     });
 
-    // Custom Gains Calculation
     customGains.forEach(item => {
         const qty = parseFloat(item.qty) || 0;
         const watts = parseFloat(item.watts) || 0;
@@ -276,17 +321,14 @@ function calculateDetailedGains() {
         }
     });
 
-    // Update Section Summaries
     for(const [key, val] of Object.entries(sectionTotals)) {
         const el = document.getElementById(`gain_summary_${key}`);
         if(el) el.textContent = `${Math.round(val)} BTU/hr`;
     }
 
-    // Update the main simulation input
     const simInput = document.getElementById('simInternalGain');
     if (simInput) {
         simInput.value = Math.round(totalBTUPerHour);
-        // Trigger the main calculation
         if (typeof calculateAll === 'function') calculateAll();
     }
 }
@@ -312,18 +354,16 @@ function deserializeConfiguration() {
     const params = new URLSearchParams(window.location.search);
     if ([...params].length === 0) return false;
 
-    // 1. Set Building Shape First (to trigger dimension inputs)
     if (params.has('buildingShape')) {
         const shape = params.get('buildingShape');
         const shapeEl = document.getElementById('buildingShape');
         if (shapeEl) {
             shapeEl.value = shape;
             saveInputToLocalStorage(shapeEl);
-            updateDimensions(); // This creates the specific dimension inputs
+            updateDimensions();
         }
     }
 
-    // 2. Set All Fields
     CONFIG_FIELDS.forEach(id => {
         if (params.has(id)) {
             const el = document.getElementById(id);
@@ -334,15 +374,14 @@ function deserializeConfiguration() {
                 } else {
                     el.value = val;
                 }
-                saveInputToLocalStorage(el); // Persist immediately
+                saveInputToLocalStorage(el);
             }
         }
     });
 
-    return true; // Config loaded
+    return true;
 }
 
-// --- STORAGE HELPERS ---
 function saveInputToLocalStorage(element) {
     if (element && element.id) {
         if(element.type === 'checkbox') {
@@ -366,7 +405,6 @@ function loadInputFromLocalStorage(element) {
     }
 }
 
-// Shape Templates
 const dimensionTemplates = {
     rectangle: `
         <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
@@ -386,27 +424,70 @@ const dimensionTemplates = {
     `
 };
 
-// --- PRESET LOGIC ---
 function applyPreset(suffix) {
     const preset = document.getElementById(`insulationPreset${suffix}`).value;
     if(!preset) return;
 
-    const w = document.getElementById(`wallRValue${suffix}`);
+    // We only set R-values for Roof and Floor directly.
+    // Wall R-Value is now derived from assembly, so we set the Assembly fields.
     const r = document.getElementById(`roofRValue${suffix}`);
     const f = document.getElementById(`floorRValue${suffix}`);
 
+    // Helpers to set assembly inputs
+    const setAssembly = (type, studSize, spacing, cavIns, ci, massMat, massThick, massIns) => {
+        const setVal = (id, val) => {
+            const el = document.getElementById(id + suffix);
+            if (el) {
+                el.value = val;
+                saveInputToLocalStorage(el);
+            }
+        };
+
+        setVal('wallAssemblyType', type);
+
+        if (type === 'stick') {
+            setVal('wallStudSize', studSize);
+            setVal('wallStudMaterial', 'wood'); // Default to wood for presets for now
+            setVal('wallStudSpacing', spacing);
+            setVal('wallCavityInsulation', cavIns);
+            setVal('wallContinuousInsulation', ci);
+        } else {
+            setVal('wallMassMaterial', massMat);
+            setVal('wallMassThickness', massThick);
+            setVal('wallMassInsulation', massIns);
+        }
+    };
+
     switch(preset) {
-        case 'code_min': w.value = 13; r.value = 38; f.value = 10; break;
-        case 'high_perf': w.value = 21; r.value = 50; f.value = 20; break;
-        case 'passive_house': w.value = 32; r.value = 50; f.value = 30; break;
-        case 'uninsulated': w.value = 4; r.value = 4; f.value = 1; break;
+        case 'code_min':
+            // Stick Frame, 2x4, 16oc, Fiberglass, No CI. Result ~R-13 nominal, Eff ~11
+            setAssembly('stick', '2x4', '16', 'fiberglass_batt', '0');
+            r.value = 38; f.value = 10;
+            break;
+        case 'high_perf':
+            // Stick Frame, 2x6, 24oc, Mineral Wool, R-5 CI. Result ~R-23 nominal + 5
+            setAssembly('stick', '2x6', '24', 'mineral_wool', '5');
+            r.value = 50; f.value = 20;
+            break;
+        case 'passive_house':
+            // Double Stud or Thick Mass? Let's do 2x8 + R-10 CI for simulation or similar
+            // Or better: Stick, 2x6, 24oc, Mineral Wool, R-15 CI
+            setAssembly('stick', '2x6', '24', 'mineral_wool', '15');
+            r.value = 60; f.value = 30;
+            break;
+        case 'uninsulated':
+            // Stick, 2x4, 16oc, None
+            setAssembly('stick', '2x4', '16', 'none', '0');
+            r.value = 4; f.value = 1;
+            break;
     }
-    // Save immediately on preset apply
+
     saveInputToLocalStorage(document.getElementById(`insulationPreset${suffix}`));
-    saveInputToLocalStorage(w);
     saveInputToLocalStorage(r);
     saveInputToLocalStorage(f);
 
+    // Force UI update to show correct fields
+    toggleScenarioAssemblyUI(suffix);
     calculateAll();
 }
 
@@ -415,24 +496,15 @@ function applyGlazingPreset(suffix) {
     if(!preset || preset === 'custom') return;
 
     const areas = getSurfaceAreas();
-    const floor = areas.floor; // Use floor area as base
+    const floor = areas.floor;
 
     let winPct = 0;
     let doorArea = 20;
 
     switch(preset) {
-        case 'minimal':
-            winPct = 0.10;
-            doorArea = 20;
-            break;
-        case 'common':
-            winPct = 0.20;
-            doorArea = 20;
-            break;
-        case 'generous':
-            winPct = 0.35;
-            doorArea = 40;
-            break;
+        case 'minimal': winPct = 0.10; doorArea = 20; break;
+        case 'common': winPct = 0.20; doorArea = 20; break;
+        case 'generous': winPct = 0.35; doorArea = 40; break;
     }
 
     const wArea = document.getElementById(`windowArea${suffix}`);
@@ -455,56 +527,60 @@ function updateDimensions() {
     const container = document.getElementById('dimensionInputs');
     container.innerHTML = dimensionTemplates[shape];
 
-    // Re-bind listeners & Load Saved Data for these dynamic inputs
     container.querySelectorAll('input').forEach(i => {
-        loadInputFromLocalStorage(i); // Restore persisted values
+        loadInputFromLocalStorage(i);
         i.addEventListener('input', (e) => {
             saveInputToLocalStorage(e.target);
             calculateAll();
         });
     });
-    // Removed calculateAll() call here to avoid double calculation/side-effects during setup
 }
 
-// --- TOGGLE LOGIC ---
 function toggleABMode() {
     const isEnabled = document.getElementById('abToggle').checked;
-
     const scenariosGrid = document.getElementById('scenariosGrid');
     const scenarioB = document.getElementById('scenarioBoxB');
     const headerA = document.getElementById('headerA');
-
     const resultsGrid = document.getElementById('resultsGrid');
     const resultB = document.getElementById('resultBoxB');
     const resultHeaderA = document.getElementById('resultHeaderA');
     const chartContainers = document.querySelectorAll('.lg\\:col-span-2-dynamic');
 
     if(isEnabled) {
-        // Turn ON Comparison
         scenariosGrid.classList.add('lg:grid-cols-2');
         scenarioB.classList.remove('hidden');
         headerA.textContent = "Scenario A (Standard)";
-
         resultsGrid.classList.add('lg:grid-cols-2');
         resultB.classList.remove('hidden');
         resultHeaderA.textContent = "Scenario A Results";
-
         chartContainers.forEach(el => el.classList.add('lg:col-span-2'));
     } else {
-        // Turn OFF Comparison
         scenariosGrid.classList.remove('lg:grid-cols-2');
         scenarioB.classList.add('hidden');
         headerA.textContent = "Construction Details";
-
         resultsGrid.classList.remove('lg:grid-cols-2');
         resultB.classList.add('hidden');
         resultHeaderA.textContent = "Estimated Results";
-
         chartContainers.forEach(el => el.classList.remove('lg:col-span-2'));
     }
     calculateAll();
 }
 
+function toggleScenarioAssemblyUI(suffix) {
+    const type = document.getElementById(`wallAssemblyType${suffix}`)?.value;
+    const stickGroup = document.getElementById(`group_stick${suffix}`);
+    const massGroup = document.getElementById(`group_mass${suffix}`);
+
+    if (!stickGroup || !massGroup) return;
+
+    if (type === 'stick') {
+        stickGroup.classList.remove('hidden');
+        massGroup.classList.add('hidden');
+    } else {
+        stickGroup.classList.add('hidden');
+        massGroup.classList.remove('hidden');
+    }
+}
 
 // --- CALCULATION LOGIC ---
 
@@ -526,43 +602,138 @@ function getSurfaceAreas() {
             const rise = (W/2) * (pitch/12);
             const slope = Math.sqrt((W/2)**2 + rise**2);
             areas.roof = L * slope * 2;
-            // Add gable ends to wall
             areas.wall += (W * rise);
         }
     } else if (shape === 'a-frame') {
             const H = parseFloat(document.getElementById('height')?.value) || 0;
             const slope = Math.sqrt((W/2)**2 + H**2);
             areas.roof = 2 * L * slope;
-            areas.wall = W * H; // Two triangle ends combined
+            areas.wall = W * H;
             areas.floor = L * W;
     } else if (shape === 'gothic-arch') {
         const spring = parseFloat(document.getElementById('springWallHeight')?.value) || 0;
         const r = W/2;
         areas.floor = L * W;
-        areas.wall = (2*L*spring) + (Math.PI * r**2); // Ends
-        areas.roof = L * (Math.PI * r); // Arch top
+        areas.wall = (2*L*spring) + (Math.PI * r**2);
+        areas.roof = L * (Math.PI * r);
     }
 
     areas.total = areas.wall + areas.roof;
     return areas;
 }
 
+function calculateEffectiveR(assembly) {
+    // Mandatory Air Films (R-0.68 Interior + R-0.17 Exterior)
+    let r_total = MATERIALS.air_film_int.r_total + MATERIALS.air_film_ext.r_total;
+
+    // Add Gypsum/Sheathing defaults (R-1.0)
+    r_total += 1.0;
+
+    if (assembly.type === 'stick') {
+        // Stud Depth
+        let depth = 3.5;
+        if (assembly.studSize === '2x6') depth = 5.5;
+        if (assembly.studSize === '2x8') depth = 7.25;
+
+        // Cavity Insulation R
+        const insType = assembly.cavityInsulation || 'fiberglass_batt';
+        const insRPerInch = MATERIALS[insType]?.r_inch || 0;
+        let r_cavity = depth * insRPerInch;
+
+        // Determine Calculation Method based on Material
+        const mat = assembly.studMaterial || 'wood'; // Default to wood
+
+        if (mat === 'steel') {
+            // Steel: Use Correction Factors
+            const sizeKey = assembly.studSize;
+            const spaceKey = assembly.spacing;
+            const factor = STEEL_CORRECTION_FACTORS[sizeKey]?.[spaceKey] || 0.46; // Fallback to 0.46 if not found
+
+            // Effective Cavity R = Nominal Cavity R * Factor
+            // NOTE: Steel stud assembly essentially bypasses parallel path math in this simplified model
+            // by derating the cavity R-value directly which accounts for the bridge.
+            // The stud itself is not added in parallel because the factor accounts for the composite performance.
+            r_total += (r_cavity * factor);
+
+        } else {
+            // Wood: Parallel Path Method
+            const framingFactor = assembly.spacing === '24' ? 0.22 : 0.25;
+
+            const studRPerInch = MATERIALS.wood_stud.r_inch;
+            const r_stud = depth * studRPerInch;
+
+            const u_stud = r_stud > 0 ? 1/r_stud : 0;
+            const u_cavity_final = r_cavity > 0 ? 1/r_cavity : 1/0.9; // Empty cavity R~0.9
+
+            const u_effective = (framingFactor * u_stud) + ((1-framingFactor) * u_cavity_final);
+
+            if (u_effective > 0) {
+                r_total += (1 / u_effective);
+            }
+        }
+
+        // Add Continuous Insulation (Series)
+        const ci = parseFloat(assembly.continuousInsulation) || 0;
+        r_total += ci;
+
+    } else if (assembly.type === 'mass') {
+        // Series Calculation
+        const matType = assembly.massMaterial || 'cmu_standard';
+        const thickness = parseFloat(assembly.massThickness) || 8;
+        const ci = parseFloat(assembly.massInsulation) || 0;
+
+        // Mass Layer
+        if (MATERIALS[matType]) {
+            if (MATERIALS[matType].r_total) {
+                // Fixed R (like CMU block)
+                r_total += MATERIALS[matType].r_total;
+            } else if (MATERIALS[matType].r_inch) {
+                // Per inch
+                r_total += (thickness * MATERIALS[matType].r_inch);
+            }
+        }
+
+        // Insulation Layer (Series)
+        r_total += ci;
+    }
+
+    return r_total;
+}
+
 function getScenarioData(suffix) {
-    // R-Values
-    const rWall = parseFloat(document.getElementById(`wallRValue${suffix}`).value) || 1;
+    // WALL R-VALUE CALCULATION
+    const assType = document.getElementById(`wallAssemblyType${suffix}`)?.value;
+    let rWall = 0;
+
+    if (assType) {
+        // Build Assembly Object
+        const assembly = {
+            type: assType, // 'stick' or 'mass'
+            // Stick
+            studSize: document.getElementById(`wallStudSize${suffix}`)?.value,
+            studMaterial: document.getElementById(`wallStudMaterial${suffix}`)?.value,
+            spacing: document.getElementById(`wallStudSpacing${suffix}`)?.value,
+            cavityInsulation: document.getElementById(`wallCavityInsulation${suffix}`)?.value,
+            continuousInsulation: document.getElementById(`wallContinuousInsulation${suffix}`)?.value,
+            // Mass
+            massMaterial: document.getElementById(`wallMassMaterial${suffix}`)?.value,
+            massThickness: document.getElementById(`wallMassThickness${suffix}`)?.value,
+            massInsulation: document.getElementById(`wallMassInsulation${suffix}`)?.value
+        };
+        rWall = calculateEffectiveR(assembly);
+    } else {
+        // Fallback or Legacy
+        rWall = parseFloat(document.getElementById(`wallRValue${suffix}`)?.value) || 13;
+    }
+
     const rRoof = parseFloat(document.getElementById(`roofRValue${suffix}`).value) || 1;
     const rFloor = parseFloat(document.getElementById(`floorRValue${suffix}`).value) || 1;
 
-    // Windows & Doors
     const wArea = parseFloat(document.getElementById(`windowArea${suffix}`).value) || 0;
     const wR = parseFloat(document.getElementById(`windowR${suffix}`).value) || 1;
     const dArea = parseFloat(document.getElementById(`doorArea${suffix}`).value) || 0;
     const dR = parseFloat(document.getElementById(`doorR${suffix}`).value) || 1;
-
-    // Air Sealing
     const sealing = document.getElementById(`airSealing${suffix}`).value;
-
-    // Mass
     const massMat = document.getElementById(`massMaterial${suffix}`).value;
     const thickness = parseFloat(document.getElementById(`slabThickness${suffix}`).value) || 1;
 
@@ -570,46 +741,39 @@ function getScenarioData(suffix) {
 }
 
 function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
-    // Subtract openings from wall first, then roof if needed
     let netWall = areas.wall - (data.wArea + data.dArea);
     let netRoof = areas.roof;
 
     if (netWall < 0) {
-        netRoof += netWall; // Subtract excess from roof
+        netRoof += netWall;
         netWall = 0;
     }
     netRoof = Math.max(0, netRoof);
 
-    // Ensure R-values are not zero
     const safeR = (r) => Math.max(r, 0.1);
     const rW_win = safeR(data.wR);
     const rD_door = safeR(data.dR);
 
-    // Conductive Losses
-    const lossWall = (netWall / data.rWall) * deltaT_Air;
-    const lossRoof = (netRoof / data.rRoof) * deltaT_Air;
+    const lossWall = (netWall / safeR(data.rWall)) * deltaT_Air;
+    const lossRoof = (netRoof / safeR(data.rRoof)) * deltaT_Air;
     const lossWindow = (data.wArea / rW_win) * deltaT_Air;
     const lossDoor = (data.dArea / rD_door) * deltaT_Air;
-    const lossFloor = (areas.floor / data.rFloor) * deltaT_Ground;
+    const lossFloor = (areas.floor / safeR(data.rFloor)) * deltaT_Ground;
 
-    // UA (Conductance) for Simulation
     let ua = 0;
-    ua += (netWall / data.rWall);
-    ua += (netRoof / data.rRoof);
+    ua += (netWall / safeR(data.rWall));
+    ua += (netRoof / safeR(data.rRoof));
     ua += (data.wArea / rW_win);
     ua += (data.dArea / rD_door);
 
-    // Sealing Penalty (Infiltration)
-    // Simplified: Add % to total UA
     let infiltrationLoss = 0;
     if(data.sealing === 'poor') {
-         // Approx 25% of conductive load
          infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
          ua *= 1.25;
     }
 
     const totalLoss = lossWall + lossRoof + lossWindow + lossDoor + lossFloor + infiltrationLoss;
-    const uaFloor = (areas.floor / data.rFloor);
+    const uaFloor = (areas.floor / safeR(data.rFloor));
 
     return {
         totalLoss, ua, uaFloor,
@@ -625,26 +789,20 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
 }
 
 function calculateMassCapacity(areas, data) {
-    let density = 145, specHeat = 0.2; // Concrete
+    let density = 145, specHeat = 0.2;
     if(data.massMat === 'stone') { density = 135; specHeat = 0.2; }
     if(data.massMat === 'wood') { density = 30; specHeat = 0.4; }
 
     const vol = areas.floor * (data.thickness / 12);
     const mass = vol * density;
     const floorCapacity = mass * specHeat;
-
-    // Add Structure Mass (Approximation)
-    // Even a light shed has wall mass (~1.5 BTU/sf/F).
-    // This baseline stability mass prevents division by near-zero errors.
     const structureCapacity = areas.total * 1.5;
 
     return floorCapacity + structureCapacity;
 }
 
 function calculateAll() {
-    const isAB = document.getElementById('abToggle').checked;
-
-    // 1. Common Data
+    const isAB = document.getElementById('abToggle')?.checked;
     const areas = getSurfaceAreas();
     if(areas.total <= 0) return;
 
@@ -654,12 +812,10 @@ function calculateAll() {
     const dtAir = Math.max(0, tIn - tOut);
     const dtGround = Math.max(0, tIn - tGround);
 
-    // 2. Scenario A
     const dataA = getScenarioData('_A');
     const lossA = calculateHeatLoss(areas, dataA, dtAir, dtGround);
     const capA = calculateMassCapacity(areas, dataA);
 
-    // Update A UI
     document.getElementById('resultLoss_A').textContent = Math.round(lossA.totalLoss).toLocaleString();
     const dropA = lossA.totalLoss / Math.max(capA, 1);
     document.getElementById('resultDrop_A').textContent = dropA.toFixed(2);
@@ -672,14 +828,12 @@ function calculateAll() {
         lossB = calculateHeatLoss(areas, dataB, dtAir, dtGround);
         capB = calculateMassCapacity(areas, dataB);
 
-        // Update B UI
         document.getElementById('resultLoss_B').textContent = Math.round(lossB.totalLoss).toLocaleString();
         const dropB = lossB.totalLoss / Math.max(capB, 1);
         document.getElementById('resultDrop_B').textContent = dropB.toFixed(2);
         updateBreakdownUI('breakdown_B', lossB.breakdown);
     }
 
-    // 6. Update Charts
     updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB);
     updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround);
     updateBreakdownChart(isAB, lossA, lossB);
@@ -700,9 +854,9 @@ function updateBreakdownUI(elementId, breakdown) {
 }
 
 function updateBreakdownChart(isAB, lossA, lossB) {
-    const ctx = document.getElementById('breakdownChart').getContext('2d');
+    const ctx = document.getElementById('breakdownChart')?.getContext('2d');
+    if(!ctx) return;
 
-    // Data Preparation
     const labels = Object.keys(lossA.breakdown);
     const dataA = Object.values(lossA.breakdown);
     const dataB = isAB && lossB ? Object.values(lossB.breakdown) : [];
@@ -710,7 +864,7 @@ function updateBreakdownChart(isAB, lossA, lossB) {
     const datasets = [{
         label: 'Scenario A',
         data: dataA,
-        backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 1
     }];
@@ -719,7 +873,7 @@ function updateBreakdownChart(isAB, lossA, lossB) {
         datasets.push({
             label: 'Scenario B',
             data: dataB,
-            backgroundColor: 'rgba(16, 185, 129, 0.7)', // Green
+            backgroundColor: 'rgba(16, 185, 129, 0.7)',
             borderColor: 'rgba(16, 185, 129, 1)',
             borderWidth: 1
         });
@@ -750,18 +904,16 @@ function updateBreakdownChart(isAB, lossA, lossB) {
 }
 
 function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
-    const ctx = document.getElementById('heatLossChart').getContext('2d');
+    const ctx = document.getElementById('heatLossChart')?.getContext('2d');
+    if(!ctx) return;
+
     const labels = [];
     const d_A = [];
     const d_B = [];
 
-    // Dynamic Chart Range logic based on Design Temps
     const currentOutdoor = parseFloat(document.getElementById('outdoorTemp').value);
-    // Ensure we cover from roughly 20 below coldest to 20 above hottest, or at least 0-60 baseline
     const minT = Math.min(0, currentOutdoor - 10, tIn - 30);
     const maxT = Math.max(60, currentOutdoor + 10, tIn + 10);
-
-    // Round to nearest 5 for clean ticks
     const startT = Math.floor(minT / 5) * 5;
     const endT = Math.ceil(maxT / 5) * 5;
 
@@ -806,13 +958,14 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
 }
 
 function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
-    const ctx = document.getElementById('simulationChart').getContext('2d');
+    const ctx = document.getElementById('simulationChart')?.getContext('2d');
+    if(!ctx) return;
 
     const duration = parseInt(document.getElementById('simDuration').value);
     const low = parseFloat(document.getElementById('simLowTemp').value);
     const high = parseFloat(document.getElementById('simHighTemp').value);
     const iGain = parseFloat(document.getElementById('simInternalGain').value);
-    const sGain = 1000; // Simplified average solar for A/B demo
+    const sGain = 1000;
 
     const labels = [];
     const simA = [];
@@ -822,39 +975,28 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
     let currA = tIn;
     let currB = tIn;
 
-    // Sub-step configuration for stability
-    const stepsPerHour = 60; // 1-minute steps
+    const stepsPerHour = 60;
     const dt = 1 / stepsPerHour;
 
     for(let h=0; h<=duration; h++) {
-        // Time Label
         if(h%24 === 0) labels.push(`Day ${h/24 + 1}`);
         else labels.push('');
 
-        // Outdoor Temp (Sinusoidal)
         const avg = (high+low)/2;
         const amp = (high-low)/2;
         const hDay = h%24;
-        const tOut = avg - amp * Math.cos(Math.PI * (hDay-4)/12); // Low at 4am
+        const tOut = avg - amp * Math.cos(Math.PI * (hDay-4)/12);
         simOut.push(tOut);
 
-        // Solar (Simple Step)
         let sol = (hDay >= 9 && hDay <= 16) ? sGain : 0;
-
-        // Net Gains
         const gains = iGain + sol;
 
-        // --- INTEGRATION LOOP ---
-        // Run 60 mini-steps for every hour to prevent oscillation
         for(let m=0; m<stepsPerHour; m++) {
-            // Step A
-            // loss.ua is the conductance. Rate of change = (Gains - ConductiveLoss) / Capacity
             const loadA = (lossA.ua * (currA - tOut)) + (lossA.uaFloor * (currA - tGround));
-            const rateA = (gains - loadA) / Math.max(capA, 50); // Clamp min capacity to 50
+            const rateA = (gains - loadA) / Math.max(capA, 50);
             currA += rateA * dt;
 
             if(isAB) {
-                // Step B
                 const loadB = (lossB.ua * (currB - tOut)) + (lossB.uaFloor * (currB - tGround));
                 const rateB = (gains - loadB) / Math.max(capB, 50);
                 currB += rateB * dt;
@@ -874,7 +1016,7 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
         datasets.splice(1, 0, { label: 'Indoor B', data: simB, borderColor: '#10B981', tension: 0.4, pointRadius: 0 });
     }
 
-        if(simulationChart) simulationChart.destroy();
+    if(simulationChart) simulationChart.destroy();
     simulationChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -892,14 +1034,11 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
     });
 }
 
-// --- INIT ---
 function init() {
-
-    // Helper to attach listeners AND load data
     const attachAndLoad = (id) => {
         const el = document.getElementById(id);
         if(el) {
-            loadInputFromLocalStorage(el); // Load on start
+            loadInputFromLocalStorage(el);
             el.addEventListener('input', (e) => {
                 saveInputToLocalStorage(e.target);
                 calculateAll();
@@ -908,14 +1047,12 @@ function init() {
                     saveInputToLocalStorage(e.target);
                     calculateAll();
             });
-            // Specific handler for gain counts
             if(id.startsWith('gainCount')) {
                 el.addEventListener('input', updateInternalGains);
             }
         }
     };
 
-    // 1. Toggle Switch
     const toggle = document.getElementById('abToggle');
     if (toggle) {
         loadInputFromLocalStorage(toggle);
@@ -926,7 +1063,6 @@ function init() {
         });
     }
 
-    // 2. Shape Selector (triggers dimension update)
     const shapeEl = document.getElementById('buildingShape');
     if (shapeEl) {
         loadInputFromLocalStorage(shapeEl);
@@ -936,28 +1072,39 @@ function init() {
         });
     }
 
-    // 3. Update Dimensions first (to inject inputs)
     updateDimensions();
 
-    // 4. Attach to Shared Inputs
     ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp','customGainsData'].forEach(attachAndLoad);
 
-    // 5. Attach to Scenario Inputs
     ['_A','_B'].forEach(s => {
-        ['insulationPreset','glazingPreset','wallRValue','roofRValue','floorRValue','windowArea','windowR','doorArea','doorR','airSealing','massMaterial','slabThickness'].forEach(base => {
+        // Shared & Others
+        ['insulationPreset','glazingPreset','roofRValue','floorRValue',
+         'windowArea','windowR','doorArea','doorR','airSealing','massMaterial','slabThickness'].forEach(base => {
             attachAndLoad(base+s);
         });
 
-        // Reverse Binding: If manual edits occur, clear presets
-        ['wallRValue','roofRValue','floorRValue'].forEach(k => {
-            const el = document.getElementById(k+s);
-            if(el) {
-                el.addEventListener('input', () => {
-                    const pre = document.getElementById('insulationPreset'+s);
-                    if(pre) { pre.value = ''; saveInputToLocalStorage(pre); }
-                });
-            }
+        // Assembly Fields
+        ['wallAssemblyType','wallStudSize','wallStudMaterial','wallStudSpacing','wallCavityInsulation','wallContinuousInsulation',
+         'wallMassMaterial','wallMassThickness','wallMassInsulation'].forEach(base => {
+             const id = base+s;
+             const el = document.getElementById(id);
+             if (el) {
+                 loadInputFromLocalStorage(el);
+                 el.addEventListener('change', (e) => {
+                    saveInputToLocalStorage(e.target);
+                    // If type changes, toggle UI
+                    if(id.startsWith('wallAssemblyType')) toggleScenarioAssemblyUI(s);
+                    calculateAll();
+                 });
+                 el.addEventListener('input', (e) => {
+                    saveInputToLocalStorage(e.target);
+                    calculateAll();
+                 });
+             }
         });
+
+        // Toggle visibility initially
+        toggleScenarioAssemblyUI(s);
 
         ['windowArea','doorArea'].forEach(k => {
              const el = document.getElementById(k+s);
@@ -970,21 +1117,24 @@ function init() {
         });
     });
 
-    // 6. Initial State Setters
-    // Apply defaults (if presets are selected)
-    ['_A', '_B'].forEach(s => {
-        applyPreset(s);
-        applyGlazingPreset(s);
-    });
+    // Check if configuration loaded from URL, otherwise apply defaults
+    if (!deserializeConfiguration()) {
+        ['_A', '_B'].forEach(s => {
+            // Only apply defaults if local storage is empty for these?
+            // For now, simple approach: check if type is set.
+            const typeEl = document.getElementById('wallAssemblyType' + s);
+            if(typeEl && !typeEl.value) {
+                applyPreset(s);
+            }
+            applyGlazingPreset(s);
+        });
+    }
 
-    // Load custom gains from storage/URL (via the hidden input value set by loadInput/deserialize)
     syncCustomGainsFromDOM();
-
-    loadGainData(); // This renders everything
+    loadGainData();
     toggleABMode();
     calculateAll();
 
-    // Menu
     const menuBtn = document.getElementById('menu-btn');
     if (menuBtn) {
         menuBtn.addEventListener('click', () => {
@@ -992,7 +1142,6 @@ function init() {
         });
     }
 
-    // Help Modal Logic
     const helpLink = document.getElementById('help-link');
     const helpModal = document.getElementById('helpModal');
     const closeHelpModal = document.getElementById('closeHelpModal');
@@ -1001,10 +1150,9 @@ function init() {
     if (helpLink && helpModal) {
         helpLink.addEventListener('click', (e) => {
             e.preventDefault();
-            document.getElementById('menu-dropdown').classList.add('hidden'); // Close menu
+            document.getElementById('menu-dropdown').classList.add('hidden');
             helpModal.classList.remove('hidden');
 
-            // Fetch README if not already loaded
             if (helpContent.innerHTML.includes('Loading...')) {
                 fetch('README.md')
                     .then(response => response.text())
@@ -1022,7 +1170,6 @@ function init() {
             helpModal.classList.add('hidden');
         });
 
-        // Close on outside click
         helpModal.addEventListener('click', (e) => {
             if (e.target === helpModal) {
                 helpModal.classList.add('hidden');
@@ -1030,7 +1177,6 @@ function init() {
         });
     }
 
-    // Share Button Logic
     const shareBtn = document.getElementById('shareBtn');
     const copyLinkBtn = document.getElementById('copyLinkBtn');
 
@@ -1068,34 +1214,17 @@ function init() {
             });
         });
     }
-
-    // Load from URL (High Priority)
-    const loadedFromUrl = deserializeConfiguration();
-    // If not loaded from URL, we rely on the localStorage loaded in attachAndLoad steps above.
-    // However, deserializeConfiguration calls saveInputToLocalStorage, so we are good.
-    // We just need to ensure calculateAll is called.
-    if(loadedFromUrl) {
-         // Re-run setup that depends on loaded values
-         toggleABMode();
-         updateDimensions(); // Ensure correct shape is rendered again if needed
-
-         // Re-sync and re-render custom gains because URL might have new data
-         syncCustomGainsFromDOM();
-         renderCustomGains();
-
-         calculateAll();
-    }
 }
 
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', init);
 }
 
-// Export for testing
 if (typeof module !== 'undefined') {
     module.exports = {
         calculateHeatLoss,
         calculateMassCapacity,
+        calculateEffectiveR,
         getSurfaceAreas,
         getScenarioData,
         calculateAll,
@@ -1110,6 +1239,8 @@ if (typeof module !== 'undefined') {
         removeCustomGain,
         updateCustomGain,
         syncCustomGainsFromDOM,
-        renderCustomGains
+        renderCustomGains,
+        MATERIALS,
+        STEEL_CORRECTION_FACTORS
     };
 }

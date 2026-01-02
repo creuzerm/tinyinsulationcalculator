@@ -58,11 +58,20 @@ The calculator derives surface areas based on the selected `buildingShape`.
 
 Heat loss is calculated using the UA formula ($Q = U \cdot A \cdot \Delta T$), separated by component to account for ground coupling vs. air coupling.
 
+* **Effective R-Value Calculation (Walls):**
+  The calculator no longer uses a simple nominal R-value for walls. It calculates an **Effective R-Value** based on the assembly layers to account for thermal bridging.
+
+  * **Stick Frame (Wood):** Uses the **Parallel Path Method** (weighting stud vs. cavity area).
+    * $R_{effective} = 1 / ( (f_{framing} / R_{stud}) + (f_{cavity} / R_{cavity}) ) + R_{continuous} + R_{airfilms}$
+  * **Mass Wall:** Uses **Series Summation** for homogeneous layers (like Aircrete or CMU) plus insulation.
+    * $R_{effective} = R_{mass} + R_{insulation} + R_{airfilms}$
+  * **Air Films:** Standard air films ($R_{int}=0.68$, $R_{ext}=0.17$) are automatically added.
+
 * **Conductive Loss (Air Coupled - Walls, Roof, Windows):**
   
 
   $$
-  Q_{env} = \left( \frac{A_{wall}}{R_{wall}} + \frac{A_{roof}}{R_{roof}} + \frac{A_{window}}{R_{window}} \right) \times (T_{in} - T_{out})
+  Q_{env} = \left( \frac{A_{wall}}{R_{wall\_eff}} + \frac{A_{roof}}{R_{roof}} + \frac{A_{window}}{R_{window}} \right) \times (T_{in} - T_{out})
   $$
 
 * **Conductive Loss (Ground Coupled - Floor):**

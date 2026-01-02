@@ -154,8 +154,86 @@
                     </select>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 input-group">
-                    <div><label class="input-label">Wall R</label><input type="number" id="wallRValue_A" class="input-field" value="13"></div>
+                <!-- Wall Assembly Builder -->
+                <div class="border border-blue-200 rounded p-3 bg-white mb-4">
+                    <label class="input-label font-bold text-blue-800 border-b border-blue-100 pb-1 mb-2 block">Wall Assembly</label>
+
+                    <div class="mb-2">
+                        <label class="text-xs text-gray-500 block mb-1">Structure Type</label>
+                        <select id="wallAssemblyType_A" class="input-field text-sm">
+                            <option value="stick">Stick Frame (Wood)</option>
+                            <option value="mass">Mass / Solid Wall</option>
+                        </select>
+                    </div>
+
+                    <!-- Stick Frame A -->
+                    <div id="group_stick_A" class="space-y-2">
+        <div class="grid grid-cols-3 gap-2">
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">Material</label>
+                <select id="wallStudMaterial_A" class="input-field text-sm">
+                    <option value="wood">Wood</option>
+                    <option value="steel">Steel</option>
+                </select>
+            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Stud Size</label>
+                                <select id="wallStudSize_A" class="input-field text-sm">
+                                    <option value="2x4">2x4 (3.5")</option>
+                                    <option value="2x6">2x6 (5.5")</option>
+                                    <option value="2x8">2x8 (7.25")</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Spacing</label>
+                                <select id="wallStudSpacing_A" class="input-field text-sm">
+                                    <option value="16">16" o.c.</option>
+                                    <option value="24">24" o.c.</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Cavity Insulation</label>
+                            <select id="wallCavityInsulation_A" class="input-field text-sm">
+                                <option value="fiberglass_batt">Fiberglass Batt</option>
+                                <option value="mineral_wool">Mineral Wool</option>
+                                <option value="cellulose">Cellulose</option>
+                                <option value="spray_foam_open">Open Cell Spray Foam</option>
+                                <option value="spray_foam_closed">Closed Cell Spray Foam</option>
+                                <option value="none">None (Empty)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Continuous Insulation (R-Value)</label>
+                            <input type="number" id="wallContinuousInsulation_A" class="input-field text-sm" placeholder="0" value="0">
+                        </div>
+                    </div>
+
+                    <!-- Mass Wall A -->
+                    <div id="group_mass_A" class="space-y-2 hidden">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Material</label>
+                                <select id="wallMassMaterial_A" class="input-field text-sm">
+                                    <option value="cmu_standard">Standard CMU</option>
+                                    <option value="aircrete">Aircrete</option>
+                                    <option value="concrete">Poured Concrete</option>
+                                    <option value="brick">Brick</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Thickness (in)</label>
+                                <input type="number" id="wallMassThickness_A" class="input-field text-sm" value="8">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Addt'l Insulation (R-Value)</label>
+                            <input type="number" id="wallMassInsulation_A" class="input-field text-sm" placeholder="0" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 input-group">
                     <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_A" class="input-field" value="38"></div>
                     <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_A" class="input-field" value="10"></div>
                 </div>
@@ -234,8 +312,86 @@
                     </select>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 input-group">
-                    <div><label class="input-label">Wall R</label><input type="number" id="wallRValue_B" class="input-field" value="32"></div>
+                <!-- Wall Assembly Builder B -->
+                <div class="border border-green-200 rounded p-3 bg-white mb-4">
+                    <label class="input-label font-bold text-green-800 border-b border-green-100 pb-1 mb-2 block">Wall Assembly</label>
+
+                    <div class="mb-2">
+                        <label class="text-xs text-gray-500 block mb-1">Structure Type</label>
+                        <select id="wallAssemblyType_B" class="input-field text-sm">
+                            <option value="stick">Stick Frame (Wood)</option>
+                            <option value="mass">Mass / Solid Wall</option>
+                        </select>
+                    </div>
+
+                    <!-- Stick Frame B -->
+                    <div id="group_stick_B" class="space-y-2">
+        <div class="grid grid-cols-3 gap-2">
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">Material</label>
+                <select id="wallStudMaterial_B" class="input-field text-sm">
+                    <option value="wood">Wood</option>
+                    <option value="steel">Steel</option>
+                </select>
+            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Stud Size</label>
+                                <select id="wallStudSize_B" class="input-field text-sm">
+                                    <option value="2x4">2x4 (3.5")</option>
+                                    <option value="2x6">2x6 (5.5")</option>
+                                    <option value="2x8">2x8 (7.25")</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Spacing</label>
+                                <select id="wallStudSpacing_B" class="input-field text-sm">
+                                    <option value="16">16" o.c.</option>
+                                    <option value="24">24" o.c.</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Cavity Insulation</label>
+                            <select id="wallCavityInsulation_B" class="input-field text-sm">
+                                <option value="fiberglass_batt">Fiberglass Batt</option>
+                                <option value="mineral_wool">Mineral Wool</option>
+                                <option value="cellulose">Cellulose</option>
+                                <option value="spray_foam_open">Open Cell Spray Foam</option>
+                                <option value="spray_foam_closed">Closed Cell Spray Foam</option>
+                                <option value="none">None (Empty)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Continuous Insulation (R-Value)</label>
+                            <input type="number" id="wallContinuousInsulation_B" class="input-field text-sm" placeholder="0" value="0">
+                        </div>
+                    </div>
+
+                    <!-- Mass Wall B -->
+                    <div id="group_mass_B" class="space-y-2 hidden">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Material</label>
+                                <select id="wallMassMaterial_B" class="input-field text-sm">
+                                    <option value="cmu_standard">Standard CMU</option>
+                                    <option value="aircrete">Aircrete</option>
+                                    <option value="concrete">Poured Concrete</option>
+                                    <option value="brick">Brick</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Thickness (in)</label>
+                                <input type="number" id="wallMassThickness_B" class="input-field text-sm" value="8">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Addt'l Insulation (R-Value)</label>
+                            <input type="number" id="wallMassInsulation_B" class="input-field text-sm" placeholder="0" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 input-group">
                     <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_B" class="input-field" value="50"></div>
                     <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_B" class="input-field" value="30"></div>
                 </div>
