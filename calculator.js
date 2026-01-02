@@ -1174,15 +1174,15 @@ function init() {
             helpModal.classList.remove('hidden');
 
             if (helpContent.innerHTML.includes('Loading...')) {
-                fetch('README.md')
-                    .then(response => response.text())
-                    .then(text => {
-                        helpContent.innerHTML = marked.parse(text);
-                    })
-                    .catch(err => {
-                        helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
-                        console.error(err);
-                    });
+                Promise.all([
+                    fetch('README.md').then(res => res.text()),
+                    fetch('methods.md').then(res => res.text())
+                ]).then(([readme, methods]) => {
+                    helpContent.innerHTML = marked.parse(readme + '\n<hr>\n' + methods);
+                }).catch(err => {
+                    helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
+                    console.error(err);
+                });
             }
         });
 
