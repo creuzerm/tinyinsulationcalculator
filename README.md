@@ -106,3 +106,13 @@ All inputs are saved to your browser's **Local Storage**. You can refresh the pa
 * **Dynamic R-Values:** R-values are treated as static. In reality, some insulation performance drifts with extreme temperatures.
 
 * **1D Heat Flow:** Calculations assume one-dimensional heat flow through assemblies. Thermal bridging is approximated via the "Air Sealing" penalty or user-adjusted R-values.
+
+## 6. Future Roadmap: Van Life Support
+
+We are actively expanding the tool to support **Van Life** and camper builds. This requires specific physics adjustments:
+
+*   **Air Coupled Floors:** Unlike houses on the ground, vehicles have air flowing underneath. The calculator will support floors exposed to outdoor air temps.
+*   **Cargo Van Geometry:** Approximate surface areas for standard vans (Sprinter, Transit) will be added.
+*   **Automotive Insulation:** The material database will be expanded to include Thinsulate, Havelock Wool, and Armaflex.
+*   **Metal Rib Thermal Bridging:** Enhanced thermal bridging penalties for metal skin and ribs.
+*   **Solar "Oven Effect":** Adjustments for vehicle color (Light vs. Dark) impacting solar gain.
