@@ -275,3 +275,19 @@ When verifying the tool via code interpretation or DOM manipulation:
 3. **Read Output:** Check `document.getElementById('resultLoss_A').textContent` (or `resultLoss_B` in A/B mode).
 
 4. **Validate:** Parse the integer from the result string (remove commas) and compare with the Expected Result +/- 1% tolerance.
+
+## 7. Accessibility Requirements
+
+To ensure the application is usable by vision impaired users, all development must adhere to the following accessibility standards:
+
+1.  **Semantic HTML:** Use proper HTML5 semantic elements (`<header>`, `<main>`, `<article>`, `<button>`, etc.) to provide structure.
+2.  **ARIA Labels:** Use `aria-label`, `aria-describedby`, and `aria-live` attributes where appropriate, especially for:
+    *   Dynamic content updates (e.g., calculation results).
+    *   Visual-only elements like charts (provide text alternatives).
+    *   Form controls without visible labels.
+3.  **Keyboard Navigation:** Ensure all interactive elements (buttons, inputs, summaries) are focusable and operable via keyboard.
+4.  **Color Contrast:** Ensure sufficient color contrast between text and background colors (WCAG AA standard). Avoid light gray text on white backgrounds.
+5.  **Focus Management:** Ensure focus indicators are visible.
+6.  **Screen Reader Compatibility:**
+    *   Charts must have a text fallback or be described via ARIA.
+    *   Status updates (results) should be announced dynamically.
