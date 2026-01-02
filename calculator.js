@@ -498,6 +498,22 @@ function applyPreset(suffix) {
             if(r) r.value = 60;
             if(f) f.value = 30;
             break;
+        case 'van_build':
+            // Stick, 2x4 (approx depth), Van Ribs, 24oc, Thinsulate, 0 CI
+            // Note: 2x4 is 3.5" deep, Thinsulate is R-5.2/in.
+            // Effective R will be heavily penalized by van_ribs factor (0.25).
+            setAssembly('stick', '2x4', '24', 'thinsulate_sm600', '0');
+            // We need to override the material to van_ribs, but setAssembly defaults to wood for stick.
+            // We'll manually set it after calling setAssembly, or update setAssembly.
+            // Let's update the element directly here to be safe and simple.
+            const matEl = document.getElementById(`wallStudMaterial${suffix}`);
+            if(matEl) {
+                matEl.value = 'van_ribs';
+                saveInputToLocalStorage(matEl);
+            }
+            if(r) r.value = 12; // Approx 2 inches of thinsulate/foam
+            if(f) f.value = 5;  // Approx 1 inch of foam
+            break;
         case 'uninsulated':
             // Stick, 2x4, 16oc, None
             setAssembly('stick', '2x4', '16', 'none', '0');
@@ -1293,6 +1309,7 @@ if (typeof module !== 'undefined') {
         updateDimensions,
         toggleABMode,
         init,
+        applyPreset,
         applyGlazingPreset,
         loadGainData,
         calculateDetailedGains,
