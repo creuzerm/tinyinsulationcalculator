@@ -28,13 +28,13 @@
     <div class="container mx-auto p-2 md:p-6 max-w-7xl">
         <header class="text-center mb-6 relative">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Tiny Home Heat Loss Calculator</h1>
-            <p class="text-gray-600 mt-2">Estimate heating load and thermal battery capacity.</p>
+            <p class="text-gray-700 mt-2">Estimate heating load and thermal battery capacity.</p>
 
             <!-- A/B Toggle Switch -->
             <div class="mt-6 flex flex-col items-center justify-center space-y-4">
                 <label class="inline-flex items-center cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
                     <input type="checkbox" id="abToggle" class="sr-only peer">
-                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     <span class="ms-3 text-sm font-medium text-gray-700">Enable A/B Comparison</span>
                 </label>
 
@@ -469,15 +469,15 @@
         <div id="resultsGrid" class="grid grid-cols-1 gap-6"> <!-- JS will toggle lg:grid-cols-2 -->
             
             <!-- Result Cards -->
-            <div id="resultBoxA" class="bg-blue-50 p-6 rounded-lg border border-blue-200 flex flex-col items-center justify-center text-center">
+            <div id="resultBoxA" class="bg-blue-50 p-6 rounded-lg border border-blue-200 flex flex-col items-center justify-center text-center" aria-live="polite">
                 <h3 id="resultHeaderA" class="text-lg font-bold text-blue-900 mb-2">Estimated Results</h3>
                 <div class="mb-4">
                     <p class="text-4xl font-bold text-blue-600"><span id="resultLoss_A">0</span></p>
                     <p class="text-sm text-blue-800">Peak Heat Loss (BTU/hr)</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_A">0</span> <span class="text-sm text-gray-600">°F/hr</span></p>
-                    <p class="text-xs text-gray-500">Passive Temp Loss</p>
+                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_A">0</span> <span class="text-sm text-gray-700">°F/hr</span></p>
+                    <p class="text-xs text-gray-700">Passive Temp Loss</p>
                 </div>
                 <div class="mt-4 w-full text-left text-sm text-gray-700 bg-white p-2 rounded">
                     <p class="font-semibold border-b pb-1 mb-1">Loss Breakdown:</p>
@@ -485,15 +485,15 @@
                 </div>
             </div>
 
-            <div id="resultBoxB" class="bg-green-50 p-6 rounded-lg border border-green-200 flex flex-col items-center justify-center text-center hidden">
+            <div id="resultBoxB" class="bg-green-50 p-6 rounded-lg border border-green-200 flex flex-col items-center justify-center text-center hidden" aria-live="polite">
                 <h3 class="text-lg font-bold text-green-900 mb-2">Scenario B Results</h3>
                 <div class="mb-4">
                     <p class="text-4xl font-bold text-green-600"><span id="resultLoss_B">0</span></p>
                     <p class="text-sm text-green-800">Peak Heat Loss (BTU/hr)</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_B">0</span> <span class="text-sm text-gray-600">°F/hr</span></p>
-                    <p class="text-xs text-gray-500">Passive Temp Loss</p>
+                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_B">0</span> <span class="text-sm text-gray-700">°F/hr</span></p>
+                    <p class="text-xs text-gray-700">Passive Temp Loss</p>
                 </div>
                  <div class="mt-4 w-full text-left text-sm text-gray-700 bg-white p-2 rounded">
                     <p class="font-semibold border-b pb-1 mb-1">Loss Breakdown:</p>
@@ -505,22 +505,22 @@
             <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Heat Loss Analysis</h3>
                 <div class="heatLossChartBox">
-                    <canvas id="heatLossChart"></canvas>
+                    <canvas id="heatLossChart" role="img" aria-label="Line chart showing heat loss in BTU per hour across different outdoor temperatures. See result cards for specific values."></canvas>
                 </div>
             </div>
 
             <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Loss Breakdown</h3>
                 <div class="heatLossChartBox">
-                    <canvas id="breakdownChart"></canvas>
+                    <canvas id="breakdownChart" role="img" aria-label="Bar chart showing breakdown of heat loss by component (Walls, Roof, Floor, Windows, Doors). See Loss Breakdown list in result cards for details."></canvas>
                 </div>
             </div>
 
             <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Passive Simulation</h3>
-                <p class="text-center text-sm text-gray-500 mb-4">Indoor temperature drift with NO supplemental heating.</p>
+                <p class="text-center text-sm text-gray-700 mb-4">Indoor temperature drift with NO supplemental heating.</p>
                 <div class="heatLossChartBox">
-                    <canvas id="simulationChart"></canvas>
+                    <canvas id="simulationChart" role="img" aria-label="Line chart showing indoor temperature simulation over time without heating."></canvas>
                 </div>
             </div>
 

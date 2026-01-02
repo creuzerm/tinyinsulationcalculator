@@ -199,13 +199,13 @@
         <button id="calculateBtn" class="btn w-full mb-6">Calculate R-Value</button>
 
         <!-- Section: Results -->
-        <div id="results" class="result-box hidden">
+        <div id="results" class="result-box hidden" aria-live="polite">
             <h2 class="section-title !mb-2">Results</h2>
             <p class="result-text mb-2">Estimated Overall R-Value (Air-to-Air, Imperial): <span id="rValueImperialOverall">--</span> (ft&sup2;&middot;hr&middot;&deg;F/BTU)</p>
             <p class="result-text mb-4">Estimated Overall R-Value (Air-to-Air, SI): <span id="rValueSIOverall">--</span> (m&sup2;&middot;K/W)</p>
             <p class="result-text mb-2 hidden" id="materialRValueImperialRow">Estimated Material R-Value (Surface-to-Surface, Imperial): <span id="rValueImperialMaterial">--</span> (ft&sup2;&middot;hr&middot;&deg;F/BTU)</p>
             <p class="result-text mb-4 hidden" id="materialRValueSIRow">Estimated Material R-Value (Surface-to-Surface, SI): <span id="rValueSIMaterial">--</span> (m&sup2;&middot;K/W)</p>
-            <p class="text-sm text-gray-700 mt-4"><em>Disclaimer: This is an estimation based on steady-state assumptions and your inputs, and relies on assumed typical U-values for other building components. Real-world conditions can vary significantly, especially if internal/solar gains are present or the assumed U-values are not representative.</em></p>
+            <p class="text-sm text-gray-800 mt-4"><em>Disclaimer: This is an estimation based on steady-state assumptions and your inputs, and relies on assumed typical U-values for other building components. Real-world conditions can vary significantly, especially if internal/solar gains are present or the assumed U-values are not representative.</em></p>
         </div>
 
         <!-- Help Modal -->
