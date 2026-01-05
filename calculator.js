@@ -15,6 +15,7 @@ const CONFIG_FIELDS = [
     'wallMassMaterial_A', 'wallMassThickness_A', 'wallMassInsulation_A',
     // Other A
     'roofRValue_A', 'floorRValue_A',
+    'skirtR_A', 'skirtHeight_A', 'skirtSeal_A',
     'windowArea_A', 'windowR_A', 'doorArea_A', 'doorR_A', 'airSealing_A', 'massMaterial_A', 'slabThickness_A',
     // Scenario B
     'insulationPreset_B',
@@ -23,6 +24,7 @@ const CONFIG_FIELDS = [
     'wallMassMaterial_B', 'wallMassThickness_B', 'wallMassInsulation_B',
     // Other B
     'roofRValue_B', 'floorRValue_B',
+    'skirtR_B', 'skirtHeight_B', 'skirtSeal_B',
     'windowArea_B', 'windowR_B', 'doorArea_B', 'doorR_B', 'airSealing_B', 'massMaterial_B', 'slabThickness_B',
     // Simulation
     'simDuration', 'simInternalGain', 'simLowTemp', 'simHighTemp',
@@ -699,13 +701,14 @@ function getSurfaceAreas() {
     const L = parseFloat(document.getElementById('length')?.value) || 0;
     const W = parseFloat(document.getElementById('width')?.value) || 0;
 
-    let areas = { wall:0, roof:0, floor:0, total:0 };
+    let areas = { wall:0, roof:0, floor:0, perimeter:0, total:0 };
 
     if(shape === 'rectangle') {
         const H = parseFloat(document.getElementById('height')?.value) || 0;
         const pitch = parseFloat(document.getElementById('roofPitch')?.value) || 0;
         areas.wall = (2*L*H) + (2*W*H);
         areas.floor = L*W;
+        areas.perimeter = (2*L) + (2*W);
         if(pitch === 0) {
             areas.roof = L*W;
         } else {
@@ -720,12 +723,14 @@ function getSurfaceAreas() {
             areas.roof = 2 * L * slope;
             areas.wall = W * H;
             areas.floor = L * W;
+            areas.perimeter = (2*L) + (2*W);
     } else if (shape === 'gothic-arch') {
         const spring = parseFloat(document.getElementById('springWallHeight')?.value) || 0;
         const r = W/2;
         areas.floor = L * W;
         areas.wall = (2*L*spring) + (Math.PI * r**2);
         areas.roof = L * (Math.PI * r);
+        areas.perimeter = (2*L) + (2*W);
     } else if (shape === 'cargo-van') {
         // User inputs: L (Cargo Length), W (Floor Width), H (Interior Height)
         const H = parseFloat(document.getElementById('height')?.value) || 0;
@@ -733,6 +738,7 @@ function getSurfaceAreas() {
         areas.roof = L * W;
         // Walls + Sliding Door + Rear Doors approximation
         areas.wall = (2 * L * H) + (2 * W * H);
+        areas.perimeter = (2*L) + (2*W);
     }
 
     areas.total = areas.wall + areas.roof;
@@ -851,6 +857,15 @@ function getScenarioData(suffix) {
     const rFloorEl = document.getElementById(`floorRValue${suffix}`);
     const rFloor = rFloorEl ? (parseFloat(rFloorEl.value) || 1) : 1;
 
+    const skirtREl = document.getElementById(`skirtR${suffix}`);
+    const skirtR = skirtREl ? (parseFloat(skirtREl.value) || 0) : 0;
+
+    const skirtHeightEl = document.getElementById(`skirtHeight${suffix}`);
+    const skirtHeight = skirtHeightEl ? (parseFloat(skirtHeightEl.value) || 0) : 0;
+
+    const skirtSealEl = document.getElementById(`skirtSeal${suffix}`);
+    const skirtSeal = skirtSealEl ? skirtSealEl.value : 'vented';
+
     const wAreaEl = document.getElementById(`windowArea${suffix}`);
     const wArea = wAreaEl ? (parseFloat(wAreaEl.value) || 0) : 0;
 
@@ -872,7 +887,7 @@ function getScenarioData(suffix) {
     const thicknessEl = document.getElementById(`slabThickness${suffix}`);
     const thickness = thicknessEl ? (parseFloat(thicknessEl.value) || 1) : 1;
 
-    return { rWall, rRoof, rFloor, wArea, wR, dArea, dR, sealing, massMat, thickness };
+    return { rWall, rRoof, rFloor, skirtR, skirtHeight, skirtSeal, wArea, wR, dArea, dR, sealing, massMat, thickness };
 }
 
 function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
@@ -889,42 +904,89 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     const rW_win = safeR(data.wR);
     const rD_door = safeR(data.dR);
 
+    // Basic UAs
+    const ua_wall = netWall / safeR(data.rWall);
+    const ua_roof = netRoof / safeR(data.rRoof);
+    const ua_win = data.wArea / rW_win;
+    const ua_door = data.dArea / rD_door;
+
     // DETECT FLOOR COUPLING CONTEXT
     const shape = document.getElementById('buildingShape')?.value;
     // Floor is Air Coupled if it is a vehicle OR if the user selected a raised floor type (Wood/Metal)
     // Concrete and Stone (Earth) are assumed to be Ground Coupled (Slab on Grade)
     const isAirCoupled = (shape === 'cargo-van') || (data.massMat === 'wood' || data.massMat === 'metal');
 
-    const floorDeltaT = isAirCoupled ? deltaT_Air : deltaT_Ground;
+    let lossFloor = 0;
+    let ua_floor_to_air = 0;
+    let ua_floor_to_ground = 0;
 
-    const lossWall = (netWall / safeR(data.rWall)) * deltaT_Air;
-    const lossRoof = (netRoof / safeR(data.rRoof)) * deltaT_Air;
-    const lossWindow = (data.wArea / rW_win) * deltaT_Air;
-    const lossDoor = (data.dArea / rD_door) * deltaT_Air;
-    const lossFloor = (areas.floor / safeR(data.rFloor)) * floorDeltaT;
+    // SKIRTING / BUFFER ZONE LOGIC
+    if (data.skirtR > 0 && data.skirtHeight > 0) {
+        // Definitions
+        // U_f: Floor Conductance (Area / R_floor)
+        const U_f = areas.floor / safeR(data.rFloor);
 
-    let ua = 0;
-    ua += (netWall / safeR(data.rWall));
-    ua += (netRoof / safeR(data.rRoof));
-    ua += (data.wArea / rW_win);
-    ua += (data.dArea / rD_door);
+        // U_s: Skirting Conductance (Perimeter * Height / R_skirt)
+        const U_s = (areas.perimeter * data.skirtHeight) / safeR(data.skirtR);
 
-    // If air coupled, the floor conductance contributes to the Air UA, not the Ground UA
-    if (isAirCoupled) {
-        ua += (areas.floor / safeR(data.rFloor));
+        // U_g: Ground Conductance (Area / 1.0)
+        const U_g = areas.floor / 1.0;
+
+        // Q_v: Ventilation (Volume * ACH * 0.018)
+        // Volume = Area * Height
+        const volume = areas.floor * data.skirtHeight;
+        let ach = 5.0; // Default vented
+        if(data.skirtSeal === 'sealed') ach = 0.5;
+        else if(data.skirtSeal === 'leaky') ach = 20.0;
+        const Q_v = volume * ach * 0.018;
+
+        const U_sigma = U_f + U_s + U_g + Q_v;
+
+        // Calculate K factors for effective UA mapping
+        // Heat Loss Floor = K1 * (Ti - To) + K2 * (Ti - Tg)
+        const K1 = (U_f * (U_s + Q_v)) / U_sigma;
+        const K2 = (U_f * U_g) / U_sigma;
+
+        ua_floor_to_air = K1;
+        ua_floor_to_ground = K2;
+
+        lossFloor = (K1 * deltaT_Air) + (K2 * deltaT_Ground);
+
+    } else if (isAirCoupled) {
+        // Standard Air Coupled (Stilts, Vehicle, etc)
+        const U_f = areas.floor / safeR(data.rFloor);
+        ua_floor_to_air = U_f;
+        ua_floor_to_ground = 0;
+        lossFloor = U_f * deltaT_Air;
+
+    } else {
+        // Standard Ground Coupled (Slab on Grade)
+        const U_f = areas.floor / safeR(data.rFloor);
+        ua_floor_to_air = 0;
+        ua_floor_to_ground = U_f;
+        lossFloor = U_f * deltaT_Ground;
     }
+
+    const lossWall = ua_wall * deltaT_Air;
+    const lossRoof = ua_roof * deltaT_Air;
+    const lossWindow = ua_win * deltaT_Air;
+    const lossDoor = ua_door * deltaT_Air;
+
+    let ua = ua_wall + ua_roof + ua_win + ua_door + ua_floor_to_air;
+    let uaFloor = ua_floor_to_ground;
 
     let infiltrationLoss = 0;
     if(data.sealing === 'poor') {
+         // Infiltration adds 25% to envelope losses (simplified)
+         // Note: Applying to floor loss as well for simplicity, though debatably applies less to ground coupled
          infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
+
+         // Increase UAs effectively
          ua *= 1.25;
+         uaFloor *= 1.25;
     }
 
     const totalLoss = lossWall + lossRoof + lossWindow + lossDoor + lossFloor + infiltrationLoss;
-
-    // uaFloor represents the conductance to the GROUND.
-    // If air coupled, this is 0.
-    const uaFloor = isAirCoupled ? 0 : (areas.floor / safeR(data.rFloor));
 
     return {
         totalLoss, ua, uaFloor,
@@ -1237,6 +1299,7 @@ function init() {
     ['_A','_B'].forEach(s => {
         // Shared & Others
         ['insulationPreset','glazingPreset','roofRValue','floorRValue',
+         'skirtR', 'skirtHeight', 'skirtSeal',
          'windowArea','windowR','doorArea','doorR','airSealing','massMaterial','slabThickness'].forEach(base => {
             attachAndLoad(base+s);
         });

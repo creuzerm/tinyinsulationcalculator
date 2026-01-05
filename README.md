@@ -36,7 +36,17 @@ The calculator uses a modified UA formula that separates air-coupled components 
 
    * Uses a distinct ground temperature (default 50°F) rather than outdoor air temperature, which is critical for accurate winter estimates.
 
-### 2.2 Thermal Mass ("The Battery")
+### 2.2 Buffer Zone Physics (Skirting)
+
+For tiny homes on wheels or raised foundations, skirting can create a **Buffer Zone** between the floor and the ground. The calculator solves for the equilibrium temperature of this zone ($T_{buffer}$), which is typically warmer than the outside air but colder than the interior.
+
+This is critical for preventing frozen pipes and reducing heat loss in mobile structures. The calculation balances:
+* Heat loss from the floor into the zone.
+* Heat loss through the skirting walls to the outside.
+* Heat exchange with the ground.
+* Ventilation losses (air leaks) in the skirting.
+
+### 2.3 Thermal Mass ("The Battery")
 
 Calculates the thermal inertia of the building. This determines how quickly the building heats up or cools down.
 
