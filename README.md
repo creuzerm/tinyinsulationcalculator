@@ -99,6 +99,8 @@ Toggle the **"Enable A/B Comparison"** switch at the top of the page.
 
 All inputs are saved to your browser's **Local Storage**. You can refresh the page or close the tab, and your specific wall assemblies, R-values, and dimensions will remain.
 
+To reset the calculator, use the **"Clear all"** button at the bottom of the page. This will reset all standard inputs to their defaults. **Note:** Any custom heat sources you have added will be retained in the list for future use, but they will be unselected (quantity set to 0).
+
 ## 5. Assumptions & Limitations
 
 * **Solar Gain Simplified:** Solar gain is treated as a fixed "on/off" block during the day. It does not currently account for window orientation (North vs South) or shading coefficients.

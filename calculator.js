@@ -294,6 +294,65 @@ function syncCustomGainsFromDOM() {
     }
 }
 
+function clearAll() {
+    if (!confirm('Are you sure you want to clear all data? Custom sources will be retained but unselected.')) return;
+
+    // 1. Reset Custom Gains (retain items, zero qty)
+    customGains.forEach(g => g.qty = 0);
+    saveCustomGains(); // Updates hidden input and LocalStorage for 'customGainsData'
+
+    // 2. Reset Config Fields
+    CONFIG_FIELDS.forEach(id => {
+        if (id === 'customGainsData') return; // Handled above
+
+        // Remove from storage
+        localStorage.removeItem(id);
+
+        // Reset DOM Element
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.type === 'checkbox') {
+                el.checked = el.defaultChecked;
+            } else {
+                el.value = el.defaultValue;
+            }
+
+            // Special handling for selects that might not have a "value" attribute in HTML but option selected
+            if (el.tagName === 'SELECT') {
+                let foundDefault = false;
+                for(let opt of el.options) {
+                    if(opt.defaultSelected) {
+                        el.value = opt.value;
+                        foundDefault = true;
+                        break;
+                    }
+                }
+                if(!foundDefault && el.options.length > 0) {
+                     el.value = el.options[0].value;
+                }
+            }
+        }
+    });
+
+    // 3. Handle specific logic triggered by changes
+
+    // Reset Shape & Dimensions
+    updateDimensions();
+
+    // Reset A/B Toggle UI
+    toggleABMode();
+
+    // Reset Wall Assembly UIs (A and B)
+    toggleScenarioAssemblyUI('_A');
+    toggleScenarioAssemblyUI('_B');
+
+    // 4. Re-render Gains Table (resets occupants/appliances to JSON defaults)
+    renderGainTable();
+
+    // 5. Recalculate
+    calculateAll();
+}
+
 function calculateDetailedGains() {
     if (!gainData) return;
 
@@ -1313,6 +1372,11 @@ function init() {
             });
         });
     }
+
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAll);
+    }
 }
 
 if (typeof document !== 'undefined') {
@@ -1340,6 +1404,7 @@ if (typeof module !== 'undefined') {
         updateCustomGain,
         syncCustomGainsFromDOM,
         renderCustomGains,
+        clearAll,
         MATERIALS,
         STEEL_CORRECTION_FACTORS
     };
