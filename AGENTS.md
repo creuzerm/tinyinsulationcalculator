@@ -81,6 +81,29 @@ Heat loss is calculated using the UA formula ($Q = U \cdot A \cdot \Delta T$), s
   Q_{floor} = \left( \frac{A_{floor}}{R_{floor}} \right) \times (T_{in} - T_{ground})
   $$
 
+### 2.5 Skirting & Buffer Zones
+
+If Skirting inputs (R-Value & Height) are provided, the calculator solves for the **Buffer Zone Temperature** ($T_{buffer}$) using a steady-state nodal balance equation.
+
+**The Nodal Balance:**
+
+$$
+T_{buffer} = \frac{T_{in} \cdot UA_{floor} + T_{out} \cdot (UA_{skirt} + Q_{vent}) + T_{ground} \cdot UA_{ground\_contact}}{UA_{floor} + UA_{skirt} + UA_{ground\_contact} + Q_{vent}}
+$$
+
+**Where:**
+
+* $UA_{floor} = A_{floor} / R_{floor}$
+* $UA_{skirt} = (Perimeter \times Height) / R_{skirt}$
+* $UA_{ground\_contact} = A_{floor} / 1$ (Assumes uninsulated earth floor of buffer zone)
+* $Q_{vent} = Volume_{buffer} \times ACH \times 0.018$ (Convective heat removal)
+
+**Skirting Air Tightness Constants (ACH):**
+
+* **Sealed:** 0.5 ACH (Taped foam board)
+* **Vented:** 5.0 ACH (Lattice/Standard skirting)
+* **Leaky:** 20.0 ACH (Improvised/Windy)
+
 * **Air Sealing Penalty:**
   If `airSealing === 'poor'`, the calculated $UA_{envelope}$ is multiplied by **1.25**.
 
