@@ -276,6 +276,11 @@ When verifying the tool via code interpretation or DOM manipulation:
 
 4. **Validate:** Parse the integer from the result string (remove commas) and compare with the Expected Result +/- 1% tolerance.
 
+5. **Clear All Verification:**
+   * Trigger the "Clear all" button click.
+   * Confirm that standard inputs reset to defaults (e.g., Indoor Temp = 68).
+   * Confirm that "Custom Gains" entries are retained in the list but their quantities are reset to 0.
+
 ## 7. Accessibility Requirements
 
 To ensure the application is usable by vision impaired users, all development must adhere to the following accessibility standards:
