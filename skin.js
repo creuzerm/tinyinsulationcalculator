@@ -14,7 +14,7 @@
              if (!document.getElementById('brand-icon')) {
                 const icon = document.createElement('div');
                 icon.id = 'brand-icon';
-                icon.innerHTML = 'TC'; // Or your SVG
+                icon.textContent = 'TC'; // Or your SVG
                 icon.className = 'my-brand-class';
                 // Insert before the H1
                 h1.parentNode.insertBefore(icon, h1);
