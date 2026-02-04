@@ -35,7 +35,7 @@
         const btn = document.createElement('button');
         btn.id = 'runThermalCheckBtn';
         btn.innerText = 'Run Thermal Check';
-        btn.className = 'bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded shadow-md transition-colors duration-200';
+        btn.className = 'btn-run-thermal-check';
 
         btn.addEventListener('click', () => {
              // Scroll to results
