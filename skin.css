@@ -1,0 +1,24 @@
+:root {
+    /* Override with "Modern Rustic Utility" values */
+    --color-primary: #D97706;  /* Toolbox Amber */
+    --color-primary-bg: #FAF9F6; /* Birch Paper */
+    --color-text-main: #292524; /* Warm Charcoal */
+    --font-heading: 'Manrope', sans-serif;
+    --radius-card: 8px;
+    --c-scenario-a: var(--color-primary); /* Defined based on usage */
+}
+
+/* Safe targeting */
+.scenario-card-a {
+    border: 2px solid var(--c-scenario-a);
+}
+
+/* Branding Icon */
+.tc-brand-icon {
+    font-weight: bold;
+    color: var(--color-primary);
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+    display: inline-block;
+    vertical-align: middle;
+}
