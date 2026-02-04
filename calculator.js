@@ -12,6 +12,7 @@ const CONFIG_FIELDS = [
     'insulationPreset_A',
     // Wall Assembly A
     'wallAssemblyType_A', 'wallStudSize_A', 'wallStudMaterial_A', 'wallStudSpacing_A', 'wallCavityInsulation_A', 'wallContinuousInsulation_A',
+    'wallFastenerType_A', 'wallFastenerDensity_A',
     'wallMassMaterial_A', 'wallMassThickness_A', 'wallMassInsulation_A',
     // Other A
     'roofRValue_A', 'floorRValue_A',
@@ -21,6 +22,7 @@ const CONFIG_FIELDS = [
     'insulationPreset_B',
     // Wall Assembly B
     'wallAssemblyType_B', 'wallStudSize_B', 'wallStudMaterial_B', 'wallStudSpacing_B', 'wallCavityInsulation_B', 'wallContinuousInsulation_B',
+    'wallFastenerType_B', 'wallFastenerDensity_B',
     'wallMassMaterial_B', 'wallMassThickness_B', 'wallMassInsulation_B',
     // Other B
     'roofRValue_B', 'floorRValue_B',
@@ -31,6 +33,12 @@ const CONFIG_FIELDS = [
     // Custom Data
     'customGainsData'
 ];
+
+const FASTENER_CHI_VALUES = {
+    galvanized: { steel: 0.006, van_ribs: 0.006, wood: 0.001 },
+    stainless: { steel: 0.002, van_ribs: 0.002, wood: 0.001 },
+    adhesive: { steel: 0, van_ribs: 0, wood: 0 }
+};
 
 const MATERIALS = {
     // Framing
@@ -797,9 +805,32 @@ function calculateEffectiveR(assembly) {
             }
         }
 
-        // Add Continuous Insulation (Series)
+        // Add Continuous Insulation (Series) with Fastener Correction
         const ci = parseFloat(assembly.continuousInsulation) || 0;
-        r_total += ci;
+
+        if (ci > 0) {
+            // Determine Chi Value
+            const fType = assembly.fastenerType || 'galvanized';
+            // map studMaterial from select values to keys in FASTENER_CHI_VALUES if needed,
+            // but select values 'wood', 'steel', 'van_ribs' match keys in FASTENER_CHI_VALUES exactly (except 'wood' vs 'wood_stud' in MATERIALS, but getScenarioData gets value directly)
+            // Let's check getScenarioData. It gets value from select.
+            // Select options: wood, steel, van_ribs.
+            const sMat = assembly.studMaterial || 'wood';
+
+            const chiTable = FASTENER_CHI_VALUES[fType] || FASTENER_CHI_VALUES['galvanized'];
+            const chi = chiTable[sMat] !== undefined ? chiTable[sMat] : FASTENER_CHI_VALUES.galvanized.wood;
+
+            const density = parseFloat(assembly.fastenerDensity) || 0;
+
+            // Calculate Effective CI R-Value
+            // U_effective = U_nominal + (Chi * Density)
+            // R_effective = 1 / U_effective
+            const u_nominal = 1 / ci;
+            const u_effective = u_nominal + (chi * density);
+            const r_effective_ci = 1 / u_effective;
+
+            r_total += r_effective_ci;
+        }
 
     } else if (assembly.type === 'mass') {
         // Series Calculation
@@ -840,6 +871,8 @@ function getScenarioData(suffix) {
             spacing: document.getElementById(`wallStudSpacing${suffix}`)?.value,
             cavityInsulation: document.getElementById(`wallCavityInsulation${suffix}`)?.value,
             continuousInsulation: document.getElementById(`wallContinuousInsulation${suffix}`)?.value,
+            fastenerType: document.getElementById(`wallFastenerType${suffix}`)?.value,
+            fastenerDensity: document.getElementById(`wallFastenerDensity${suffix}`)?.value,
             // Mass
             massMaterial: document.getElementById(`wallMassMaterial${suffix}`)?.value,
             massThickness: document.getElementById(`wallMassThickness${suffix}`)?.value,
@@ -1306,6 +1339,7 @@ function init() {
 
         // Assembly Fields
         ['wallAssemblyType','wallStudSize','wallStudMaterial','wallStudSpacing','wallCavityInsulation','wallContinuousInsulation',
+         'wallFastenerType', 'wallFastenerDensity',
          'wallMassMaterial','wallMassThickness','wallMassInsulation'].forEach(base => {
              const id = base+s;
              const el = document.getElementById(id);
