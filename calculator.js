@@ -818,7 +818,7 @@ function calculateEffectiveR(assembly) {
             const sMat = assembly.studMaterial || 'wood';
 
             const chiTable = FASTENER_CHI_VALUES[fType] || FASTENER_CHI_VALUES['galvanized'];
-            const chi = chiTable[sMat] !== undefined ? chiTable[sMat] : 0.001;
+            const chi = chiTable[sMat] !== undefined ? chiTable[sMat] : FASTENER_CHI_VALUES.galvanized.wood;
 
             const density = parseFloat(assembly.fastenerDensity) || 0;
 
