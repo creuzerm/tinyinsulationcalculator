@@ -464,5 +464,5 @@ When implementing new features or refactoring, ensure the following logic is exp
 
 4.  **Priority Tools to Expose:**
     *   `applyPreset(name)`: To quickly switch between 'Van', 'Cabin', 'Shed'.
-    *   `runSimulation(days)`: To run the passive thermal battery simulation.
+    *   `runSimulation(durationInHours)`: To run the passive thermal battery simulation (e.g., 24 for 1 day).
     *   `getDetailedResults()`: To return the breakdown of heat loss by component (Walls vs Windows vs Roof).
