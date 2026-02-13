@@ -454,7 +454,7 @@ When implementing new features or refactoring, ensure the following logic is exp
 
 1.  **State Manipulation:**
     *   Functions that modify the application state (e.g., `setDimensions`, `updateMaterial`) must be decoupled from the UI event listeners so they can be called programmatically.
-    *   *Example:* `updateRoofRValue('_A', 40)` should update the state *and* refresh the UI, just as if the user typed it.
+    *   *Example:* `updateWallRValue(20)` should update the state *and* refresh the UI, just as if the user typed it.
 
 2.  **Tool Registration:**
     *   Future implementations should register these functions in a standardized namespace (e.g., `window.webmcp` or similar as the spec evolves) with JSON schemas describing their inputs.
@@ -463,6 +463,6 @@ When implementing new features or refactoring, ensure the following logic is exp
     *   All exposed tools must include natural language descriptions explaining their purpose to an LLM (e.g., *"Calculates the heat loss based on current geometry"*).
 
 4.  **Priority Tools to Expose:**
-    *   `applyPreset(scenario, presetName)`: To quickly switch between presets like 'van_build' (for Van) or 'uninsulated' (for Shed).
-    *   `runSimulation(durationInHours)`: To run the passive thermal battery simulation (e.g., 24 for 1 day).
+    *   `applyPreset(name)`: To quickly switch between `'van_build'`, `'code_min'`, `'passive_house'`.
+    *   `runSimulation(days)`: To run the passive thermal battery simulation.
     *   `getDetailedResults()`: To return the breakdown of heat loss by component (Walls vs Windows vs Roof).
