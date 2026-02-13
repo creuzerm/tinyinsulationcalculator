@@ -444,25 +444,62 @@ Add a toggle in `index.html` for **"Vehicle Color"** (Light vs. Dark).
 
 To support next-generation browser agents and assistive technologies, this project adopts **WebMCP** concepts. This allows agents to interact with the calculator logic directly rather than scraping the DOM.
 
-### 9.1 Core Concepts
-*   **Client-Side Tools:** The application exposes JavaScript functions as "tools" that agents can discover and invoke.
-*   **Shared Context:** Agents operate within the user's session, manipulating the live application state so the user can verify changes (Human-in-the-loop).
-*   **Structured Access:** Agents read results via structured JSON returns, not by parsing HTML text.
+### 9.1 Architectural Directive
 
-### 9.2 Requirements for Agents
+*   **Target Environment:** This project utilizes the client-side Web Machine Context Protocol (WebMCP).
+*   **Restriction:** DO NOT create backend Model Context Protocol (MCP) servers using Python, Node.js, or Go. All tool execution logic must remain within the frontend client-side JavaScript context.
+
+### 9.2 Dependencies and Setup
+
+*   Install the global polyfill dependency: `npm install @mcp-b/global`.
+*   Import the polyfill at the top of the relevant component or application entry point: `import '@mcp-b/global';`.
+
+### 9.3 Imperative API Implementation (JavaScript Tools)
+
+Expose programmatic capabilities by registering tools via the global navigator object.
+
+*   **Registration:** Use `window.navigator.modelContext.registerTool(toolObject)`.
+*   **Tool Dictionary Schema:**
+    *   `name`: A unique string identifier for the tool (e.g., `calculate_sum`). Tool name collisions will throw synchronous errors.
+    *   `description`: A clear, positive natural language prompt explaining the tool's purpose and the logic behind its parameters.
+    *   `inputSchema`: A strictly typed object adhering to JSON Schema Draft 2020-12 defining all expected arguments. Use specific enums, required arrays, and primitives.
+    *   `execute(args)`: An asynchronous callback function that executes the logic and MUST return a `Promise` resolving to the content payload.
+*   **Lifecycle Management (React/Vue):** Tools must be registered inside component lifecycle hooks (e.g., `useEffect` in React). You must implement cleanup logic using `unregisterTool(name)` when the component unmounts to prevent context collisions.
+*   **Performance:** For long-running tasks, stream intermediate updates or logs to prevent the agent from timing out. For database queries, enforce limits and pagination to avoid exceeding context windows.
+
+### 9.4 Declarative API Implementation (HTML Forms)
+
+When refactoring existing HTML forms, convert them into agent-callable tools by injecting declarative attributes.
+
+*   Add `toolname="unique_identifier"` directly to the `<form>` tag.
+*   Add `tooldescription="Description of the form's purpose"` to the `<form>` tag.
+*   Add `toolparamdescription="Description of expected data"` to individual `<input>`, `<select>`, or `<textarea>` elements to automatically generate the tool's schema properties.
+*   *(Optional)* Add the `toolautosubmit` boolean attribute to the `<form>` if the agent is authorized to submit the payload without waiting for manual human confirmation.
+
+### 9.5 Implicit Actuation Optimization (Fallback)
+
+Ensure the User Interface remains accessible for fallback agents relying on Document Object Model parsing rather than explicit APIs.
+
+*   Strictly utilize semantic HTML5 elements (`<main>`, `<article>`, `<section>`, `<nav>`, and native `<button>` tags).
+*   Apply explicit `aria-label` attributes to custom interactive elements (e.g., visually styled calculator operators). Do not use ARIA attributes if a native HTML element accomplishes the same task.
+
+### 9.6 Testing Protocols
+
+*   When generating unit tests that execute in headless virtual machines, utilize the `window.navigator.modelContextTesting.setMockToolResponse("tool_name", mockResponse)` method. This bypasses the live `execute()` callback and simulates a successful agent execution loop.
+
+### 9.7 Discovery Integration
+
+*   Upon creating a new WebMCP tool or exposing a new declarative form, you must update the `llms.txt` file located at the repository/domain root. Ensure the new tool endpoints and capabilities are documented in the markdown index so navigating agents can discover them.
+
+### 9.8 Priority Tools to Expose (Project Specific)
+
 When implementing new features or refactoring, ensure the following logic is exposed as WebMCP-compatible tools:
 
 1.  **State Manipulation:**
     *   Functions that modify the application state (e.g., `setDimensions`, `updateMaterial`) must be decoupled from the UI event listeners so they can be called programmatically.
     *   *Example:* `updateWallRValue(20)` should update the state *and* refresh the UI, just as if the user typed it.
 
-2.  **Tool Registration:**
-    *   Future implementations should register these functions in a standardized namespace (e.g., `window.webmcp` or similar as the spec evolves) with JSON schemas describing their inputs.
-
-3.  **Semantic Descriptions:**
-    *   All exposed tools must include natural language descriptions explaining their purpose to an LLM (e.g., *"Calculates the heat loss based on current geometry"*).
-
-4.  **Priority Tools to Expose:**
+2.  **Specific Tools:**
     *   `applyPreset(name)`: To quickly switch between `'van_build'`, `'code_min'`, `'passive_house'`.
     *   `runSimulation(days)`: To run the passive thermal battery simulation.
     *   `getDetailedResults()`: To return the breakdown of heat loss by component (Walls vs Windows vs Roof).
