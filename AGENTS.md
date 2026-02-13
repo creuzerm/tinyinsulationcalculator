@@ -439,3 +439,30 @@ Add a toggle in `index.html` for **"Vehicle Color"** (Light vs. Dark).
 
 * **Light:** Keep current solar gain logic.
 * **Dark:** Multiply `simInternalGain` or solar input by 1.5x during daylight hours to simulate the radiant heat transfer of the metal skin.
+
+## 9. WebMCP Integration Standards
+
+To support next-generation browser agents and assistive technologies, this project adopts **WebMCP** concepts. This allows agents to interact with the calculator logic directly rather than scraping the DOM.
+
+### 9.1 Core Concepts
+*   **Client-Side Tools:** The application exposes JavaScript functions as "tools" that agents can discover and invoke.
+*   **Shared Context:** Agents operate within the user's session, manipulating the live application state so the user can verify changes (Human-in-the-loop).
+*   **Structured Access:** Agents read results via structured JSON returns, not by parsing HTML text.
+
+### 9.2 Requirements for Agents
+When implementing new features or refactoring, ensure the following logic is exposed as WebMCP-compatible tools:
+
+1.  **State Manipulation:**
+    *   Functions that modify the application state (e.g., `setDimensions`, `updateMaterial`) must be decoupled from the UI event listeners so they can be called programmatically.
+    *   *Example:* `updateWallRValue(20)` should update the state *and* refresh the UI, just as if the user typed it.
+
+2.  **Tool Registration:**
+    *   Future implementations should register these functions in a standardized namespace (e.g., `window.webmcp` or similar as the spec evolves) with JSON schemas describing their inputs.
+
+3.  **Semantic Descriptions:**
+    *   All exposed tools must include natural language descriptions explaining their purpose to an LLM (e.g., *"Calculates the heat loss based on current geometry"*).
+
+4.  **Priority Tools to Expose:**
+    *   `applyPreset(name)`: To quickly switch between `'van_build'`, `'code_min'`, `'passive_house'`.
+    *   `runSimulation(days)`: To run the passive thermal battery simulation.
+    *   `getDetailedResults()`: To return the breakdown of heat loss by component (Walls vs Windows vs Roof).
