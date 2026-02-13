@@ -491,25 +491,25 @@ function loadInputFromLocalStorage(element) {
 
 const dimensionTemplates = {
     rectangle: `
-        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
-        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="10"></div>
-        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="8"></div>
-        <div><label class="input-label">Roof Pitch</label><input type="number" id="roofPitch" class="input-field bg-gray-50" value="4"></div>
+        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20" toolparamdescription="Length of the rectangle in feet."></div>
+        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="10" toolparamdescription="Width of the rectangle in feet."></div>
+        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="8" toolparamdescription="Height of the walls in feet."></div>
+        <div><label class="input-label">Roof Pitch</label><input type="number" id="roofPitch" class="input-field bg-gray-50" value="4" toolparamdescription="Roof pitch (rise over 12)."></div>
     `,
     'a-frame': `
-        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
-        <div><label class="input-label">Base Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12"></div>
-        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="15"></div>
+        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20" toolparamdescription="Length of the A-frame in feet."></div>
+        <div><label class="input-label">Base Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12" toolparamdescription="Base width of the A-frame in feet."></div>
+        <div><label class="input-label">Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="15" toolparamdescription="Peak height of the A-frame in feet."></div>
     `,
     'gothic-arch': `
-        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20"></div>
-        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12"></div>
-        <div><label class="input-label">Spring Ht</label><input type="number" id="springWallHeight" class="input-field bg-gray-50" value="2"></div>
+        <div><label class="input-label">Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="20" toolparamdescription="Length of the arch structure in feet."></div>
+        <div><label class="input-label">Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="12" toolparamdescription="Width of the arch base in feet."></div>
+        <div><label class="input-label">Spring Ht</label><input type="number" id="springWallHeight" class="input-field bg-gray-50" value="2" toolparamdescription="Height of the vertical spring walls in feet."></div>
     `,
     'cargo-van': `
-        <div><label class="input-label">Cargo Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="12"></div>
-        <div><label class="input-label">Floor Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="6"></div>
-        <div><label class="input-label">Int. Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="6.3"></div>
+        <div><label class="input-label">Cargo Length (ft)</label><input type="number" id="length" class="input-field bg-gray-50" value="12" toolparamdescription="Interior cargo length in feet."></div>
+        <div><label class="input-label">Floor Width (ft)</label><input type="number" id="width" class="input-field bg-gray-50" value="6" toolparamdescription="Interior floor width in feet."></div>
+        <div><label class="input-label">Int. Height (ft)</label><input type="number" id="height" class="input-field bg-gray-50" value="6.3" toolparamdescription="Interior standing height in feet."></div>
     `
 };
 

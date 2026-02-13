@@ -17,6 +17,10 @@ describe('WebMCP Integration', () => {
     beforeAll(() => {
         calculatorScript = loadScript('calculator.js');
         webmcpScript = loadScript('webmcp.js');
+
+        // Strip import statements for JSDOM eval
+        webmcpScript = webmcpScript.replace(/^import .*$/gm, '// import removed for test');
+        webmcpScript = webmcpScript.replace(/await import\(.*\);/g, '// dynamic import removed');
     });
 
     beforeEach(() => {
@@ -24,25 +28,31 @@ describe('WebMCP Integration', () => {
         document.documentElement.innerHTML = `
             <html>
             <body>
-                <input id="insulationPreset_A" value="">
-                <input id="insulationPreset_B" value="">
-                <input id="buildingShape" value="rectangle">
-                <div id="dimensionInputs"></div>
-                <input id="length" value="10">
-                <input id="width" value="10">
-                <input id="height" value="8">
-                <input id="roofPitch" value="0">
-                <input id="indoorTemp" value="70">
-                <input id="outdoorTemp" value="20">
-                <input id="groundTemp" value="50">
-                <input id="simDuration" value="24">
-                <input id="simInternalGain" value="0">
-                <input id="simLowTemp" value="20">
-                <input id="simHighTemp" value="30">
-                <input id="vehicleColor" value="light">
+                <form id="sharedSettings">
+                   <select id="buildingShape">
+                       <option value="rectangle">Rectangle</option>
+                       <option value="a-frame">A-Frame</option>
+                       <option value="gothic-arch">Gothic Arch</option>
+                       <option value="cargo-van">Cargo Van</option>
+                   </select>
+                   <div id="dimensionInputs"></div>
+                   <input id="indoorTemp" value="70">
+                   <input id="outdoorTemp" value="20">
+                   <input id="groundTemp" value="50">
+                   <select id="vehicleColor"><option value="light">Light</option></select>
+                </form>
+
+                <form id="simulationSettings">
+                   <input id="simDuration" value="24">
+                   <input id="simInternalGain" value="0">
+                   <input id="simLowTemp" value="20">
+                   <input id="simHighTemp" value="30">
+                </form>
+
                 <input id="abToggle" type="checkbox">
 
-                <!-- Inputs needed for calculator.js to not crash -->
+                <!-- Scenario A Inputs -->
+                <input id="insulationPreset_A" value="">
                 <input id="wallAssemblyType_A" value="stick">
                 <select id="wallStudSize_A"><option value="2x4">2x4</option></select>
                 <select id="wallStudMaterial_A"><option value="wood">Wood</option></select>
@@ -62,7 +72,8 @@ describe('WebMCP Integration', () => {
                 <select id="massMaterial_A"><option value="wood">Wood</option></select>
                 <select id="glazingPreset_A"><option value="custom">Custom</option></select>
 
-                <!-- B -->
+                <!-- Scenario B Inputs -->
+                <input id="insulationPreset_B" value="">
                 <input id="wallAssemblyType_B" value="stick">
                 <select id="wallStudSize_B"><option value="2x4">2x4</option></select>
                 <select id="wallStudMaterial_B"><option value="wood">Wood</option></select>
@@ -93,7 +104,7 @@ describe('WebMCP Integration', () => {
                 <span id="resultDrop_B"></span>
                 <div id="breakdown_B"></div>
 
-                <!-- Simulation Inputs Containers -->
+                <!-- Helper elements for UI toggles -->
                 <div id="scenariosGrid">
                     <div id="scenarioBoxB" class="hidden"></div>
                 </div>
@@ -103,6 +114,9 @@ describe('WebMCP Integration', () => {
                 <h3 id="headerA"></h3>
                 <h3 id="resultHeaderA"></h3>
                 <div class="lg:col-span-2-dynamic"></div>
+
+                <!-- Helper for templates -->
+                <div id="dimensionInputs"></div>
             </body>
             </html>
         `;
@@ -126,6 +140,7 @@ describe('WebMCP Integration', () => {
         // Execute Calculator Script (to set up globals)
         // We rely on the module export for functions, but we must assign them to window
         // to mimic browser behavior for webmcp.js which expects them on window.
+        // Also need to handle module.exports from calculator.js being assigned to window
         const calculator = require('./calculator.js');
         Object.assign(window, calculator);
 
@@ -133,12 +148,13 @@ describe('WebMCP Integration', () => {
         window.init();
 
         // Execute WebMCP Script
+        // Since it might be an IIFE, just eval it
         eval(webmcpScript);
     });
 
-    test('window.navigator.modelContext should be defined', () => {
+    test('window.navigator.modelContext should be defined and have registerTool', () => {
         expect(window.navigator.modelContext).toBeDefined();
-        expect(typeof window.navigator.modelContext.provideContext).toBe('function');
+        expect(typeof window.navigator.modelContext.registerTool).toBe('function');
     });
 
     test('tools should be registered in window.aiTools', () => {
@@ -146,12 +162,12 @@ describe('WebMCP Integration', () => {
         expect(window.aiTools['apply_preset']).toBeDefined();
         expect(window.aiTools['set_dimensions']).toBeDefined();
         expect(window.aiTools['run_simulation']).toBeDefined();
-        expect(window.aiTools['get_results']).toBeDefined();
+        expect(window.aiTools['get_detailed_results']).toBeDefined();
     });
 
-    test('apply_preset tool should update DOM and trigger calculation', () => {
+    test('apply_preset tool should update DOM and trigger calculation', async () => {
         const tool = window.aiTools['apply_preset'];
-        tool({ suffix: '_A', preset: 'van_build' }, {});
+        await tool({ suffix: '_A', preset: 'van_build' }, {});
 
         const presetVal = document.getElementById('insulationPreset_A').value;
         expect(presetVal).toBe('van_build');
@@ -160,31 +176,31 @@ describe('WebMCP Integration', () => {
         expect(roofR).toBe('12');
     });
 
-    test('set_dimensions tool should update DOM', () => {
+    test('set_dimensions tool should update DOM', async () => {
         const tool = window.aiTools['set_dimensions'];
-        tool({ shape: 'cargo-van', length: 20, width: 8, height: 7 }, {});
+        await tool({ shape: 'cargo-van', length: 20, width: 8, height: 7 }, {});
 
         expect(document.getElementById('buildingShape').value).toBe('cargo-van');
         expect(document.getElementById('length').value).toBe('20');
     });
 
-    test('run_simulation tool should return data', () => {
+    test('run_simulation tool should return data', async () => {
         const tool = window.aiTools['run_simulation'];
         // Ensure valid inputs first
-        window.aiTools['set_dimensions']({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {});
+        await window.aiTools['set_dimensions']({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {});
 
-        const result = tool({ duration: 24, lowTemp: 10, highTemp: 20 }, {});
+        const result = await tool({ duration: 24, lowTemp: 10, highTemp: 20 }, {});
         expect(result).toBeDefined();
         expect(result.simA.length).toBeGreaterThan(20);
         expect(result.labels).toBeDefined();
     });
 
-    test('get_results tool should return result object', () => {
-        const tool = window.aiTools['get_results'];
+    test('get_detailed_results tool should return result object', async () => {
+        const tool = window.aiTools['get_detailed_results'];
         // Set up valid state
-        window.aiTools['set_dimensions']({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {});
+        await window.aiTools['set_dimensions']({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {});
 
-        const result = tool({}, {});
+        const result = await tool({}, {});
         expect(result).toBeDefined();
         expect(result.scenarioA).toBeDefined();
         expect(result.scenarioA.loss.totalLoss).toBeGreaterThan(0);
