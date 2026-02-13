@@ -454,7 +454,7 @@ When implementing new features or refactoring, ensure the following logic is exp
 
 1.  **State Manipulation:**
     *   Functions that modify the application state (e.g., `setDimensions`, `updateMaterial`) must be decoupled from the UI event listeners so they can be called programmatically.
-    *   *Example:* `updateWallRValue(20)` should update the state *and* refresh the UI, just as if the user typed it.
+    *   *Example:* `updateRoofRValue('_A', 40)` should update the state *and* refresh the UI, just as if the user typed it.
 
 2.  **Tool Registration:**
     *   Future implementations should register these functions in a standardized namespace (e.g., `window.webmcp` or similar as the spec evolves) with JSON schemas describing their inputs.
