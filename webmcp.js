@@ -1,24 +1,31 @@
-(function() {
+// webmcp.js
+// Loaded as module
+
+(async function() {
+    try {
+        await import('https://esm.sh/@mcp-b/global');
+    } catch (e) {
+        console.warn("Failed to load @mcp-b/global, using local polyfill.", e);
+    }
+
     // --- Polyfill for WebMCP API ---
+    // This polyfill ensures the application works even if the @mcp-b/global package
+    // fails to load or if the environment does not provide the modelContext.
     if (!window.navigator.modelContext) {
         window.navigator.modelContext = {
-            provideContext: function(context) {
-                // In a real browser implementation, this would communicate with the agent.
-                // For this polyfill/shim, we also expose tools to window.aiTools
-                // to satisfy project-specific requirements.
-                if (context.tools) {
-                    window.aiTools = window.aiTools || {};
-                    context.tools.forEach(tool => {
-                        window.aiTools[tool.name] = tool.execute;
-                        // Also store metadata for inspection if needed
-                        window.aiTools[tool.name].description = tool.description;
-                        window.aiTools[tool.name].schema = tool.inputSchema;
-                    });
-                    console.log("WebMCP Tools Registered:", context.tools.map(t => t.name));
-                }
-            },
+            // Store registered tools
+            _tools: [],
+
             registerTool: function(tool) {
-                 this.provideContext({ tools: [tool] });
+                this._tools.push(tool);
+
+                // Expose to window.aiTools for testing/legacy support
+                window.aiTools = window.aiTools || {};
+                window.aiTools[tool.name] = tool.execute;
+                window.aiTools[tool.name].description = tool.description;
+                window.aiTools[tool.name].schema = tool.inputSchema;
+
+                console.log(`WebMCP Tool Registered: ${tool.name}`);
             }
         };
     }
@@ -45,7 +52,7 @@
                 },
                 required: ["suffix", "preset"]
             },
-            execute: ({ suffix, preset }, agent) => {
+            execute: async ({ suffix, preset }) => {
                 const el = document.getElementById(`insulationPreset${suffix}`);
                 if (el) {
                     el.value = preset;
@@ -76,7 +83,7 @@
                 },
                 required: ["shape", "length", "width", "height"]
             },
-            execute: (params, agent) => {
+            execute: async (params) => {
                 const shapeEl = document.getElementById('buildingShape');
                 if (shapeEl) {
                     shapeEl.value = params.shape;
@@ -112,7 +119,7 @@
                 },
                 required: ["duration"]
             },
-            execute: (params, agent) => {
+            execute: async (params) => {
                 // Update simulation inputs if provided
                 if (params.duration) document.getElementById('simDuration').value = params.duration;
                 if (params.lowTemp) document.getElementById('simLowTemp').value = params.lowTemp;
@@ -146,10 +153,10 @@
             }
         },
         {
-            name: "get_results",
+            name: "get_detailed_results",
             description: "Retrieves the current calculated heat loss results for all active scenarios.",
             inputSchema: { type: "object", properties: {} },
-            execute: (params, agent) => {
+            execute: async (params) => {
                 if (window.calculateAll) {
                     return window.calculateAll();
                 }
@@ -159,8 +166,11 @@
     ];
 
     // --- Register Tools ---
+    // Ensure modelContext is available
     if (window.navigator.modelContext) {
-        window.navigator.modelContext.provideContext({ tools: tools });
+        tools.forEach(tool => {
+            window.navigator.modelContext.registerTool(tool);
+        });
     }
 
 })();

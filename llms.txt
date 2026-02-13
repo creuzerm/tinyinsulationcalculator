@@ -1,0 +1,40 @@
+# WebMCP Tools
+
+This application exposes client-side WebMCP tools for interacting with the calculator logic.
+These tools are registered via `window.navigator.modelContext`.
+
+## Imperative Tools (JavaScript API)
+
+### `apply_preset`
+Applies a construction preset (e.g. 'van_build', 'code_min') to a specific scenario.
+- `suffix`: "_A" or "_B"
+- `preset`: "code_min", "high_perf", "passive_house", "van_build", "uninsulated"
+
+### `set_dimensions`
+Sets the building shape and dimensions.
+- `shape`: "rectangle", "a-frame", "gothic-arch", "cargo-van"
+- `length`, `width`, `height`, `roofPitch`
+
+### `run_simulation`
+Runs the passive thermal simulation.
+- `duration`: Hours (24 or 168)
+- `lowTemp`, `highTemp`
+
+### `get_detailed_results`
+Retrieves the current calculated heat loss results for all active scenarios.
+
+## Declarative Tools (HTML Forms)
+
+The following HTML forms are instrumented with WebMCP attributes for declarative interaction:
+
+### `update_shared_settings`
+Update shared building and climate settings (Shape, Dimensions, Temperature, Vehicle Color).
+
+### `update_scenario_a`
+Update Scenario A construction details (Insulation, R-values, Windows, Doors, Mass).
+
+### `update_scenario_b`
+Update Scenario B construction details.
+
+### `update_simulation_settings`
+Update simulation settings (Duration, Internal Gains, Daily Temperatures).
