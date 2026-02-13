@@ -1051,7 +1051,7 @@ function calculateMassCapacity(areas, data) {
 function calculateAll() {
     const isAB = document.getElementById('abToggle')?.checked;
     const areas = getSurfaceAreas();
-    if(areas.total <= 0) return;
+    if(areas.total <= 0) return null;
 
     const tIn = parseFloat(document.getElementById('indoorTemp').value);
     const tOut = parseFloat(document.getElementById('outdoorTemp').value);
@@ -1084,6 +1084,14 @@ function calculateAll() {
     updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB);
     updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround);
     updateBreakdownChart(isAB, lossA, lossB);
+
+    return {
+        isAB,
+        areas,
+        temperatures: { tIn, tOut, tGround },
+        scenarioA: { data: dataA, loss: lossA, capacity: capA },
+        scenarioB: isAB ? { data: dataB, loss: lossB, capacity: capB } : null
+    };
 }
 
 function updateBreakdownUI(elementId, breakdown) {
@@ -1204,20 +1212,12 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
     });
 }
 
-function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
-    const ctx = document.getElementById('simulationChart')?.getContext('2d');
-    if(!ctx) return;
-
-    const duration = parseInt(document.getElementById('simDuration').value);
-    const low = parseFloat(document.getElementById('simLowTemp').value);
-    const high = parseFloat(document.getElementById('simHighTemp').value);
-    const iGain = parseFloat(document.getElementById('simInternalGain').value);
+function calculateSimulationData(params) {
+    const { isAB, lossA, lossB, capA, capB, tIn, tGround, duration, low, high, iGain, buildingShape, vehicleColor } = params;
     const sGainBase = 1000;
 
-    const shape = document.getElementById('buildingShape').value;
-    const isVehicle = (shape === 'cargo-van');
-    const vColor = document.getElementById('vehicleColor').value;
-    const solarMult = (isVehicle && vColor === 'dark') ? 1.5 : 1.0;
+    const isVehicle = (buildingShape === 'cargo-van');
+    const solarMult = (isVehicle && vehicleColor === 'dark') ? 1.5 : 1.0;
     const sGain = sGainBase * solarMult;
 
     const labels = [];
@@ -1249,7 +1249,7 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
             const rateA = (gains - loadA) / Math.max(capA, 50);
             currA += rateA * dt;
 
-            if(isAB) {
+            if(isAB && lossB) {
                 const loadB = (lossB.ua * (currB - tOut)) + (lossB.uaFloor * (currB - tGround));
                 const rateB = (gains - loadB) / Math.max(capB, 50);
                 currB += rateB * dt;
@@ -1260,20 +1260,41 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
         if(isAB) simB.push(currB);
     }
 
+    return { labels, simA, simB, simOut };
+}
+
+function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
+    const ctx = document.getElementById('simulationChart')?.getContext('2d');
+    if(!ctx) return;
+
+    const duration = parseInt(document.getElementById('simDuration').value);
+    const low = parseFloat(document.getElementById('simLowTemp').value);
+    const high = parseFloat(document.getElementById('simHighTemp').value);
+    const iGain = parseFloat(document.getElementById('simInternalGain').value);
+    const shape = document.getElementById('buildingShape').value;
+    const vColor = document.getElementById('vehicleColor').value;
+
+    const simData = calculateSimulationData({
+        isAB, lossA, lossB, capA, capB, tIn, tGround,
+        duration, low, high, iGain,
+        buildingShape: shape,
+        vehicleColor: vColor
+    });
+
     const datasets = [
-        { label: isAB ? 'Indoor A' : 'Indoor Temp', data: simA, borderColor: '#3B82F6', tension: 0.4, pointRadius: 0 },
-        { label: 'Outdoor', data: simOut, borderColor: '#9CA3AF', borderDash: [5,5], pointRadius: 0, borderWidth: 1 }
+        { label: isAB ? 'Indoor A' : 'Indoor Temp', data: simData.simA, borderColor: '#3B82F6', tension: 0.4, pointRadius: 0 },
+        { label: 'Outdoor', data: simData.simOut, borderColor: '#9CA3AF', borderDash: [5,5], pointRadius: 0, borderWidth: 1 }
     ];
 
     if(isAB) {
-        datasets.splice(1, 0, { label: 'Indoor B', data: simB, borderColor: '#10B981', tension: 0.4, pointRadius: 0 });
+        datasets.splice(1, 0, { label: 'Indoor B', data: simData.simB, borderColor: '#10B981', tension: 0.4, pointRadius: 0 });
     }
 
     if(simulationChart) simulationChart.destroy();
     simulationChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: simData.labels,
             datasets: datasets
         },
         options: {
@@ -1488,6 +1509,7 @@ if (typeof module !== 'undefined') {
         getSurfaceAreas,
         getScenarioData,
         calculateAll,
+        calculateSimulationData,
         updateDimensions,
         toggleABMode,
         init,
