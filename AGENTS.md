@@ -463,6 +463,6 @@ When implementing new features or refactoring, ensure the following logic is exp
     *   All exposed tools must include natural language descriptions explaining their purpose to an LLM (e.g., *"Calculates the heat loss based on current geometry"*).
 
 4.  **Priority Tools to Expose:**
-    *   `applyPreset(name)`: To quickly switch between 'Van', 'Cabin', 'Shed'.
+    *   `applyPreset(scenario, presetName)`: To quickly switch between presets like 'van_build' (for Van) or 'uninsulated' (for Shed).
     *   `runSimulation(durationInHours)`: To run the passive thermal battery simulation (e.g., 24 for 1 day).
     *   `getDetailedResults()`: To return the breakdown of heat loss by component (Walls vs Windows vs Roof).
