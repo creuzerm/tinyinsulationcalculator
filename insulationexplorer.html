@@ -95,12 +95,19 @@
                     <!-- Structure -->
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x4 Stud (16oc)')" aria-label="Add 2x4 Wood Stud">🧱 2x4 Wood Stud</button>
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x6 Stud (16oc)')" aria-label="Add 2x6 Wood Stud">🧱 2x6 Wood Stud</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x6 Roof Truss')" aria-label="Add 2x6 Roof Truss">🏠 2x6 Roof Truss</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x8 Joist')" aria-label="Add 2x8 Joist">🧱 2x8 Joist</button>
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x10 Joist')" aria-label="Add 2x10 Joist">🧱 2x10 Joist</button>
                     
                     <!-- Insulation -->
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Fiberglass Batt (3.5in)')" aria-label="Add Fiberglass R-13">🧶 Fiberglass R-13</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Fiberglass Batt (5.5in)')" aria-label="Add Fiberglass R-21">🧶 Fiberglass R-21</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Basement Subfloor System')" aria-label="Add Basement Subfloor R-21+Reflectix">✨ Bsmt Subfloor (R-21+Refl)</button>
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Rockwool (3.5in)')" aria-label="Add Rockwool R-15">🪨 Rockwool R-15</button>
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Rockwool (5.5in)')" aria-label="Add Rockwool R-23">🪨 Rockwool R-23</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Rockwool (7.25in)')" aria-label="Add Rockwool R-30">🪨 Rockwool R-30</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (1in)')" aria-label="Add XPS Foam R-5">🟦 XPS Foam (1")</button>
+                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (1in)')" aria-label="Add Polyiso Foam R-6">🟨 Polyiso Foam (1")</button>
                     
                     <!-- Radiant/Films -->
                     <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Reflectix Radiant Barrier')" aria-label="Add Reflectix Layer">✨ Reflectix Layer</button>
@@ -146,9 +153,16 @@
             '2x4 Stud (16oc)': { r: 4.5, type: 'structure', thickness: 3.5, name: '2x4 Wood Stud Wall (16" o.c.)' },
             '2x6 Stud (16oc)': { r: 6.9, type: 'structure', thickness: 5.5, name: '2x6 Wood Stud Wall (16" o.c.)' },
             '2x10 Joist': { r: 11.25, type: 'structure', thickness: 9.25, name: '2x10 Roof Joist' },
+            '2x6 Roof Truss': { r: 6.9, type: 'structure', thickness: 5.5, name: '2x6 Roof Truss' },
+            '2x8 Joist': { r: 9.1, type: 'structure', thickness: 7.25, name: '2x8 Floor/Roof Joist' },
             'Fiberglass Batt (3.5in)': { r: 13, type: 'insulation', thickness: 3.5, name: 'Fiberglass Batt (R-13)' },
+            'Fiberglass Batt (5.5in)': { r: 21, type: 'insulation', thickness: 5.5, name: 'Fiberglass Batt (R-21)' },
+            'Basement Subfloor System': { r: 27, type: 'insulation', thickness: 5.5, name: 'Basement Subfloor (R-21 + Permeable Reflectix)' },
             'Rockwool (3.5in)': { r: 15, type: 'insulation', thickness: 3.5, name: 'Rockwool Safe\'n\'Sound (R-15)' },
             'Rockwool (5.5in)': { r: 23, type: 'insulation', thickness: 5.5, name: 'Rockwool ComfortBatt (R-23)' },
+            'Rockwool (7.25in)': { r: 30, type: 'insulation', thickness: 7.25, name: 'Rockwool ComfortBatt (R-30)' },
+            'XPS Rigid Foam (1in)': { r: 5.0, type: 'insulation', thickness: 1.0, name: 'XPS Rigid Foam (1")' },
+            'Polyiso Board (1in)': { r: 6.0, type: 'insulation', thickness: 1.0, name: 'Foil-Faced Polyiso (1")' },
             'Reflectix Radiant Barrier': { r: 1.1, type: 'radiant', thickness: 0.3, name: 'Reflectix (Double Bubble)' },
             'Air Gap (0.75in)': { r: 0.9, type: 'air', thickness: 0.75, name: 'Dead Air Space (0.75")' },
             'Poly Vapor Barrier': { r: 0, type: 'vapor', thickness: 0.01, name: '6-mil Polyethylene' },
