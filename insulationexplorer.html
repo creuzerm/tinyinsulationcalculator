@@ -31,13 +31,19 @@
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Insulation Explorer</h1>
             <p class="text-gray-700 mt-2">Design your wall or roof assembly to see how materials interact.</p>
 
-             <nav class="mt-4 flex justify-center space-x-4 text-sm font-medium">
-                 <a href="index.html" class="text-blue-600 hover:text-blue-800 transition-colors">Main Calculator</a>
-                 <span class="text-gray-300">|</span>
-                 <a href="existing_building_estimator.html" class="text-blue-600 hover:text-blue-800 transition-colors">Retrofit Tool</a>
-                 <span class="text-gray-300">|</span>
-                 <span class="text-gray-500 cursor-default">Explorer</span>
-            </nav>
+            <!-- Hamburger Menu -->
+            <div class="absolute top-0 right-0 p-4">
+                <button id="menu-btn" class="text-gray-500 hover:text-gray-700 focus:outline-none" aria-label="Menu">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                    <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tiny Home Calculator</a>
+                    <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Existing Building Estimator</a>
+                    <a href="insulationexplorer.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Insulation Explorer</a>
+                </div>
+            </div>
         </header>
 
         <div class="mb-6 text-center max-w-3xl mx-auto">
@@ -283,6 +289,21 @@
         // Looking at webmcp.js (from memory), it polyfills navigator.modelContext immediately if it's not dynamic import.
 
         window.addEventListener('load', () => {
+             // Menu Toggle Logic
+             const menuBtn = document.getElementById('menu-btn');
+             const menuDropdown = document.getElementById('menu-dropdown');
+             if (menuBtn && menuDropdown) {
+                 menuBtn.addEventListener('click', (e) => {
+                     e.stopPropagation();
+                     menuDropdown.classList.toggle('hidden');
+                 });
+                 document.addEventListener('click', (event) => {
+                    if (!menuDropdown.classList.contains('hidden') && !menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
+                        menuDropdown.classList.add('hidden');
+                    }
+                });
+             }
+
              if (window.navigator && window.navigator.modelContext) {
                 window.navigator.modelContext.registerTool({
                     name: "calculate_assembly",
