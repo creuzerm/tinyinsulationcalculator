@@ -43,6 +43,7 @@ const FASTENER_CHI_VALUES = {
 const MATERIALS = {
     // Framing
     wood_stud: { r_inch: 1.25, type: 'framing' },
+    wood_truss: { r_inch: 1.25, type: 'framing' },
     steel_stud: { type: 'framing' },
 
     // Mass / Solid
@@ -53,6 +54,7 @@ const MATERIALS = {
 
     // Insulation (Cavity)
     fiberglass_batt: { r_inch: 3.2 },
+    fiberglass_r21_reflectix: { r_inch: 4.9 },
     mineral_wool: { r_inch: 4.2 },
     cellulose: { r_inch: 3.7 },
     spray_foam_open: { r_inch: 3.6 },
@@ -790,7 +792,8 @@ function calculateEffectiveR(assembly) {
 
         } else {
             // Wood: Parallel Path Method
-            const framingFactor = assembly.spacing === '24' ? 0.22 : 0.25;
+            let framingFactor = assembly.spacing === '24' ? 0.22 : 0.25;
+            if (mat === 'wood_truss') framingFactor = 0.12;
 
             const studRPerInch = MATERIALS.wood_stud.r_inch;
             const r_stud = depth * studRPerInch;
