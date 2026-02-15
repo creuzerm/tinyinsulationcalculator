@@ -277,8 +277,8 @@
                         layerNote = "ACTIVE (Reflecting Heat)";
                     } else {
                         // Radiant Barrier INACTIVE (Conduction only)
-                        r_down = 1.1;
-                        r_up = 1.1;
+                        r_down = layer.r;
+                        r_up = layer.r;
                         warnings.push(`Radiant layer at position ${index + 1} has no air gap! It is acting as a conductor only.`);
                         layerNote = "INACTIVE (No Air Gap)";
                     }
