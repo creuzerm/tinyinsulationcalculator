@@ -505,11 +505,15 @@
             load('a', 'A');
             load('b', 'B');
 
+            // After loading both stacks, reset the active stack to 'A' to ensure a consistent state.
+            activeStackId = 'A';
+
             if (params.get('ab') === '1') {
                 document.getElementById('abToggle').checked = true;
                 toggleABMode();
+                // Explicitly set the target UI to match the active stack.
+                setTarget('A');
             } else {
-                activeStackId = 'A'; // Reset
                 render();
             }
 
