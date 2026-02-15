@@ -1,0 +1,58 @@
+{
+    "Structure": {
+        "2x4 Stud (16oc)": { "r": 4.5, "type": "structure", "thickness": 3.5, "name": "2x4 Wood Stud Wall (16\" o.c.)" },
+        "2x6 Stud (16oc)": { "r": 6.9, "type": "structure", "thickness": 5.5, "name": "2x6 Wood Stud Wall (16\" o.c.)" },
+        "2x6 Roof Truss": { "r": 6.9, "type": "structure", "thickness": 5.5, "name": "2x6 Roof Truss" },
+        "2x8 Joist": { "r": 9.1, "type": "structure", "thickness": 7.25, "name": "2x8 Floor/Roof Joist" },
+        "2x10 Joist": { "r": 11.25, "type": "structure", "thickness": 9.25, "name": "2x10 Roof Joist" },
+        "SIP Panel (4in)": { "r": 15, "type": "structure", "thickness": 4.0, "name": "SIP Panel (4\")", "placeholder": true },
+        "SIP Panel (6in)": { "r": 23, "type": "structure", "thickness": 6.0, "name": "SIP Panel (6\")", "placeholder": true },
+        "CMU Block (8in)": { "r": 1.1, "type": "structure", "thickness": 8.0, "name": "Standard CMU Block (8\")", "placeholder": true },
+        "Aircrete Block (8in)": { "r": 16, "type": "structure", "thickness": 8.0, "name": "Aircrete Block (8\")", "placeholder": true }
+    },
+    "Batt Insulation": {
+        "Fiberglass Batt (3.5in)": { "r": 13, "type": "insulation", "thickness": 3.5, "name": "Fiberglass Batt (R-13)" },
+        "Fiberglass Batt (5.5in)": { "r": 21, "type": "insulation", "thickness": 5.5, "name": "Fiberglass Batt (R-21)" },
+        "Basement Subfloor System": { "r": 27, "type": "insulation", "thickness": 5.5, "name": "Basement Subfloor (R-21 + Permeable Reflectix)" },
+        "Rockwool (3.5in)": { "r": 15, "type": "insulation", "thickness": 3.5, "name": "Rockwool Safe'n'Sound (R-15)" },
+        "Rockwool (5.5in)": { "r": 23, "type": "insulation", "thickness": 5.5, "name": "Rockwool ComfortBatt (R-23)" },
+        "Rockwool (7.25in)": { "r": 30, "type": "insulation", "thickness": 7.25, "name": "Rockwool ComfortBatt (R-30)" }
+    },
+    "Foam Boards": {
+        "XPS Rigid Foam (0.5in)": { "r": 2.5, "type": "insulation", "thickness": 0.5, "name": "XPS Rigid Foam (0.5\")" },
+        "XPS Rigid Foam (1in)": { "r": 5.0, "type": "insulation", "thickness": 1.0, "name": "XPS Rigid Foam (1\")" },
+        "XPS Rigid Foam (1.5in)": { "r": 7.5, "type": "insulation", "thickness": 1.5, "name": "XPS Rigid Foam (1.5\")" },
+        "XPS Rigid Foam (2in)": { "r": 10.0, "type": "insulation", "thickness": 2.0, "name": "XPS Rigid Foam (2\")" },
+        "XPS Rigid Foam (3in)": { "r": 15.0, "type": "insulation", "thickness": 3.0, "name": "XPS Rigid Foam (3\")" },
+        "XPS Rigid Foam (4in)": { "r": 20.0, "type": "insulation", "thickness": 4.0, "name": "XPS Rigid Foam (4\")" },
+        "Polyiso Board (0.5in)": { "r": 3.0, "type": "insulation", "thickness": 0.5, "name": "Foil-Faced Polyiso (0.5\")" },
+        "Polyiso Board (1in)": { "r": 6.0, "type": "insulation", "thickness": 1.0, "name": "Foil-Faced Polyiso (1\")" },
+        "Polyiso Board (1.5in)": { "r": 9.0, "type": "insulation", "thickness": 1.5, "name": "Foil-Faced Polyiso (1.5\")" },
+        "Polyiso Board (2in)": { "r": 12.0, "type": "insulation", "thickness": 2.0, "name": "Foil-Faced Polyiso (2\")" },
+        "Polyiso Board (3in)": { "r": 18.0, "type": "insulation", "thickness": 3.0, "name": "Foil-Faced Polyiso (3\")" },
+        "Polyiso Board (4in)": { "r": 24.0, "type": "insulation", "thickness": 4.0, "name": "Foil-Faced Polyiso (4\")" },
+        "EPS Rigid Foam (0.5in)": { "r": 2.0, "type": "insulation", "thickness": 0.5, "name": "EPS Rigid Foam (0.5\")" },
+        "EPS Rigid Foam (1in)": { "r": 3.9, "type": "insulation", "thickness": 1.0, "name": "EPS Rigid Foam (1\")" },
+        "EPS Rigid Foam (1.5in)": { "r": 5.9, "type": "insulation", "thickness": 1.5, "name": "EPS Rigid Foam (1.5\")" },
+        "EPS Rigid Foam (2in)": { "r": 7.8, "type": "insulation", "thickness": 2.0, "name": "EPS Rigid Foam (2\")" },
+        "EPS Rigid Foam (3in)": { "r": 11.7, "type": "insulation", "thickness": 3.0, "name": "EPS Rigid Foam (3\")" },
+        "EPS Rigid Foam (4in)": { "r": 15.6, "type": "insulation", "thickness": 4.0, "name": "EPS Rigid Foam (4\")" }
+    },
+    "Spray Foam": {
+        "Closed Cell Foam (3.5in)": { "r": 22.8, "type": "insulation", "thickness": 3.5, "name": "Closed Cell Spray Foam (3.5\")" },
+        "Closed Cell Foam (5.5in)": { "r": 35.8, "type": "insulation", "thickness": 5.5, "name": "Closed Cell Spray Foam (5.5\")" },
+        "Closed Cell Foam (7.25in)": { "r": 47.1, "type": "insulation", "thickness": 7.25, "name": "Closed Cell Spray Foam (7.25\")" },
+        "Closed Cell Foam (9.25in)": { "r": 60.1, "type": "insulation", "thickness": 9.25, "name": "Closed Cell Spray Foam (9.25\")" },
+        "Open Cell Foam (3.5in)": { "r": 13.0, "type": "insulation", "thickness": 3.5, "name": "Open Cell Spray Foam (3.5\")" },
+        "Open Cell Foam (5.5in)": { "r": 20.4, "type": "insulation", "thickness": 5.5, "name": "Open Cell Spray Foam (5.5\")" },
+        "Open Cell Foam (7.25in)": { "r": 26.8, "type": "insulation", "thickness": 7.25, "name": "Open Cell Spray Foam (7.25\")" },
+        "Open Cell Foam (9.25in)": { "r": 34.2, "type": "insulation", "thickness": 9.25, "name": "Open Cell Spray Foam (9.25\")" }
+    },
+    "Radiant & Films": {
+        "Reflectix Radiant Barrier": { "r": 1.1, "type": "radiant", "thickness": 0.3, "name": "Reflectix (Double Bubble)" },
+        "Air Gap (0.75in)": { "r": 0.9, "type": "air", "thickness": 0.75, "name": "Dead Air Space (0.75\")" },
+        "Poly Vapor Barrier": { "r": 0, "type": "vapor", "thickness": 0.01, "name": "6-mil Polyethylene" },
+        "OSB Sheathing": { "r": 0.6, "type": "sheathing", "thickness": 0.5, "name": "OSB Sheathing (1/2\")" },
+        "Drywall": { "r": 0.45, "type": "finish", "thickness": 0.5, "name": "Gypsum Board (1/2\")" }
+    }
+}

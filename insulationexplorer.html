@@ -91,75 +91,8 @@
                 <div id="warnings" class="inspector-warning rounded-md" style="display:none;"></div>
 
                 <h3 class="font-bold text-gray-700 mt-2">Add Layer</h3>
-                <div class="add-menu">
-                    <!-- Structure -->
-                    <h4 class="col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1">Structure</h4>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x4 Stud (16oc)')" aria-label="Add 2x4 Wood Stud">🧱 2x4 Wood Stud</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x6 Stud (16oc)')" aria-label="Add 2x6 Wood Stud">🧱 2x6 Wood Stud</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x6 Roof Truss')" aria-label="Add 2x6 Roof Truss">🏠 2x6 Roof Truss</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x8 Joist')" aria-label="Add 2x8 Joist">🧱 2x8 Joist</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('2x10 Joist')" aria-label="Add 2x10 Joist">🧱 2x10 Joist</button>
-                    
-                    <!-- Batt Insulation -->
-                    <h4 class="col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1">Batt Insulation</h4>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Fiberglass Batt (3.5in)')" aria-label="Add Fiberglass R-13">🧶 Fiberglass R-13</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Fiberglass Batt (5.5in)')" aria-label="Add Fiberglass R-21">🧶 Fiberglass R-21</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Basement Subfloor System')" aria-label="Add Basement Subfloor R-21+Reflectix">✨ Bsmt Subfloor (R-21+Refl)</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Rockwool (3.5in)')" aria-label="Add Rockwool R-15">🪨 Rockwool R-15</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Rockwool (5.5in)')" aria-label="Add Rockwool R-23">🪨 Rockwool R-23</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Rockwool (7.25in)')" aria-label="Add Rockwool R-30">🪨 Rockwool R-30</button>
-                    
-                    <!-- Foam Boards -->
-                    <h4 class="col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1">Foam Boards</h4>
-
-                    <!-- XPS -->
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (0.5in)')" aria-label="Add XPS Rigid Foam 0.5 inch">🟦 XPS (0.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (1in)')" aria-label="Add XPS Rigid Foam 1 inch">🟦 XPS (1")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (1.5in)')" aria-label="Add XPS Rigid Foam 1.5 inch">🟦 XPS (1.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (2in)')" aria-label="Add XPS Rigid Foam 2 inch">🟦 XPS (2")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (3in)')" aria-label="Add XPS Rigid Foam 3 inch">🟦 XPS (3")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('XPS Rigid Foam (4in)')" aria-label="Add XPS Rigid Foam 4 inch">🟦 XPS (4")</button>
-
-                    <!-- Polyiso -->
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (0.5in)')" aria-label="Add Polyiso Board 0.5 inch">🟨 Polyiso (0.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (1in)')" aria-label="Add Polyiso Board 1 inch">🟨 Polyiso (1")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (1.5in)')" aria-label="Add Polyiso Board 1.5 inch">🟨 Polyiso (1.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (2in)')" aria-label="Add Polyiso Board 2 inch">🟨 Polyiso (2")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (3in)')" aria-label="Add Polyiso Board 3 inch">🟨 Polyiso (3")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Polyiso Board (4in)')" aria-label="Add Polyiso Board 4 inch">🟨 Polyiso (4")</button>
-
-                    <!-- EPS -->
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('EPS Rigid Foam (0.5in)')" aria-label="Add EPS Rigid Foam 0.5 inch">⬜ EPS (0.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('EPS Rigid Foam (1in)')" aria-label="Add EPS Rigid Foam 1 inch">⬜ EPS (1")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('EPS Rigid Foam (1.5in)')" aria-label="Add EPS Rigid Foam 1.5 inch">⬜ EPS (1.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('EPS Rigid Foam (2in)')" aria-label="Add EPS Rigid Foam 2 inch">⬜ EPS (2")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('EPS Rigid Foam (3in)')" aria-label="Add EPS Rigid Foam 3 inch">⬜ EPS (3")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('EPS Rigid Foam (4in)')" aria-label="Add EPS Rigid Foam 4 inch">⬜ EPS (4")</button>
-
-                    <!-- Spray Foam -->
-                    <h4 class="col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1">Spray Foam</h4>
-
-                    <!-- Closed Cell -->
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Closed Cell Foam (3.5in)')" aria-label="Add Closed Cell Foam 3.5 inch">🧱 Closed Cell (3.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Closed Cell Foam (5.5in)')" aria-label="Add Closed Cell Foam 5.5 inch">🧱 Closed Cell (5.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Closed Cell Foam (7.25in)')" aria-label="Add Closed Cell Foam 7.25 inch">🧱 Closed Cell (7.25")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Closed Cell Foam (9.25in)')" aria-label="Add Closed Cell Foam 9.25 inch">🧱 Closed Cell (9.25")</button>
-
-                    <!-- Open Cell -->
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Open Cell Foam (3.5in)')" aria-label="Add Open Cell Foam 3.5 inch">💨 Open Cell (3.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Open Cell Foam (5.5in)')" aria-label="Add Open Cell Foam 5.5 inch">💨 Open Cell (5.5")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Open Cell Foam (7.25in)')" aria-label="Add Open Cell Foam 7.25 inch">💨 Open Cell (7.25")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Open Cell Foam (9.25in)')" aria-label="Add Open Cell Foam 9.25 inch">💨 Open Cell (9.25")</button>
-
-                    <!-- Radiant/Films -->
-                    <h4 class="col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1">Radiant & Films</h4>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Reflectix Radiant Barrier')" aria-label="Add Reflectix Layer">✨ Reflectix Layer</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Air Gap (0.75in)')" aria-label="Add Air Gap">💨 Air Gap (3/4")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Poly Vapor Barrier')" aria-label="Add Poly Sheet">🛡️ Poly Sheet</button>
-
-                    <!-- Sheathing/Finish -->
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('OSB Sheathing')" aria-label="Add OSB Sheathing">🪵 OSB (1/2")</button>
-                    <button class="add-btn shadow-sm transition-colors" onclick="addLayer('Drywall')" aria-label="Add Drywall">⬜ Drywall (1/2")</button>
+                <div id="material-menu" class="add-menu">
+                    <p class="col-span-full text-center text-gray-500 py-4">Loading materials...</p>
                 </div>
                 
                 <button class="button w-full mt-5 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded shadow transition-colors" onclick="resetStack()">Reset Assembly</button>
@@ -188,67 +121,84 @@
     <!-- Logic Engine -->
     <script type="module" src="webmcp.js"></script>
     <script>
-        // Database of Materials
-        // r_per_inch: conductive resistance
-        // type: category for logic
-        // thickness: default thickness in inches
-        const MATERIALS = {
-            '2x4 Stud (16oc)': { r: 4.5, type: 'structure', thickness: 3.5, name: '2x4 Wood Stud Wall (16" o.c.)' },
-            '2x6 Stud (16oc)': { r: 6.9, type: 'structure', thickness: 5.5, name: '2x6 Wood Stud Wall (16" o.c.)' },
-            '2x10 Joist': { r: 11.25, type: 'structure', thickness: 9.25, name: '2x10 Roof Joist' },
-            '2x6 Roof Truss': { r: 6.9, type: 'structure', thickness: 5.5, name: '2x6 Roof Truss' },
-            '2x8 Joist': { r: 9.1, type: 'structure', thickness: 7.25, name: '2x8 Floor/Roof Joist' },
-            'Fiberglass Batt (3.5in)': { r: 13, type: 'insulation', thickness: 3.5, name: 'Fiberglass Batt (R-13)' },
-            'Fiberglass Batt (5.5in)': { r: 21, type: 'insulation', thickness: 5.5, name: 'Fiberglass Batt (R-21)' },
-            'Basement Subfloor System': { r: 27, type: 'insulation', thickness: 5.5, name: 'Basement Subfloor (R-21 + Permeable Reflectix)' },
-            'Rockwool (3.5in)': { r: 15, type: 'insulation', thickness: 3.5, name: 'Rockwool Safe\'n\'Sound (R-15)' },
-            'Rockwool (5.5in)': { r: 23, type: 'insulation', thickness: 5.5, name: 'Rockwool ComfortBatt (R-23)' },
-            'Rockwool (7.25in)': { r: 30, type: 'insulation', thickness: 7.25, name: 'Rockwool ComfortBatt (R-30)' },
-
-            // Foam Boards
-            'XPS Rigid Foam (0.5in)': { r: 2.5, type: 'insulation', thickness: 0.5, name: 'XPS Rigid Foam (0.5")' },
-            'XPS Rigid Foam (1in)': { r: 5.0, type: 'insulation', thickness: 1.0, name: 'XPS Rigid Foam (1")' },
-            'XPS Rigid Foam (1.5in)': { r: 7.5, type: 'insulation', thickness: 1.5, name: 'XPS Rigid Foam (1.5")' },
-            'XPS Rigid Foam (2in)': { r: 10.0, type: 'insulation', thickness: 2.0, name: 'XPS Rigid Foam (2")' },
-            'XPS Rigid Foam (3in)': { r: 15.0, type: 'insulation', thickness: 3.0, name: 'XPS Rigid Foam (3")' },
-            'XPS Rigid Foam (4in)': { r: 20.0, type: 'insulation', thickness: 4.0, name: 'XPS Rigid Foam (4")' },
-
-            'Polyiso Board (0.5in)': { r: 3.0, type: 'insulation', thickness: 0.5, name: 'Foil-Faced Polyiso (0.5")' },
-            'Polyiso Board (1in)': { r: 6.0, type: 'insulation', thickness: 1.0, name: 'Foil-Faced Polyiso (1")' },
-            'Polyiso Board (1.5in)': { r: 9.0, type: 'insulation', thickness: 1.5, name: 'Foil-Faced Polyiso (1.5")' },
-            'Polyiso Board (2in)': { r: 12.0, type: 'insulation', thickness: 2.0, name: 'Foil-Faced Polyiso (2")' },
-            'Polyiso Board (3in)': { r: 18.0, type: 'insulation', thickness: 3.0, name: 'Foil-Faced Polyiso (3")' },
-            'Polyiso Board (4in)': { r: 24.0, type: 'insulation', thickness: 4.0, name: 'Foil-Faced Polyiso (4")' },
-
-            'EPS Rigid Foam (0.5in)': { r: 2.0, type: 'insulation', thickness: 0.5, name: 'EPS Rigid Foam (0.5")' },
-            'EPS Rigid Foam (1in)': { r: 3.9, type: 'insulation', thickness: 1.0, name: 'EPS Rigid Foam (1")' },
-            'EPS Rigid Foam (1.5in)': { r: 5.9, type: 'insulation', thickness: 1.5, name: 'EPS Rigid Foam (1.5")' },
-            'EPS Rigid Foam (2in)': { r: 7.8, type: 'insulation', thickness: 2.0, name: 'EPS Rigid Foam (2")' },
-            'EPS Rigid Foam (3in)': { r: 11.7, type: 'insulation', thickness: 3.0, name: 'EPS Rigid Foam (3")' },
-            'EPS Rigid Foam (4in)': { r: 15.6, type: 'insulation', thickness: 4.0, name: 'EPS Rigid Foam (4")' },
-
-            // Spray Foam
-            'Closed Cell Foam (3.5in)': { r: 22.8, type: 'insulation', thickness: 3.5, name: 'Closed Cell Spray Foam (3.5")' },
-            'Closed Cell Foam (5.5in)': { r: 35.8, type: 'insulation', thickness: 5.5, name: 'Closed Cell Spray Foam (5.5")' },
-            'Closed Cell Foam (7.25in)': { r: 47.1, type: 'insulation', thickness: 7.25, name: 'Closed Cell Spray Foam (7.25")' },
-            'Closed Cell Foam (9.25in)': { r: 60.1, type: 'insulation', thickness: 9.25, name: 'Closed Cell Spray Foam (9.25")' },
-
-            'Open Cell Foam (3.5in)': { r: 13.0, type: 'insulation', thickness: 3.5, name: 'Open Cell Spray Foam (3.5")' },
-            'Open Cell Foam (5.5in)': { r: 20.4, type: 'insulation', thickness: 5.5, name: 'Open Cell Spray Foam (5.5")' },
-            'Open Cell Foam (7.25in)': { r: 26.8, type: 'insulation', thickness: 7.25, name: 'Open Cell Spray Foam (7.25")' },
-            'Open Cell Foam (9.25in)': { r: 34.2, type: 'insulation', thickness: 9.25, name: 'Open Cell Spray Foam (9.25")' },
-
-            'Reflectix Radiant Barrier': { r: 1.1, type: 'radiant', thickness: 0.3, name: 'Reflectix (Double Bubble)' },
-            'Air Gap (0.75in)': { r: 0.9, type: 'air', thickness: 0.75, name: 'Dead Air Space (0.75")' },
-            'Poly Vapor Barrier': { r: 0, type: 'vapor', thickness: 0.01, name: '6-mil Polyethylene' },
-            'OSB Sheathing': { r: 0.6, type: 'sheathing', thickness: 0.5, name: 'OSB Sheathing (1/2")' },
-            'Drywall': { r: 0.45, type: 'finish', thickness: 0.5, name: 'Gypsum Board (1/2")' }
-        };
-
-        // State
+        // Global Data
+        let MATERIALS = {};
         let stack = [];
 
-        function init() {
+        // Fetch data and initialize
+        async function loadMaterials() {
+            try {
+                const response = await fetch('materials.json');
+                if (!response.ok) throw new Error('Failed to load materials.json');
+                const data = await response.json();
+
+                // Flatten the structured JSON into a single lookup object for calculation logic
+                MATERIALS = {};
+                const menuContainer = document.getElementById('material-menu');
+                menuContainer.innerHTML = ''; // Clear loading message
+
+                // Iterate through categories to build UI and lookup table
+                for (const [category, items] of Object.entries(data)) {
+                    // Create Category Header
+                    const header = document.createElement('h4');
+                    header.className = 'col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1';
+                    header.textContent = category;
+                    menuContainer.appendChild(header);
+
+                    // Create Buttons
+                    for (const [key, material] of Object.entries(items)) {
+                        // Add to lookup
+                        MATERIALS[key] = material;
+
+                        // Add Button (skip placeholders if desired, but here we render them if they are valid options)
+                        // If placeholder property exists and is true, we might want to disable it or mark it.
+                        // For now, per requirements, we just render them.
+                        const btn = document.createElement('button');
+                        btn.className = 'add-btn shadow-sm transition-colors';
+                        btn.onclick = () => addLayer(key);
+                        btn.setAttribute('aria-label', `Add ${material.name}`);
+
+                        // Icon mapping based on type
+                        let icon = "🧱";
+                        if(material.type === 'insulation') icon = "🟦";
+                        if(material.name.includes("Fiberglass")) icon = "🧶";
+                        if(material.name.includes("Rockwool")) icon = "🪨";
+                        if(material.name.includes("Polyiso")) icon = "🟨";
+                        if(material.name.includes("EPS")) icon = "⬜";
+                        if(material.name.includes("Spray")) icon = "💨";
+                        if(material.type === 'radiant') icon = "✨";
+                        if(material.type === 'air') icon = "💨";
+                        if(material.type === 'vapor') icon = "🛡️";
+                        if(material.type === 'sheathing') icon = "🪵";
+                        if(material.type === 'finish') icon = "⬜";
+                        if(key.includes("Roof")) icon = "🏠";
+
+                        btn.innerText = `${icon} ${material.name.replace(/Rigid Foam|Board|Spray Foam|Batt|Safe'n'Sound|ComfortBatt/g, "").replace(/\(.*\)/, "").trim()} (${material.thickness}")`;
+
+                        // Override concise labels for specific known items to match previous design if needed,
+                        // or just use the generated one which is robust.
+                        // Let's stick to the generated one for simplicity and consistency.
+
+                        if (material.placeholder) {
+                            btn.disabled = true;
+                            btn.classList.add('opacity-50', 'cursor-not-allowed');
+                            btn.title = "Coming Soon";
+                        }
+
+                        menuContainer.appendChild(btn);
+                    }
+                }
+
+                // Initialize Default Stack
+                initStack();
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('material-menu').innerHTML = `<p class="col-span-full text-red-500">Error loading materials: ${error.message}</p>`;
+            }
+        }
+
+        function initStack() {
             // Pre-load a common scenario
             addLayer('OSB Sheathing');
             addLayer('2x6 Stud (16oc)');
@@ -267,6 +217,9 @@
             });
             render();
         }
+
+        // Start Loading and store promise
+        const materialsLoadedPromise = loadMaterials();
 
         function removeLayer(id) {
             stack = stack.filter(l => l.id !== id);
@@ -377,7 +330,10 @@
         // OR simply wrap it in a timeout or event listener if the polyfill is async.
         // Looking at webmcp.js (from memory), it polyfills navigator.modelContext immediately if it's not dynamic import.
 
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
+             // Wait for materials to load so tool registration has correct enum
+             await materialsLoadedPromise;
+
              // Menu Toggle Logic
              const menuBtn = document.getElementById('menu-btn');
              const menuDropdown = document.getElementById('menu-dropdown');
@@ -471,8 +427,6 @@
             inspector.innerHTML = `<strong>Inspector Notes:</strong><br>${tips}`;
         }
 
-        // Init
-        init();
 
     </script>
     <script src="skin.js"></script>
