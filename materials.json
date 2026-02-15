@@ -50,6 +50,7 @@
     },
     "Radiant & Films": {
         "Reflectix Radiant Barrier": { "r": 1.1, "type": "radiant", "thickness": 0.3, "name": "Reflectix (Double Bubble)" },
+        "Reflectix Woven Radiant Barrier": { "r": 0, "type": "radiant", "thickness": 0.02, "name": "Reflectix Radiant/Air Barrier (Woven)" },
         "Air Gap (0.75in)": { "r": 0.9, "type": "air", "thickness": 0.75, "name": "Dead Air Space (0.75\")" },
         "Poly Vapor Barrier": { "r": 0, "type": "vapor", "thickness": 0.01, "name": "6-mil Polyethylene" },
         "OSB Sheathing": { "r": 0.6, "type": "sheathing", "thickness": 0.5, "name": "OSB Sheathing (1/2\")" },
