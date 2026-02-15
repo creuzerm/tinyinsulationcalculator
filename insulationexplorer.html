@@ -275,7 +275,7 @@
             stacks[activeStackId].push({
                 ...material,
                 key: key,
-                id: Date.now() + Math.random()
+                id: crypto.randomUUID()
             });
             render();
         }
