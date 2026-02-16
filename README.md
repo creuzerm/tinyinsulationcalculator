@@ -119,12 +119,11 @@ To reset the calculator, use the **"Clear all"** button at the bottom of the pag
 
 * **1D Heat Flow:** Calculations assume one-dimensional heat flow through assemblies. Thermal bridging is approximated via the "Air Sealing" penalty or user-adjusted R-values.
 
-## 6. Future Roadmap: Van Life Support
-
-We are actively expanding the tool to support **Van Life** and camper builds. This requires specific physics adjustments:
-
-*   **Air Coupled Floors:** Unlike houses on the ground, vehicles have air flowing underneath. The calculator will support floors exposed to outdoor air temps.
-*   **Cargo Van Geometry:** Approximate surface areas for standard vans (Sprinter, Transit) will be added.
-*   **Automotive Insulation:** The material database will be expanded to include Thinsulate, Havelock Wool, and Armaflex.
-*   **Metal Rib Thermal Bridging:** Enhanced thermal bridging penalties for metal skin and ribs.
-*   **Solar "Oven Effect":** Adjustments for vehicle color (Light vs. Dark) impacting solar gain.
+## 6. Future Roadmap: TODO
+* Bring the Existing Building Estimator in line with the rest of the project
+* Allow sending values from the sub tools to the main tool
+  * Existing Building Estimator can send to the main tiny home calculator as A or B
+  * Insulation Explorer can send to the main tiny home calculator as A or B for the wall, ceiling or floor.
+* Unify the experience. If we need seperate calculators, keep them, but integrate them
+* Improve the WebMCP support
+* Better help documentation
