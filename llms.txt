@@ -20,8 +20,22 @@ Runs the passive thermal simulation.
 - `duration`: Hours (24 or 168)
 - `lowTemp`, `highTemp`
 
+
 ### `get_detailed_results`
 Retrieves the current calculated heat loss results for all active scenarios.
+
+
+### `calculate_assembly`
+Calculates the effective R-value (Winter/Summer) of a wall or roof assembly given a list of layer keys.
+- `layers`: Array of material keys (e.g., '2x4 Stud (16oc)', 'Fiberglass Batt (3.5in)'). See `materials.json` for full list of keys.
+
+### `estimate_r_value`
+Estimates the R-value of a building component using energy balance calculations based on HVAC load and temperatures.
+- `spaceDimensions`: `{ length, width, height }` (ft)
+- `temperatures`: `{ indoor, outdoor }` (F)
+- `hvac`: `{ rate, mode }` (BTU/hr, 'heating'/'cooling')
+- `targetComponent`: `{ area }` (sq ft)
+- `envelope`: `{ ach, windowArea, floorArea, otherWallArea }` (Ach, sq ft)
 
 ## Declarative Tools (HTML Forms)
 
