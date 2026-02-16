@@ -229,7 +229,7 @@
                         if(material.type === 'finish') icon = "⬜";
                         if(key.includes("Roof")) icon = "🏠";
 
-                        btn.innerText = `${icon} ${material.name.replace(/Rigid Foam|Board|Spray Foam|Batt|Safe'n'Sound|ComfortBatt/g, "").replace(/\(.*\)/, "").trim()} (${material.thickness}")`;
+                        btn.innerText = `${icon} ${material.name.replace(/Rigid Foam|Board|Spray Foam|Batt|Safe'n'Sound|ComfortBatt/g, "").replace(/\(.*\)/, "").trim()} (R-${material.r} | ${material.thickness}")`;
 
                         // Override concise labels for specific known items to match previous design if needed,
                         // or just use the generated one which is robust.
