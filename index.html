@@ -19,6 +19,37 @@
     <link rel="canonical" href="https://example.com/index.html">
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: 'var(--color-primary)',
+                            hover: 'var(--color-primary-hover)',
+                            subtle: 'var(--color-primary-subtle)',
+                        },
+                        secondary: {
+                            DEFAULT: 'var(--color-secondary)',
+                            subtle: 'var(--color-secondary-subtle)',
+                        },
+                        accent: 'var(--color-accent)',
+                        app: 'var(--color-bg-app)',
+                        card: 'var(--color-bg-card)',
+                        border: 'var(--color-border)',
+                    },
+                    borderRadius: {
+                        card: 'var(--radius-card)',
+                        input: 'var(--radius-input)',
+                    },
+                    fontFamily: {
+                        heading: ['var(--font-heading)'],
+                        body: ['var(--font-body)'],
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,9 +70,9 @@
             <div class="mt-6 flex flex-col items-center justify-center space-y-4">
                 <label
                     class="inline-flex items-center cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
-                    <input type="checkbox" id="abToggle" class="sr-only peer">
+                    <input type="checkbox" id="abToggle" data-action="toggle-ab" class="sr-only peer">
                     <div
-                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
                     </div>
                     <span class="ms-3 text-sm font-medium text-gray-700">Enable A/B Comparison</span>
                 </label>
@@ -163,8 +194,8 @@
                 </div>
 
                 <!-- Wall Assembly Builder -->
-                <div class="border border-blue-200 rounded p-3 bg-white mb-4">
-                    <label class="input-label font-bold text-blue-800 border-b border-blue-100 pb-1 mb-2 block">Wall
+                <div class="border border-primary rounded p-3 bg-white mb-4">
+                    <label class="input-label font-bold text-primary border-b border-primary/20 pb-1 mb-2 block">Wall
                         Assembly</label>
 
                     <div class="mb-2">
@@ -334,8 +365,8 @@
                     </select>
                 </div>
 
-                <div class="border-t border-blue-200 pt-3 mt-4">
-                    <h4 class="font-semibold text-blue-900 mb-2">Thermal Mass</h4>
+                <div class="border-t border-primary/20 pt-3 mt-4">
+                    <h4 class="font-semibold text-primary mb-2">Thermal Mass</h4>
                     <div class="grid grid-cols-2 gap-2 input-group">
                         <div>
                             <label class="input-label">Floor Type</label>
@@ -610,7 +641,7 @@
             <!-- Quick Internal Gain Table -->
             <details class="mt-4 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden">
                 <summary
-                    class="p-3 bg-gray-50 text-sm font-medium text-blue-600 cursor-pointer hover:bg-gray-100 transition-colors">
+                    class="p-3 bg-gray-50 text-sm font-medium text-primary cursor-pointer hover:bg-gray-100 transition-colors">
                     Show Detailed Loads (Occupants & Appliances)
                 </summary>
                 <div id="gainInputsContainer" class="max-h-96 overflow-y-auto p-2 space-y-2">
@@ -633,11 +664,11 @@
                 aria-live="polite">
                 <h3 id="resultHeaderA" class="text-lg font-bold skin-text-primary mb-2">Estimated Results</h3>
                 <div class="mb-4">
-                    <p class="text-4xl font-bold text-blue-600"><span id="resultLoss_A">0</span></p>
-                    <p class="text-sm text-blue-800">Peak Heat Loss (BTU/hr)</p>
+                    <p class="text-4xl font-bold text-primary"><span id="resultLoss_A">0</span></p>
+                    <p class="text-sm text-primary">Peak Heat Loss (BTU/hr)</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_A">0</span> <span
+                    <p class="text-2xl font-bold text-accent"><span id="resultDrop_A">0</span> <span
                             class="text-sm text-gray-700">°F/hr</span></p>
                     <p class="text-xs text-gray-700">Passive Temp Loss</p>
                 </div>
@@ -652,11 +683,11 @@
                 aria-live="polite">
                 <h3 class="text-lg font-bold skin-text-secondary mb-2">Scenario B Results</h3>
                 <div class="mb-4">
-                    <p class="text-4xl font-bold text-green-600"><span id="resultLoss_B">0</span></p>
-                    <p class="text-sm text-green-800">Peak Heat Loss (BTU/hr)</p>
+                    <p class="text-4xl font-bold text-secondary"><span id="resultLoss_B">0</span></p>
+                    <p class="text-sm text-secondary">Peak Heat Loss (BTU/hr)</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_B">0</span> <span
+                    <p class="text-2xl font-bold text-accent"><span id="resultDrop_B">0</span> <span
                             class="text-sm text-gray-700">°F/hr</span></p>
                     <p class="text-xs text-gray-700">Passive Temp Loss</p>
                 </div>

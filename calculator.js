@@ -135,7 +135,7 @@ function renderGainTable() {
         summary.className = 'p-3 bg-gray-50 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center';
         summary.innerHTML = `
             <span>${title}</span>
-            <span id="gain_summary_${sectionId}" class="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">0 BTU/hr</span>
+            <span id="gain_summary_${sectionId}" class="text-xs font-normal text-primary bg-primary-subtle px-2 py-0.5 rounded-full border border-primary/20">0 BTU/hr</span>
         `;
 
         const table = document.createElement('table');
@@ -159,7 +159,7 @@ function renderGainTable() {
                             data-sensible="${item.watts_sensible}"
                             data-duty="${item.duty_cycle_hours || 24}"
                             data-section="${sectionId}"
-                            class="w-16 border border-gray-300 rounded text-center p-1 focus:ring-blue-500 focus:border-blue-500"
+                            class="w-16 border border-gray-300 rounded text-center p-1 focus:ring-primary focus:border-primary"
                             value="${item.default_qty}"
                             min="0"
                             oninput="calculateDetailedGains()">
@@ -198,7 +198,7 @@ function renderCustomGains() {
     summary.className = 'p-3 bg-gray-50 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center';
     summary.innerHTML = `
         <span>Custom / Additional Sources</span>
-        <span id="gain_summary_custom" class="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">0 BTU/hr</span>
+        <span id="gain_summary_custom" class="text-xs font-normal text-primary bg-primary-subtle px-2 py-0.5 rounded-full border border-primary/20">0 BTU/hr</span>
     `;
 
     const content = document.createElement('div');
@@ -214,7 +214,7 @@ function renderCustomGains() {
                 <tr class="border-b border-gray-200 last:border-0 bg-white">
                     <td class="p-2">
                         <input type="text"
-                            class="w-full border border-gray-300 rounded px-2 py-1 text-gray-700 focus:ring-blue-500 focus:border-blue-500 mb-1"
+                            class="w-full border border-gray-300 rounded px-2 py-1 text-gray-700 focus:ring-primary focus:border-primary mb-1"
                             placeholder="Source Name"
                             value="${item.name}"
                             oninput="updateCustomGain(${index}, 'name', this.value)">
@@ -257,7 +257,7 @@ function renderCustomGains() {
 
     // Add Button
     const addBtn = document.createElement('button');
-    addBtn.className = 'w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm font-medium';
+    addBtn.className = 'w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:border-primary hover:text-primary transition-colors text-sm font-medium';
     addBtn.textContent = '+ Add Custom Source';
     addBtn.onclick = addCustomGain;
     content.appendChild(addBtn);
@@ -680,21 +680,21 @@ function toggleABMode() {
     const chartContainers = document.querySelectorAll('.lg\\:col-span-2-dynamic');
 
     if (isEnabled) {
-        scenariosGrid.classList.add('lg:grid-cols-2');
+        scenariosGrid.setAttribute('data-layout', 'split');
         scenarioB.classList.remove('hidden');
         headerA.textContent = "Scenario A (Standard)";
-        resultsGrid.classList.add('lg:grid-cols-2');
+        resultsGrid.setAttribute('data-layout', 'split');
         resultB.classList.remove('hidden');
         resultHeaderA.textContent = "Scenario A Results";
-        chartContainers.forEach(el => el.classList.add('lg:col-span-2'));
+        chartContainers.forEach(el => el.setAttribute('data-layout', 'split'));
     } else {
-        scenariosGrid.classList.remove('lg:grid-cols-2');
+        scenariosGrid.removeAttribute('data-layout');
         scenarioB.classList.add('hidden');
         headerA.textContent = "Construction Details";
-        resultsGrid.classList.remove('lg:grid-cols-2');
+        resultsGrid.removeAttribute('data-layout');
         resultB.classList.add('hidden');
         resultHeaderA.textContent = "Estimated Results";
-        chartContainers.forEach(el => el.classList.remove('lg:col-span-2'));
+        chartContainers.forEach(el => el.removeAttribute('data-layout'));
     }
     calculateAll();
 }
