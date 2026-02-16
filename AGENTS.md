@@ -270,22 +270,20 @@ Tests are automatically run on push and pull request via GitHub Actions.
 
 To allow for white-labeling and customization without forking the core logic, this repository maintains a strict separation of structure, style, and private extensions.
 
-### 5.1 Architecture Directives
-**Do not revert these structural elements.** They are required for the private build process.
+### 5.1 The "Core vs Skin" Philosophy
+*   **Core (This Repo):** Provides the logic (`calculator.js`), the structure (`index.html`), and a **Basic UI Experience** (`styles.css`). It must be fully functional and look decent out-of-the-box for GitHub Pages previews.
+*   **Skin (Child Projects):** Consumes the Core files and overrides them using the **Contract** defined in `SKINNING.md`.
 
-1.  **Externalized Styles (`styles.css`):**
-    *   The core CSS must remain in `styles.css`, not in `index.html`.
-    *   This allows the private repo to overwrite `styles.css` with a branded version during the build.
-    *   `index.html` must link to `styles.css` and `skin.css`.
+### 5.2 Architectural Directives
+1.  **NO BUILD STEPS:** This repository must not require a build step (like webpack/vite) to run. It effectively serves as a "Basic UI" preview.
+2.  **Stable Contract:**
+    *   **CSS:** Use CSS Variables defined in `SKINNING.md` for all theming. Avoid hardcoded hex values in `styles.css` for main UI elements.
+    *   **JS:** Use `data-` attributes for logic bindings where possible, to allow Skins to change classes without breaking functionality.
+3.  **Asset Layering:**
+    *   Images should be in `assets/`.
+    *   `skin.css` and `skin.js` are reserved benchmarks for the child project to overwrite.
 
-2.  **Skin Hooks (`skin.css` & `skin.js`):**
-    *   These files must exist in the root but remain empty in the public repo.
-    *   `skin.css` is loaded *after* `styles.css` to allow overrides.
-    *   `skin.js` is loaded at the end of the `<body>` to allow UI injection (e.g., adding a custom navbar or footer).
-
-3.  **Assets Directory (`assets/`):**
-    *   All static images (logos, icons) must reside in the `assets/` folder.
-    *   Do not place images in the root. This allows the private repo to overwrite assets cleanly.
+See [SKINNING.md](SKINNING.md) for the technical details of the contract.
 
 ## 6. Verification Instructions for Agents
 

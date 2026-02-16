@@ -3,6 +3,11 @@ let heatLossChart;
 let simulationChart;
 let breakdownChart;
 
+// Helper to get element by ID or Data Model (Skinning Support)
+function el(id) {
+    return document.getElementById(id) || document.querySelector(`[data-model="${id}"]`) || document.querySelector(`[data-action="${id}"]`);
+}
+
 const CONFIG_FIELDS = [
     // Shared
     'buildingShape', 'indoorTemp', 'outdoorTemp', 'groundTemp', 'vehicleColor', 'abToggle',
@@ -115,7 +120,7 @@ async function loadGainData() {
 }
 
 function renderGainTable() {
-    const container = document.getElementById('gainInputsContainer');
+    const container = el('gainInputsContainer');
     if (!container || !gainData) return;
 
     container.innerHTML = ''; // Clear existing
@@ -144,8 +149,8 @@ function renderGainTable() {
                         <div class="font-medium text-gray-700">${item.name}</div>
                         <div class="text-xs text-gray-400">
                             ${type === 'appliance'
-                                ? `${item.watts_sensible}W Sensible / ${item.duty_cycle_hours}h daily`
-                                : `${item.watts_sensible}W Sensible Heat`}
+                    ? `${item.watts_sensible}W Sensible / ${item.duty_cycle_hours}h daily`
+                    : `${item.watts_sensible}W Sensible Heat`}
                         </div>
                     </td>
                     <td class="text-right pr-3">
@@ -177,12 +182,12 @@ function renderGainTable() {
 }
 
 function renderCustomGains() {
-    const container = document.getElementById('gainInputsContainer');
-    if(!container) return;
+    const container = el('gainInputsContainer');
+    if (!container) return;
 
     // Remove existing custom section if any (re-render strategy)
-    const existing = document.getElementById('details_custom_gains');
-    if(existing) existing.remove();
+    const existing = el('details_custom_gains');
+    if (existing) existing.remove();
 
     const details = document.createElement('details');
     details.id = 'details_custom_gains';
@@ -200,7 +205,7 @@ function renderCustomGains() {
     content.className = 'p-3 bg-gray-50/50';
 
     // Rows
-    if(customGains.length > 0) {
+    if (customGains.length > 0) {
         const table = document.createElement('table');
         table.className = 'w-full text-sm mb-3';
         let rows = '';
@@ -278,8 +283,8 @@ function removeCustomGain(index) {
 }
 
 function updateCustomGain(index, field, value) {
-    if(customGains[index]) {
-        if(field === 'name') customGains[index].name = value;
+    if (customGains[index]) {
+        if (field === 'name') customGains[index].name = value;
         else customGains[index][field] = parseFloat(value) || 0;
         saveCustomGains();
         calculateDetailedGains();
@@ -287,19 +292,19 @@ function updateCustomGain(index, field, value) {
 }
 
 function saveCustomGains() {
-    const el = document.getElementById('customGainsData');
-    if(el) {
-        el.value = JSON.stringify(customGains);
-        saveInputToLocalStorage(el);
+    const element = el('customGainsData');
+    if (element) {
+        element.value = JSON.stringify(customGains);
+        saveInputToLocalStorage(element);
     }
 }
 
 function syncCustomGainsFromDOM() {
-    const el = document.getElementById('customGainsData');
-    if(el && el.value) {
+    const element = el('customGainsData');
+    if (element && element.value) {
         try {
             customGains = JSON.parse(el.value);
-        } catch(e) {
+        } catch (e) {
             console.error('Failed to parse custom gains', e);
             customGains = [];
         }
@@ -321,26 +326,26 @@ function clearAll() {
         localStorage.removeItem(id);
 
         // Reset DOM Element
-        const el = document.getElementById(id);
-        if (el) {
-            if (el.type === 'checkbox') {
-                el.checked = el.defaultChecked;
+        const element = el(id);
+        if (element) {
+            if (element.type === 'checkbox') {
+                element.checked = element.defaultChecked;
             } else {
-                el.value = el.defaultValue;
+                element.value = element.defaultValue;
             }
 
             // Special handling for selects that might not have a "value" attribute in HTML but option selected
-            if (el.tagName === 'SELECT') {
+            if (element.tagName === 'SELECT') {
                 let foundDefault = false;
-                for(let opt of el.options) {
-                    if(opt.defaultSelected) {
-                        el.value = opt.value;
+                for (let opt of element.options) {
+                    if (opt.defaultSelected) {
+                        element.value = opt.value;
                         foundDefault = true;
                         break;
                     }
                 }
-                if(!foundDefault && el.options.length > 0) {
-                     el.value = el.options[0].value;
+                if (!foundDefault && element.options.length > 0) {
+                    element.value = element.options[0].value;
                 }
             }
         }
@@ -387,7 +392,7 @@ function calculateDetailedGains() {
 
             totalBTUPerHour += btuHr;
 
-            if(section && sectionTotals[section] !== undefined) {
+            if (section && sectionTotals[section] !== undefined) {
                 sectionTotals[section] += btuHr;
             }
         }
@@ -398,18 +403,18 @@ function calculateDetailedGains() {
         const watts = parseFloat(item.watts) || 0;
         const duty = parseFloat(item.duty) || 0;
 
-        if(qty > 0) {
-             const dailyWh = watts * duty * qty;
-             const avgWatts = dailyWh / 24;
-             const btuHr = avgWatts * 3.412;
-             totalBTUPerHour += btuHr;
-             sectionTotals.custom += btuHr;
+        if (qty > 0) {
+            const dailyWh = watts * duty * qty;
+            const avgWatts = dailyWh / 24;
+            const btuHr = avgWatts * 3.412;
+            totalBTUPerHour += btuHr;
+            sectionTotals.custom += btuHr;
         }
     });
 
-    for(const [key, val] of Object.entries(sectionTotals)) {
+    for (const [key, val] of Object.entries(sectionTotals)) {
         const el = document.getElementById(`gain_summary_${key}`);
-        if(el) el.textContent = `${Math.round(val)} BTU/hr`;
+        if (el) el.textContent = `${Math.round(val)} BTU/hr`;
     }
 
     const simInput = document.getElementById('simInternalGain');
@@ -422,13 +427,13 @@ function calculateDetailedGains() {
 function serializeConfiguration() {
     const params = new URLSearchParams();
     CONFIG_FIELDS.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
+        const element = el(id);
+        if (element) {
             let value;
-            if (el.type === 'checkbox') {
-                value = el.checked ? '1' : '0';
+            if (element.type === 'checkbox') {
+                value = element.checked ? '1' : '0';
             } else {
-                value = el.value;
+                value = element.value;
             }
             params.set(id, value);
         }
@@ -452,15 +457,15 @@ function deserializeConfiguration() {
 
     CONFIG_FIELDS.forEach(id => {
         if (params.has(id)) {
-            const el = document.getElementById(id);
-            if (el) {
+            const element = el(id);
+            if (element) {
                 const val = params.get(id);
-                if (el.type === 'checkbox') {
-                    el.checked = (val === '1');
+                if (element.type === 'checkbox') {
+                    element.checked = (val === '1');
                 } else {
-                    el.value = val;
+                    element.value = val;
                 }
-                saveInputToLocalStorage(el);
+                saveInputToLocalStorage(element);
             }
         }
     });
@@ -469,23 +474,29 @@ function deserializeConfiguration() {
 }
 
 function saveInputToLocalStorage(element) {
-    if (element && element.id) {
-        if(element.type === 'checkbox') {
-                localStorage.setItem(element.id, element.checked);
-        } else {
-                localStorage.setItem(element.id, element.value);
+    if (element) {
+        const key = element.getAttribute('data-model') || element.id;
+        if (key) {
+            if (element.type === 'checkbox') {
+                localStorage.setItem(key, element.checked);
+            } else {
+                localStorage.setItem(key, element.value);
+            }
         }
     }
 }
 
 function loadInputFromLocalStorage(element) {
-    if (element && element.id) {
-        const savedValue = localStorage.getItem(element.id);
-        if (savedValue !== null) {
-            if(element.type === 'checkbox') {
-                element.checked = (savedValue === 'true');
-            } else {
-                element.value = savedValue;
+    if (element) {
+        const key = element.getAttribute('data-model') || element.id;
+        if (key) {
+            const val = localStorage.getItem(key);
+            if (val !== null) {
+                if (element.type === 'checkbox') {
+                    element.checked = (val === 'true');
+                } else {
+                    element.value = val;
+                }
             }
         }
     }
@@ -516,21 +527,21 @@ const dimensionTemplates = {
 };
 
 function applyPreset(suffix) {
-    const preset = document.getElementById(`insulationPreset${suffix}`).value;
-    if(!preset) return;
+    const preset = el(`insulationPreset${suffix}`).value;
+    if (!preset) return;
 
     // We only set R-values for Roof and Floor directly.
     // Wall R-Value is now derived from assembly, so we set the Assembly fields.
-    const r = document.getElementById(`roofRValue${suffix}`);
-    const f = document.getElementById(`floorRValue${suffix}`);
+    const r = el(`roofRValue${suffix}`);
+    const f = el(`floorRValue${suffix}`);
 
     // Helpers to set assembly inputs
     const setAssembly = (type, studSize, spacing, cavIns, ci, massMat, massThick, massIns) => {
         const setVal = (id, val) => {
-            const el = document.getElementById(id + suffix);
-            if (el) {
-                el.value = val;
-                saveInputToLocalStorage(el);
+            const element = el(id + suffix);
+            if (element) {
+                element.value = val;
+                saveInputToLocalStorage(element);
             }
         };
 
@@ -549,25 +560,25 @@ function applyPreset(suffix) {
         }
     };
 
-    switch(preset) {
+    switch (preset) {
         case 'code_min':
             // Stick Frame, 2x4, 16oc, Fiberglass, No CI. Result ~R-13 nominal, Eff ~11
             setAssembly('stick', '2x4', '16', 'fiberglass_batt', '0');
-            if(r) r.value = 38;
-            if(f) f.value = 10;
+            if (r) r.value = 38;
+            if (f) f.value = 10;
             break;
         case 'high_perf':
             // Stick Frame, 2x6, 24oc, Mineral Wool, R-5 CI. Result ~R-23 nominal + 5
             setAssembly('stick', '2x6', '24', 'mineral_wool', '5');
-            if(r) r.value = 50;
-            if(f) f.value = 20;
+            if (r) r.value = 50;
+            if (f) f.value = 20;
             break;
         case 'passive_house':
             // Double Stud or Thick Mass? Let's do 2x8 + R-10 CI for simulation or similar
             // Or better: Stick, 2x6, 24oc, Mineral Wool, R-15 CI
             setAssembly('stick', '2x6', '24', 'mineral_wool', '15');
-            if(r) r.value = 60;
-            if(f) f.value = 30;
+            if (r) r.value = 60;
+            if (f) f.value = 30;
             break;
         case 'van_build':
             // Stick, 2x4 (approx depth), Van Ribs, 24oc, Thinsulate, 0 CI
@@ -577,21 +588,21 @@ function applyPreset(suffix) {
             // We need to override the material to van_ribs, but setAssembly defaults to wood for stick.
             // We'll manually set it after calling setAssembly, or update setAssembly.
             // Let's update the element directly here to be safe and simple.
-            const matEl = document.getElementById(`wallStudMaterial${suffix}`);
-            if(matEl) {
+            const matEl = el(`wallStudMaterial${suffix}`);
+            if (matEl) {
                 matEl.value = 'van_ribs';
                 saveInputToLocalStorage(matEl);
             }
-            if(r) r.value = 12; // Approx 2 inches of thinsulate/foam
-            if(f) f.value = 5;  // Approx 1 inch of foam
+            if (r) r.value = 12; // Approx 2 inches of thinsulate/foam
+            if (f) f.value = 5;  // Approx 1 inch of foam
 
-            const massMat = document.getElementById(`massMaterial${suffix}`);
-            if(massMat) {
+            const massMat = el(`massMaterial${suffix}`);
+            if (massMat) {
                 massMat.value = 'metal';
                 saveInputToLocalStorage(massMat);
             }
-            const massThick = document.getElementById(`slabThickness${suffix}`);
-            if(massThick) {
+            const massThick = el(`slabThickness${suffix}`);
+            if (massThick) {
                 massThick.value = 0.1; // Thin sheet metal skin
                 saveInputToLocalStorage(massThick);
             }
@@ -599,12 +610,12 @@ function applyPreset(suffix) {
         case 'uninsulated':
             // Stick, 2x4, 16oc, None
             setAssembly('stick', '2x4', '16', 'none', '0');
-            if(r) r.value = 4;
-            if(f) f.value = 1;
+            if (r) r.value = 4;
+            if (f) f.value = 1;
             break;
     }
 
-    saveInputToLocalStorage(document.getElementById(`insulationPreset${suffix}`));
+    saveInputToLocalStorage(el(`insulationPreset${suffix}`));
     saveInputToLocalStorage(r);
     saveInputToLocalStorage(f);
 
@@ -614,8 +625,8 @@ function applyPreset(suffix) {
 }
 
 function applyGlazingPreset(suffix) {
-    const preset = document.getElementById(`glazingPreset${suffix}`).value;
-    if(!preset || preset === 'custom') return;
+    const preset = el(`glazingPreset${suffix}`).value;
+    if (!preset || preset === 'custom') return;
 
     const areas = getSurfaceAreas();
     const floor = areas.floor;
@@ -623,21 +634,21 @@ function applyGlazingPreset(suffix) {
     let winPct = 0;
     let doorArea = 20;
 
-    switch(preset) {
+    switch (preset) {
         case 'minimal': winPct = 0.10; doorArea = 20; break;
         case 'common': winPct = 0.20; doorArea = 20; break;
         case 'generous': winPct = 0.35; doorArea = 40; break;
     }
 
-    const wArea = document.getElementById(`windowArea${suffix}`);
-    const dArea = document.getElementById(`doorArea${suffix}`);
+    const wArea = el(`windowArea${suffix}`);
+    const dArea = el(`doorArea${suffix}`);
 
-    if(floor > 0) {
+    if (floor > 0) {
         wArea.value = Math.round(floor * winPct);
     }
     dArea.value = doorArea;
 
-    saveInputToLocalStorage(document.getElementById(`glazingPreset${suffix}`));
+    saveInputToLocalStorage(el(`glazingPreset${suffix}`));
     saveInputToLocalStorage(wArea);
     saveInputToLocalStorage(dArea);
 
@@ -645,8 +656,8 @@ function applyGlazingPreset(suffix) {
 }
 
 function updateDimensions() {
-    const shape = document.getElementById('buildingShape').value;
-    const container = document.getElementById('dimensionInputs');
+    const shape = el('buildingShape').value;
+    const container = el('dimensionInputs');
     container.innerHTML = dimensionTemplates[shape];
 
     container.querySelectorAll('input').forEach(i => {
@@ -659,16 +670,16 @@ function updateDimensions() {
 }
 
 function toggleABMode() {
-    const isEnabled = document.getElementById('abToggle').checked;
-    const scenariosGrid = document.getElementById('scenariosGrid');
-    const scenarioB = document.getElementById('scenarioBoxB');
-    const headerA = document.getElementById('headerA');
-    const resultsGrid = document.getElementById('resultsGrid');
-    const resultB = document.getElementById('resultBoxB');
-    const resultHeaderA = document.getElementById('resultHeaderA');
+    const isEnabled = el('abToggle').checked;
+    const scenariosGrid = el('scenariosGrid');
+    const scenarioB = el('scenarioBoxB');
+    const headerA = el('headerA');
+    const resultsGrid = el('resultsGrid');
+    const resultB = el('resultBoxB');
+    const resultHeaderA = el('resultHeaderA');
     const chartContainers = document.querySelectorAll('.lg\\:col-span-2-dynamic');
 
-    if(isEnabled) {
+    if (isEnabled) {
         scenariosGrid.classList.add('lg:grid-cols-2');
         scenarioB.classList.remove('hidden');
         headerA.textContent = "Scenario A (Standard)";
@@ -689,9 +700,9 @@ function toggleABMode() {
 }
 
 function toggleScenarioAssemblyUI(suffix) {
-    const type = document.getElementById(`wallAssemblyType${suffix}`)?.value;
-    const stickGroup = document.getElementById(`group_stick${suffix}`);
-    const massGroup = document.getElementById(`group_mass${suffix}`);
+    const type = el(`wallAssemblyType${suffix}`)?.value;
+    const stickGroup = el(`group_stick${suffix}`);
+    const massGroup = el(`group_mass${suffix}`);
 
     if (!stickGroup || !massGroup) return;
 
@@ -707,48 +718,48 @@ function toggleScenarioAssemblyUI(suffix) {
 // --- CALCULATION LOGIC ---
 
 function getSurfaceAreas() {
-    const shape = document.getElementById('buildingShape').value;
-    const L = parseFloat(document.getElementById('length')?.value) || 0;
-    const W = parseFloat(document.getElementById('width')?.value) || 0;
+    const shape = el('buildingShape').value;
+    const L = parseFloat(el('length')?.value) || 0;
+    const W = parseFloat(el('width')?.value) || 0;
 
-    let areas = { wall:0, roof:0, floor:0, perimeter:0, total:0 };
+    let areas = { wall: 0, roof: 0, floor: 0, perimeter: 0, total: 0 };
 
-    if(shape === 'rectangle') {
-        const H = parseFloat(document.getElementById('height')?.value) || 0;
-        const pitch = parseFloat(document.getElementById('roofPitch')?.value) || 0;
-        areas.wall = (2*L*H) + (2*W*H);
-        areas.floor = L*W;
-        areas.perimeter = (2*L) + (2*W);
-        if(pitch === 0) {
-            areas.roof = L*W;
+    if (shape === 'rectangle') {
+        const H = parseFloat(el('height')?.value) || 0;
+        const pitch = parseFloat(el('roofPitch')?.value) || 0;
+        areas.wall = (2 * L * H) + (2 * W * H);
+        areas.floor = L * W;
+        areas.perimeter = (2 * L) + (2 * W);
+        if (pitch === 0) {
+            areas.roof = L * W;
         } else {
-            const rise = (W/2) * (pitch/12);
-            const slope = Math.sqrt((W/2)**2 + rise**2);
+            const rise = (W / 2) * (pitch / 12);
+            const slope = Math.sqrt((W / 2) ** 2 + rise ** 2);
             areas.roof = L * slope * 2;
             areas.wall += (W * rise);
         }
     } else if (shape === 'a-frame') {
-            const H = parseFloat(document.getElementById('height')?.value) || 0;
-            const slope = Math.sqrt((W/2)**2 + H**2);
-            areas.roof = 2 * L * slope;
-            areas.wall = W * H;
-            areas.floor = L * W;
-            areas.perimeter = (2*L) + (2*W);
-    } else if (shape === 'gothic-arch') {
-        const spring = parseFloat(document.getElementById('springWallHeight')?.value) || 0;
-        const r = W/2;
+        const H = parseFloat(el('height')?.value) || 0;
+        const slope = Math.sqrt((W / 2) ** 2 + H ** 2);
+        areas.roof = 2 * L * slope;
+        areas.wall = W * H;
         areas.floor = L * W;
-        areas.wall = (2*L*spring) + (Math.PI * r**2);
+        areas.perimeter = (2 * L) + (2 * W);
+    } else if (shape === 'gothic-arch') {
+        const spring = parseFloat(el('springWallHeight')?.value) || 0;
+        const r = W / 2;
+        areas.floor = L * W;
+        areas.wall = (2 * L * spring) + (Math.PI * r ** 2);
         areas.roof = L * (Math.PI * r);
-        areas.perimeter = (2*L) + (2*W);
+        areas.perimeter = (2 * L) + (2 * W);
     } else if (shape === 'cargo-van') {
         // User inputs: L (Cargo Length), W (Floor Width), H (Interior Height)
-        const H = parseFloat(document.getElementById('height')?.value) || 0;
+        const H = parseFloat(el('height')?.value) || 0;
         areas.floor = L * W;
         areas.roof = L * W;
         // Walls + Sliding Door + Rear Doors approximation
         areas.wall = (2 * L * H) + (2 * W * H);
-        areas.perimeter = (2*L) + (2*W);
+        areas.perimeter = (2 * L) + (2 * W);
     }
 
     areas.total = areas.wall + areas.roof;
@@ -798,10 +809,10 @@ function calculateEffectiveR(assembly) {
             const studRPerInch = MATERIALS.wood_stud.r_inch;
             const r_stud = depth * studRPerInch;
 
-            const u_stud = r_stud > 0 ? 1/r_stud : 0;
-            const u_cavity_final = r_cavity > 0 ? 1/r_cavity : 1/0.9; // Empty cavity R~0.9
+            const u_stud = r_stud > 0 ? 1 / r_stud : 0;
+            const u_cavity_final = r_cavity > 0 ? 1 / r_cavity : 1 / 0.9; // Empty cavity R~0.9
 
-            const u_effective = (framingFactor * u_stud) + ((1-framingFactor) * u_cavity_final);
+            const u_effective = (framingFactor * u_stud) + ((1 - framingFactor) * u_cavity_final);
 
             if (u_effective > 0) {
                 r_total += (1 / u_effective);
@@ -861,7 +872,7 @@ function calculateEffectiveR(assembly) {
 
 function getScenarioData(suffix) {
     // WALL R-VALUE CALCULATION
-    const assType = document.getElementById(`wallAssemblyType${suffix}`)?.value;
+    const assType = el(`wallAssemblyType${suffix}`)?.value;
     let rWall = 0;
 
     if (assType) {
@@ -869,22 +880,22 @@ function getScenarioData(suffix) {
         const assembly = {
             type: assType, // 'stick' or 'mass'
             // Stick
-            studSize: document.getElementById(`wallStudSize${suffix}`)?.value,
-            studMaterial: document.getElementById(`wallStudMaterial${suffix}`)?.value,
-            spacing: document.getElementById(`wallStudSpacing${suffix}`)?.value,
-            cavityInsulation: document.getElementById(`wallCavityInsulation${suffix}`)?.value,
-            continuousInsulation: document.getElementById(`wallContinuousInsulation${suffix}`)?.value,
-            fastenerType: document.getElementById(`wallFastenerType${suffix}`)?.value,
-            fastenerDensity: document.getElementById(`wallFastenerDensity${suffix}`)?.value,
+            studSize: el(`wallStudSize${suffix}`)?.value,
+            studMaterial: el(`wallStudMaterial${suffix}`)?.value,
+            spacing: el(`wallStudSpacing${suffix}`)?.value,
+            cavityInsulation: el(`wallCavityInsulation${suffix}`)?.value,
+            continuousInsulation: el(`wallContinuousInsulation${suffix}`)?.value,
+            fastenerType: el(`wallFastenerType${suffix}`)?.value,
+            fastenerDensity: el(`wallFastenerDensity${suffix}`)?.value,
             // Mass
-            massMaterial: document.getElementById(`wallMassMaterial${suffix}`)?.value,
-            massThickness: document.getElementById(`wallMassThickness${suffix}`)?.value,
-            massInsulation: document.getElementById(`wallMassInsulation${suffix}`)?.value
+            massMaterial: el(`wallMassMaterial${suffix}`)?.value,
+            massThickness: el(`wallMassThickness${suffix}`)?.value,
+            massInsulation: el(`wallMassInsulation${suffix}`)?.value
         };
         rWall = calculateEffectiveR(assembly);
     } else {
         // Fallback or Legacy
-        rWall = parseFloat(document.getElementById(`wallRValue${suffix}`)?.value) || 13;
+        rWall = parseFloat(el(`wallRValue${suffix}`)?.value) || 13;
     }
 
     const rRoofEl = document.getElementById(`roofRValue${suffix}`);
@@ -972,8 +983,8 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
         // Volume = Area * Height
         const volume = areas.floor * data.skirtHeight;
         let ach = 5.0; // Default vented
-        if(data.skirtSeal === 'sealed') ach = 0.5;
-        else if(data.skirtSeal === 'leaky') ach = 20.0;
+        if (data.skirtSeal === 'sealed') ach = 0.5;
+        else if (data.skirtSeal === 'leaky') ach = 20.0;
         const Q_v = volume * ach * 0.018;
 
         const U_sigma = U_f + U_s + U_g + Q_v;
@@ -1012,14 +1023,14 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     let uaFloor = ua_floor_to_ground;
 
     let infiltrationLoss = 0;
-    if(data.sealing === 'poor') {
-         // Infiltration adds 25% to envelope losses (simplified)
-         // Note: Applying to floor loss as well for simplicity, though debatably applies less to ground coupled
-         infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
+    if (data.sealing === 'poor') {
+        // Infiltration adds 25% to envelope losses (simplified)
+        // Note: Applying to floor loss as well for simplicity, though debatably applies less to ground coupled
+        infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
 
-         // Increase UAs effectively
-         ua *= 1.25;
-         uaFloor *= 1.25;
+        // Increase UAs effectively
+        ua *= 1.25;
+        uaFloor *= 1.25;
     }
 
     const totalLoss = lossWall + lossRoof + lossWindow + lossDoor + lossFloor + infiltrationLoss;
@@ -1039,9 +1050,9 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
 
 function calculateMassCapacity(areas, data) {
     let density = 145, specHeat = 0.2;
-    if(data.massMat === 'stone') { density = 135; specHeat = 0.2; }
-    if(data.massMat === 'wood') { density = 30; specHeat = 0.4; }
-    if(data.massMat === 'metal') { density = 490; specHeat = 0.12; }
+    if (data.massMat === 'stone') { density = 135; specHeat = 0.2; }
+    if (data.massMat === 'wood') { density = 30; specHeat = 0.4; }
+    if (data.massMat === 'metal') { density = 490; specHeat = 0.12; }
 
     const vol = areas.floor * (data.thickness / 12);
     const mass = vol * density;
@@ -1052,13 +1063,13 @@ function calculateMassCapacity(areas, data) {
 }
 
 function calculateAll() {
-    const isAB = document.getElementById('abToggle')?.checked;
+    const isAB = el('abToggle')?.checked;
     const areas = getSurfaceAreas();
-    if(areas.total <= 0) return null;
+    if (areas.total <= 0) return null;
 
-    const tIn = parseFloat(document.getElementById('indoorTemp').value);
-    const tOut = parseFloat(document.getElementById('outdoorTemp').value);
-    const tGround = parseFloat(document.getElementById('groundTemp').value);
+    const tIn = parseFloat(el('indoorTemp').value);
+    const tOut = parseFloat(el('outdoorTemp').value);
+    const tGround = parseFloat(el('groundTemp').value);
     const dtAir = Math.max(0, tIn - tOut);
     const dtGround = Math.max(0, tIn - tGround);
 
@@ -1066,21 +1077,21 @@ function calculateAll() {
     const lossA = calculateHeatLoss(areas, dataA, dtAir, dtGround);
     const capA = calculateMassCapacity(areas, dataA);
 
-    document.getElementById('resultLoss_A').textContent = Math.round(lossA.totalLoss).toLocaleString();
+    el('resultLoss_A').textContent = Math.round(lossA.totalLoss).toLocaleString();
     const dropA = lossA.totalLoss / Math.max(capA, 1);
-    document.getElementById('resultDrop_A').textContent = dropA.toFixed(2);
+    el('resultDrop_A').textContent = dropA.toFixed(2);
     updateBreakdownUI('breakdown_A', lossA.breakdown);
 
     let lossB = null, capB = null, dataB = null;
 
-    if(isAB) {
+    if (isAB) {
         dataB = getScenarioData('_B');
         lossB = calculateHeatLoss(areas, dataB, dtAir, dtGround);
         capB = calculateMassCapacity(areas, dataB);
 
-        document.getElementById('resultLoss_B').textContent = Math.round(lossB.totalLoss).toLocaleString();
+        el('resultLoss_B').textContent = Math.round(lossB.totalLoss).toLocaleString();
         const dropB = lossB.totalLoss / Math.max(capB, 1);
-        document.getElementById('resultDrop_B').textContent = dropB.toFixed(2);
+        el('resultDrop_B').textContent = dropB.toFixed(2);
         updateBreakdownUI('breakdown_B', lossB.breakdown);
     }
 
@@ -1098,22 +1109,22 @@ function calculateAll() {
 }
 
 function updateBreakdownUI(elementId, breakdown) {
-    const el = document.getElementById(elementId);
-    if(!el) return;
+    const element = el(elementId);
+    if (!element) return;
 
     let html = '<ul class="space-y-1">';
-    for(const [key, val] of Object.entries(breakdown)) {
-        if(val > 0) {
+    for (const [key, val] of Object.entries(breakdown)) {
+        if (val > 0) {
             html += `<li class="flex justify-between"><span>${key}:</span> <span>${Math.round(val).toLocaleString()} BTU/hr</span></li>`;
         }
     }
     html += '</ul>';
-    el.innerHTML = html;
+    element.innerHTML = html;
 }
 
 function updateBreakdownChart(isAB, lossA, lossB) {
-    const ctx = document.getElementById('breakdownChart')?.getContext('2d');
-    if(!ctx) return;
+    const ctx = el('breakdownChart')?.getContext('2d');
+    if (!ctx) return;
 
     const labels = Object.keys(lossA.breakdown);
     const dataA = Object.values(lossA.breakdown);
@@ -1127,7 +1138,7 @@ function updateBreakdownChart(isAB, lossA, lossB) {
         borderWidth: 1
     }];
 
-    if(isAB) {
+    if (isAB) {
         datasets.push({
             label: 'Scenario B',
             data: dataB,
@@ -1137,7 +1148,7 @@ function updateBreakdownChart(isAB, lossA, lossB) {
         });
     }
 
-    if(breakdownChart) breakdownChart.destroy();
+    if (breakdownChart) breakdownChart.destroy();
 
     breakdownChart = new Chart(ctx, {
         type: 'bar',
@@ -1149,7 +1160,7 @@ function updateBreakdownChart(isAB, lossA, lossB) {
             maintainAspectRatio: false,
             responsive: true,
             scales: {
-                y: { beginAtZero: true, title: {display:true, text: 'Heat Loss (BTU/hr)'} }
+                y: { beginAtZero: true, title: { display: true, text: 'Heat Loss (BTU/hr)' } }
             },
             plugins: {
                 title: {
@@ -1162,20 +1173,20 @@ function updateBreakdownChart(isAB, lossA, lossB) {
 }
 
 function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
-    const ctx = document.getElementById('heatLossChart')?.getContext('2d');
-    if(!ctx) return;
+    const ctx = el('heatLossChart')?.getContext('2d');
+    if (!ctx) return;
 
     const labels = [];
     const d_A = [];
     const d_B = [];
 
-    const currentOutdoor = parseFloat(document.getElementById('outdoorTemp').value);
+    const currentOutdoor = parseFloat(el('outdoorTemp').value);
     const minT = Math.min(0, currentOutdoor - 10, tIn - 30);
     const maxT = Math.max(60, currentOutdoor + 10, tIn + 10);
     const startT = Math.floor(minT / 5) * 5;
     const endT = Math.ceil(maxT / 5) * 5;
 
-    for(let t=startT; t<=endT; t+=5) {
+    for (let t = startT; t <= endT; t += 5) {
         labels.push(`${t}°F`);
         const dt = Math.max(0, tIn - t);
         const dtG = Math.max(0, tIn - tGround);
@@ -1183,7 +1194,7 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
         const rA = calculateHeatLoss(areas, dataA, dt, dtG);
         d_A.push(rA.totalLoss);
 
-        if(isAB) {
+        if (isAB) {
             const rB = calculateHeatLoss(areas, dataB, dt, dtG);
             d_B.push(rB.totalLoss);
         }
@@ -1193,11 +1204,11 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
         { label: isAB ? 'Scenario A' : 'Heat Loss', data: d_A, borderColor: '#3B82F6', tension: 0.3, fill: false }
     ];
 
-    if(isAB) {
+    if (isAB) {
         datasets.push({ label: 'Scenario B', data: d_B, borderColor: '#10B981', tension: 0.3, fill: false });
     }
 
-    if(heatLossChart) heatLossChart.destroy();
+    if (heatLossChart) heatLossChart.destroy();
     heatLossChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1208,8 +1219,8 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
             maintainAspectRatio: false,
             responsive: true,
             scales: {
-                y: { title: {display:true, text: 'Heat Loss (BTU/hr)'} },
-                x: { title: {display:true, text: 'Outdoor Temp (°F)'} }
+                y: { title: { display: true, text: 'Heat Loss (BTU/hr)' } },
+                x: { title: { display: true, text: 'Outdoor Temp (°F)' } }
             }
         }
     });
@@ -1234,25 +1245,25 @@ function calculateSimulationData(params) {
     const stepsPerHour = 60;
     const dt = 1 / stepsPerHour;
 
-    for(let h=0; h<=duration; h++) {
-        if(h%24 === 0) labels.push(`Day ${h/24 + 1}`);
+    for (let h = 0; h <= duration; h++) {
+        if (h % 24 === 0) labels.push(`Day ${h / 24 + 1}`);
         else labels.push('');
 
-        const avg = (high+low)/2;
-        const amp = (high-low)/2;
-        const hDay = h%24;
-        const tOut = avg - amp * Math.cos(Math.PI * (hDay-4)/12);
+        const avg = (high + low) / 2;
+        const amp = (high - low) / 2;
+        const hDay = h % 24;
+        const tOut = avg - amp * Math.cos(Math.PI * (hDay - 4) / 12);
         simOut.push(tOut);
 
         let sol = (hDay >= 9 && hDay <= 16) ? sGain : 0;
         const gains = iGain + sol;
 
-        for(let m=0; m<stepsPerHour; m++) {
+        for (let m = 0; m < stepsPerHour; m++) {
             const loadA = (lossA.ua * (currA - tOut)) + (lossA.uaFloor * (currA - tGround));
             const rateA = (gains - loadA) / Math.max(capA, 50);
             currA += rateA * dt;
 
-            if(isAB && lossB) {
+            if (isAB && lossB) {
                 const loadB = (lossB.ua * (currB - tOut)) + (lossB.uaFloor * (currB - tGround));
                 const rateB = (gains - loadB) / Math.max(capB, 50);
                 currB += rateB * dt;
@@ -1260,22 +1271,22 @@ function calculateSimulationData(params) {
         }
 
         simA.push(currA);
-        if(isAB) simB.push(currB);
+        if (isAB) simB.push(currB);
     }
 
     return { labels, simA, simB, simOut };
 }
 
 function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
-    const ctx = document.getElementById('simulationChart')?.getContext('2d');
-    if(!ctx) return;
+    const ctx = el('simulationChart')?.getContext('2d');
+    if (!ctx) return;
 
-    const duration = parseInt(document.getElementById('simDuration').value);
-    const low = parseFloat(document.getElementById('simLowTemp').value);
-    const high = parseFloat(document.getElementById('simHighTemp').value);
-    const iGain = parseFloat(document.getElementById('simInternalGain').value);
-    const shape = document.getElementById('buildingShape').value;
-    const vColor = document.getElementById('vehicleColor').value;
+    const duration = parseInt(el('simDuration').value);
+    const low = parseFloat(el('simLowTemp').value);
+    const high = parseFloat(el('simHighTemp').value);
+    const iGain = parseFloat(el('simInternalGain').value);
+    const shape = el('buildingShape').value;
+    const vColor = el('vehicleColor').value;
 
     const simData = calculateSimulationData({
         isAB, lossA, lossB, capA, capB, tIn, tGround,
@@ -1286,14 +1297,14 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
 
     const datasets = [
         { label: isAB ? 'Indoor A' : 'Indoor Temp', data: simData.simA, borderColor: '#3B82F6', tension: 0.4, pointRadius: 0 },
-        { label: 'Outdoor', data: simData.simOut, borderColor: '#9CA3AF', borderDash: [5,5], pointRadius: 0, borderWidth: 1 }
+        { label: 'Outdoor', data: simData.simOut, borderColor: '#9CA3AF', borderDash: [5, 5], pointRadius: 0, borderWidth: 1 }
     ];
 
-    if(isAB) {
+    if (isAB) {
         datasets.splice(1, 0, { label: 'Indoor B', data: simData.simB, borderColor: '#10B981', tension: 0.4, pointRadius: 0 });
     }
 
-    if(simulationChart) simulationChart.destroy();
+    if (simulationChart) simulationChart.destroy();
     simulationChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1304,7 +1315,7 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
             maintainAspectRatio: false,
             responsive: true,
             scales: {
-                y: { title: {display:true, text: 'Temperature (°F)'} },
+                y: { title: { display: true, text: 'Temperature (°F)' } },
                 x: { ticks: { autoSkip: true, maxTicksLimit: 8 } }
             }
         }
@@ -1313,24 +1324,24 @@ function updateSimulation(isAB, areas, lossA, lossB, capA, capB, tIn, tGround) {
 
 function init() {
     const attachAndLoad = (id) => {
-        const el = document.getElementById(id);
-        if(el) {
-            loadInputFromLocalStorage(el);
-            el.addEventListener('input', (e) => {
+        const element = el(id);
+        if (element) {
+            loadInputFromLocalStorage(element);
+            element.addEventListener('input', (e) => {
                 saveInputToLocalStorage(e.target);
                 calculateAll();
             });
-            el.addEventListener('change', (e) => {
-                    saveInputToLocalStorage(e.target);
-                    calculateAll();
+            element.addEventListener('change', (e) => {
+                saveInputToLocalStorage(e.target);
+                calculateAll();
             });
-            if(id.startsWith('gainCount')) {
-                el.addEventListener('input', updateInternalGains);
+            if (id.startsWith('gainCount')) {
+                element.addEventListener('input', updateInternalGains);
             }
         }
     };
 
-    const toggle = document.getElementById('abToggle');
+    const toggle = el('abToggle');
     if (toggle) {
         loadInputFromLocalStorage(toggle);
         toggle.addEventListener('change', (e) => {
@@ -1340,7 +1351,7 @@ function init() {
         });
     }
 
-    const shapeEl = document.getElementById('buildingShape');
+    const shapeEl = el('buildingShape');
     if (shapeEl) {
         loadInputFromLocalStorage(shapeEl);
         shapeEl.addEventListener('change', (e) => {
@@ -1351,48 +1362,48 @@ function init() {
 
     updateDimensions();
 
-    ['indoorTemp','outdoorTemp','groundTemp','simDuration','simLowTemp','simHighTemp','customGainsData'].forEach(attachAndLoad);
+    ['indoorTemp', 'outdoorTemp', 'groundTemp', 'simDuration', 'simLowTemp', 'simHighTemp', 'customGainsData'].forEach(attachAndLoad);
 
-    ['_A','_B'].forEach(s => {
+    ['_A', '_B'].forEach(s => {
         // Shared & Others
-        ['insulationPreset','glazingPreset','roofRValue','floorRValue',
-         'skirtR', 'skirtHeight', 'skirtSeal',
-         'windowArea','windowR','doorArea','doorR','airSealing','massMaterial','slabThickness'].forEach(base => {
-            attachAndLoad(base+s);
-        });
+        ['insulationPreset', 'glazingPreset', 'roofRValue', 'floorRValue',
+            'skirtR', 'skirtHeight', 'skirtSeal',
+            'windowArea', 'windowR', 'doorArea', 'doorR', 'airSealing', 'massMaterial', 'slabThickness'].forEach(base => {
+                attachAndLoad(base + s);
+            });
 
         // Assembly Fields
-        ['wallAssemblyType','wallStudSize','wallStudMaterial','wallStudSpacing','wallCavityInsulation','wallContinuousInsulation',
-         'wallFastenerType', 'wallFastenerDensity',
-         'wallMassMaterial','wallMassThickness','wallMassInsulation'].forEach(base => {
-             const id = base+s;
-             const el = document.getElementById(id);
-             if (el) {
-                 loadInputFromLocalStorage(el);
-                 el.addEventListener('change', (e) => {
-                    saveInputToLocalStorage(e.target);
-                    // If type changes, toggle UI
-                    if(id.startsWith('wallAssemblyType')) toggleScenarioAssemblyUI(s);
-                    calculateAll();
-                 });
-                 el.addEventListener('input', (e) => {
-                    saveInputToLocalStorage(e.target);
-                    calculateAll();
-                 });
-             }
-        });
+        ['wallAssemblyType', 'wallStudSize', 'wallStudMaterial', 'wallStudSpacing', 'wallCavityInsulation', 'wallContinuousInsulation',
+            'wallFastenerType', 'wallFastenerDensity',
+            'wallMassMaterial', 'wallMassThickness', 'wallMassInsulation'].forEach(base => {
+                const id = base + s;
+                const element = el(id);
+                if (element) {
+                    loadInputFromLocalStorage(element);
+                    element.addEventListener('change', (e) => {
+                        saveInputToLocalStorage(e.target);
+                        // If type changes, toggle UI
+                        if (id.startsWith('wallAssemblyType')) toggleScenarioAssemblyUI(s);
+                        calculateAll();
+                    });
+                    element.addEventListener('input', (e) => {
+                        saveInputToLocalStorage(e.target);
+                        calculateAll();
+                    });
+                }
+            });
 
         // Toggle visibility initially
         toggleScenarioAssemblyUI(s);
 
-        ['windowArea','doorArea'].forEach(k => {
-             const el = document.getElementById(k+s);
-             if(el) {
-                el.addEventListener('input', () => {
-                    const pre = document.getElementById('glazingPreset'+s);
-                    if(pre) { pre.value = 'custom'; saveInputToLocalStorage(pre); }
+        ['windowArea', 'doorArea'].forEach(k => {
+            const element = el(k + s);
+            if (element) {
+                element.addEventListener('input', () => {
+                    const pre = el('glazingPreset' + s);
+                    if (pre) { pre.value = 'custom'; saveInputToLocalStorage(pre); }
                 });
-             }
+            }
         });
     });
 
@@ -1401,8 +1412,8 @@ function init() {
         ['_A', '_B'].forEach(s => {
             // Only apply defaults if local storage is empty for these?
             // For now, simple approach: check if type is set.
-            const typeEl = document.getElementById('wallAssemblyType' + s);
-            if(typeEl && !typeEl.value) {
+            const typeEl = el('wallAssemblyType' + s);
+            if (typeEl && !typeEl.value) {
                 applyPreset(s);
             }
             applyGlazingPreset(s);
@@ -1414,22 +1425,22 @@ function init() {
     toggleABMode();
     calculateAll();
 
-    const menuBtn = document.getElementById('menu-btn');
+    const menuBtn = el('menu-btn');
     if (menuBtn) {
         menuBtn.addEventListener('click', () => {
-            document.getElementById('menu-dropdown').classList.toggle('hidden');
+            el('menu-dropdown').classList.toggle('hidden');
         });
     }
 
-    const helpLink = document.getElementById('help-link');
-    const helpModal = document.getElementById('helpModal');
-    const closeHelpModal = document.getElementById('closeHelpModal');
-    const helpContent = document.getElementById('helpContent');
+    const helpLink = el('help-link');
+    const helpModal = el('helpModal');
+    const closeHelpModal = el('closeHelpModal');
+    const helpContent = el('helpContent');
 
     if (helpLink && helpModal) {
         helpLink.addEventListener('click', (e) => {
             e.preventDefault();
-            document.getElementById('menu-dropdown').classList.add('hidden');
+            el('menu-dropdown').classList.add('hidden');
             helpModal.classList.remove('hidden');
 
             if (helpContent.innerHTML.includes('Loading...')) {
@@ -1456,8 +1467,8 @@ function init() {
         });
     }
 
-    const shareBtn = document.getElementById('shareBtn');
-    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    const shareBtn = el('shareBtn');
+    const copyLinkBtn = el('copyLinkBtn');
 
     if (navigator.share) {
         shareBtn.classList.remove('hidden');
@@ -1494,7 +1505,7 @@ function init() {
         });
     }
 
-    const clearAllBtn = document.getElementById('clearAllBtn');
+    const clearAllBtn = el('clearAllBtn');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', clearAll);
     }

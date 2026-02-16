@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tiny Home Heat Loss Calculator</title>
-    <meta name="description" content="Estimate heating load and passive thermal performance for tiny homes, sheds, and cabins. Features A/B testing, thermal mass calculations, and temperature simulation.">
+    <meta name="description"
+        content="Estimate heating load and passive thermal performance for tiny homes, sheds, and cabins. Features A/B testing, thermal mass calculations, and temperature simulation.">
     <meta property="og:title" content="Tiny Home Heat Loss Calculator">
-    <meta property="og:description" content="Estimate heating load and passive thermal performance for tiny homes, sheds, and cabins. Features A/B testing, thermal mass calculations, and temperature simulation.">
+    <meta property="og:description"
+        content="Estimate heating load and passive thermal performance for tiny homes, sheds, and cabins. Features A/B testing, thermal mass calculations, and temperature simulation.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://example.com/index.html">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Tiny Home Heat Loss Calculator">
-    <meta name="twitter:description" content="Estimate heating load and passive thermal performance for tiny homes, sheds, and cabins.">
+    <meta name="twitter:description"
+        content="Estimate heating load and passive thermal performance for tiny homes, sheds, and cabins.">
     <link rel="canonical" href="https://example.com/index.html">
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
@@ -23,6 +27,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="skin.css">
 </head>
+
 <body>
 
     <div class="container mx-auto p-2 md:p-6 max-w-7xl">
@@ -32,20 +37,33 @@
 
             <!-- A/B Toggle Switch -->
             <div class="mt-6 flex flex-col items-center justify-center space-y-4">
-                <label class="inline-flex items-center cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                <label
+                    class="inline-flex items-center cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
                     <input type="checkbox" id="abToggle" class="sr-only peer">
-                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div
+                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                    </div>
                     <span class="ms-3 text-sm font-medium text-gray-700">Enable A/B Comparison</span>
                 </label>
 
                 <!-- Share Buttons -->
                 <div class="flex justify-center space-x-2">
-                    <button id="shareBtn" class="btn-primary font-medium shadow-sm flex items-center hidden transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                    <button id="shareBtn" data-action="share"
+                        class="btn-primary font-medium shadow-sm flex items-center hidden transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                            </path>
+                        </svg>
                         Share
                     </button>
-                    <button id="copyLinkBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm flex items-center transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    <button id="copyLinkBtn"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm flex items-center transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                            </path>
+                        </svg>
                         Copy Link
                     </button>
                 </div>
@@ -55,26 +73,34 @@
             <div class="absolute top-0 right-0 p-4">
                 <button id="menu-btn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16m-7 6h7"></path>
                     </svg>
                 </button>
                 <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
-                    <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tiny Home Calculator</a>
-                    <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Existing Building Estimator</a>
-                    <a href="insulationexplorer.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Insulation Explorer</a>
-                    <a href="#" id="help-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Help / Documentation</a>
+                    <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tiny Home
+                        Calculator</a>
+                    <a href="existing_building_estimator.html"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Existing Building Estimator</a>
+                    <a href="insulationexplorer.html"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Insulation Explorer</a>
+                    <a href="#" id="help-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Help /
+                        Documentation</a>
                 </div>
             </div>
         </header>
 
         <!-- SHARED PARAMETERS ROW -->
-        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_shared_settings" tooldescription="Update shared building and climate settings" toolautosubmit="true" onsubmit="event.preventDefault()">
+        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_shared_settings"
+            tooldescription="Update shared building and climate settings" toolautosubmit="true"
+            onsubmit="event.preventDefault()">
             <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Shared Building & Climate Settings</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Shape -->
                 <div>
                     <label for="buildingShape" class="input-label">Building Shape</label>
-                    <select id="buildingShape" class="input-field bg-gray-50" toolparamdescription="The architectural style of the building (rectangle, a-frame, gothic-arch, cargo-van).">
+                    <select id="buildingShape" data-model="buildingShape" class="input-field"
+                        toolparamdescription="The architectural style of the building (rectangle, a-frame, gothic-arch, cargo-van).">
                         <option value="rectangle">Simple Rectangle</option>
                         <option value="a-frame">A-Frame</option>
                         <option value="gothic-arch">Gothic Arch</option>
@@ -88,19 +114,23 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4 pt-4 border-t border-gray-100">
                 <div>
                     <label for="indoorTemp" class="input-label">Indoor Target (°F)</label>
-                    <input type="number" id="indoorTemp" class="input-field bg-gray-50" value="68" toolparamdescription="Target indoor temperature in Fahrenheit.">
+                    <input type="number" id="indoorTemp" data-model="indoorTemp" class="input-field" value="68"
+                        toolparamdescription="Target indoor temperature in Fahrenheit.">
                 </div>
                 <div>
                     <label for="outdoorTemp" class="input-label">Design Outdoor (°F)</label>
-                    <input type="number" id="outdoorTemp" class="input-field bg-gray-50" value="10" toolparamdescription="Design outdoor temperature in Fahrenheit (coldest expected).">
+                    <input type="number" id="outdoorTemp" data-model="outdoorTemp" class="input-field" value="10"
+                        toolparamdescription="Design outdoor temperature in Fahrenheit (coldest expected).">
                 </div>
                 <div>
                     <label for="groundTemp" class="input-label">Ground Temp (°F)</label>
-                    <input type="number" id="groundTemp" class="input-field bg-gray-50" value="50" toolparamdescription="Ground temperature in Fahrenheit (typically 50-55F).">
+                    <input type="number" id="groundTemp" data-model="groundTemp" class="input-field" value="50"
+                        toolparamdescription="Ground temperature in Fahrenheit (typically 50-55F).">
                 </div>
                 <div>
                     <label for="vehicleColor" class="input-label">Vehicle Color</label>
-                    <select id="vehicleColor" class="input-field bg-gray-50" toolparamdescription="External color of the vehicle skin (light or dark) affecting solar gain.">
+                    <select id="vehicleColor" data-model="vehicleColor" class="input-field"
+                        toolparamdescription="External color of the vehicle skin (light or dark) affecting solar gain.">
                         <option value="light">Light (White/Silver)</option>
                         <option value="dark">Dark (Grey/Black/Green)</option>
                     </select>
@@ -110,15 +140,19 @@
 
         <!-- SCENARIOS CONTAINER -->
         <div id="scenariosGrid" class="grid grid-cols-1 gap-6 mb-6"> <!-- JS will toggle lg:grid-cols-2 -->
-            
+
             <!-- SCENARIO A -->
-            <form id="scenarioBoxA" class="scenario-card scenario-card-a scenario-box-a p-4 rounded-lg shadow-sm" toolname="update_scenario_a" tooldescription="Update Scenario A construction details" toolautosubmit="true" onsubmit="event.preventDefault()">
+            <form id="scenarioBoxA" class="scenario-card scenario-card-a scenario-box-a p-4 rounded-lg shadow-sm"
+                toolname="update_scenario_a" tooldescription="Update Scenario A construction details"
+                toolautosubmit="true" onsubmit="event.preventDefault()">
                 <h3 id="headerA" class="text-xl font-bold mb-4 scenario-header-a pb-2">Construction Details</h3>
-                
+
                 <!-- Presets -->
                 <div class="input-group">
                     <label class="input-label">Quick Preset</label>
-                    <select id="insulationPreset_A" class="input-field" onchange="applyPreset('_A')" toolparamdescription="Quickly apply a standard insulation configuration (e.g. code_min, van_build).">
+                    <select id="insulationPreset_A" data-model="insulationPreset_A" class="input-field"
+                        onchange="applyPreset('_A')"
+                        toolparamdescription="Quickly apply a standard insulation configuration (e.g. code_min, van_build).">
                         <option value="">Select...</option>
                         <option value="code_min" selected>Code Minimum (R-13/38/10)</option>
                         <option value="high_perf">High Performance (R-21/50/20)</option>
@@ -130,7 +164,8 @@
 
                 <!-- Wall Assembly Builder -->
                 <div class="border border-blue-200 rounded p-3 bg-white mb-4">
-                    <label class="input-label font-bold text-blue-800 border-b border-blue-100 pb-1 mb-2 block">Wall Assembly</label>
+                    <label class="input-label font-bold text-blue-800 border-b border-blue-100 pb-1 mb-2 block">Wall
+                        Assembly</label>
 
                     <div class="mb-2">
                         <label class="text-xs text-gray-500 block mb-1">Structure Type</label>
@@ -142,19 +177,20 @@
 
                     <!-- Stick Frame A -->
                     <div id="group_stick_A" class="space-y-2">
-        <div class="grid grid-cols-3 gap-2">
-            <div>
-                <label class="text-xs text-gray-500 block mb-1">Material</label>
-                <select id="wallStudMaterial_A" class="input-field text-sm">
-                    <option value="wood">Wood</option>
-                    <option value="wood_truss">Wood Truss</option>
-                    <option value="steel">Steel</option>
-                    <option value="van_ribs">Van Ribs (Metal)</option>
-                </select>
-            </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Material</label>
+                                <select id="wallStudMaterial_A" data-model="wallStudMaterial_A"
+                                    class="input-field text-sm">
+                                    <option value="wood">Wood</option>
+                                    <option value="wood_truss">Wood Truss</option>
+                                    <option value="steel">Steel</option>
+                                    <option value="van_ribs">Van Ribs (Metal)</option>
+                                </select>
+                            </div>
                             <div>
                                 <label class="text-xs text-gray-500 block mb-1">Stud Size</label>
-                                <select id="wallStudSize_A" class="input-field text-sm">
+                                <select id="wallStudSize_A" data-model="wallStudSize_A" class="input-field text-sm">
                                     <option value="2x4">2x4 (3.5")</option>
                                     <option value="2x6">2x6 (5.5")</option>
                                     <option value="2x8">2x8 (7.25")</option>
@@ -162,7 +198,8 @@
                             </div>
                             <div>
                                 <label class="text-xs text-gray-500 block mb-1">Spacing</label>
-                                <select id="wallStudSpacing_A" class="input-field text-sm">
+                                <select id="wallStudSpacing_A" data-model="wallStudSpacing_A"
+                                    class="input-field text-sm">
                                     <option value="16">16" o.c.</option>
                                     <option value="24">24" o.c.</option>
                                 </select>
@@ -170,7 +207,8 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Cavity Insulation</label>
-                            <select id="wallCavityInsulation_A" class="input-field text-sm">
+                            <select id="wallCavityInsulation_A" data-model="wallCavityInsulation_A"
+                                class="input-field text-sm">
                                 <option value="fiberglass_batt">Fiberglass Batt</option>
                                 <option value="fiberglass_r21_reflectix">Fiberglass R-21 + 2x Reflectix</option>
                                 <option value="mineral_wool">Mineral Wool</option>
@@ -185,7 +223,8 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Continuous Insulation (R-Value)</label>
-                            <input type="number" id="wallContinuousInsulation_A" class="input-field text-sm" placeholder="0" value="0">
+                            <input type="number" id="wallContinuousInsulation_A" data-model="wallContinuousInsulation_A"
+                                class="input-field text-sm" placeholder="0" value="0">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Fastener Type</label>
@@ -197,7 +236,8 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Fastener Density (screws/sq ft)</label>
-                            <input type="number" id="wallFastenerDensity_A" class="input-field text-sm" value="1.0" step="0.1">
+                            <input type="number" id="wallFastenerDensity_A" class="input-field text-sm" value="1.0"
+                                step="0.1">
                         </div>
                     </div>
 
@@ -220,14 +260,17 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Addt'l Insulation (R-Value)</label>
-                            <input type="number" id="wallMassInsulation_A" class="input-field text-sm" placeholder="0" value="0">
+                            <input type="number" id="wallMassInsulation_A" class="input-field text-sm" placeholder="0"
+                                value="0">
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 input-group">
-                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_A" class="input-field" value="38"></div>
-                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_A" class="input-field" value="10"></div>
+                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_A"
+                            class="input-field" value="38"></div>
+                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_A"
+                            class="input-field" value="10"></div>
                 </div>
 
                 <div class="border-t border-gray-200 pt-3 mt-4 mb-4">
@@ -283,7 +326,7 @@
                     </div>
                 </div>
 
-                 <div class="input-group">
+                <div class="input-group">
                     <label class="input-label">Air Sealing</label>
                     <select id="airSealing_A" class="input-field">
                         <option value="good">Good (Airtight)</option>
@@ -294,9 +337,10 @@
                 <div class="border-t border-blue-200 pt-3 mt-4">
                     <h4 class="font-semibold text-blue-900 mb-2">Thermal Mass</h4>
                     <div class="grid grid-cols-2 gap-2 input-group">
-                         <div>
+                        <div>
                             <label class="input-label">Floor Type</label>
-                            <select id="massMaterial_A" class="input-field" toolparamdescription="Material of the floor mass (wood, concrete, stone, metal).">
+                            <select id="massMaterial_A" class="input-field"
+                                toolparamdescription="Material of the floor mass (wood, concrete, stone, metal).">
                                 <option value="wood" selected>Wood Frame</option>
                                 <option value="concrete">Concrete</option>
                                 <option value="stone">Stabilized Earth</option>
@@ -305,20 +349,24 @@
                         </div>
                         <div>
                             <label class="input-label">Thick (in)</label>
-                            <input type="number" id="slabThickness_A" class="input-field" value="1" toolparamdescription="Thickness of the floor mass in inches.">
+                            <input type="number" id="slabThickness_A" class="input-field" value="1"
+                                toolparamdescription="Thickness of the floor mass in inches.">
                         </div>
                     </div>
                 </div>
             </form>
 
             <!-- SCENARIO B (Initially Hidden) -->
-            <form id="scenarioBoxB" class="scenario-card scenario-card-b scenario-box-b p-4 rounded-lg shadow-sm hidden" toolname="update_scenario_b" tooldescription="Update Scenario B construction details" toolautosubmit="true" onsubmit="event.preventDefault()">
+            <form id="scenarioBoxB" class="scenario-card scenario-card-b scenario-box-b p-4 rounded-lg shadow-sm hidden"
+                toolname="update_scenario_b" tooldescription="Update Scenario B construction details"
+                toolautosubmit="true" onsubmit="event.preventDefault()">
                 <h3 class="text-xl font-bold mb-4 scenario-header-b pb-2">Scenario B (Comparison)</h3>
-                
+
                 <!-- Presets -->
                 <div class="input-group">
                     <label class="input-label">Quick Preset</label>
-                    <select id="insulationPreset_B" class="input-field" onchange="applyPreset('_B')">
+                    <select id="insulationPreset_B" data-model="insulationPreset_B" class="input-field"
+                        onchange="applyPreset('_B')">
                         <option value="">Select...</option>
                         <option value="code_min">Code Minimum (R-13/38/10)</option>
                         <option value="high_perf">High Performance (R-21/50/20)</option>
@@ -329,8 +377,10 @@
                 </div>
 
                 <!-- Wall Assembly Builder B -->
-                <div class="border border-green-200 rounded p-3 bg-white mb-4">
-                    <label class="input-label font-bold text-green-800 border-b border-green-100 pb-1 mb-2 block">Wall Assembly</label>
+                <div class="rounded p-3 bg-white mb-4 skin-border-secondary" style="border-width: 1px;">
+                    <label
+                        class="input-label font-bold skin-text-secondary border-b skin-border-secondary pb-1 mb-2 block">Wall
+                        Assembly</label>
 
                     <div class="mb-2">
                         <label class="text-xs text-gray-500 block mb-1">Structure Type</label>
@@ -342,16 +392,17 @@
 
                     <!-- Stick Frame B -->
                     <div id="group_stick_B" class="space-y-2">
-        <div class="grid grid-cols-3 gap-2">
-            <div>
-                <label class="text-xs text-gray-500 block mb-1">Material</label>
-                <select id="wallStudMaterial_B" class="input-field text-sm">
-                    <option value="wood">Wood</option>
-                    <option value="wood_truss">Wood Truss</option>
-                    <option value="steel">Steel</option>
-                    <option value="van_ribs">Van Ribs (Metal)</option>
-                </select>
-            </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Material</label>
+                                <select id="wallStudMaterial_B" data-model="wallStudMaterial_B"
+                                    class="input-field text-sm">
+                                    <option value="wood">Wood</option>
+                                    <option value="wood_truss">Wood Truss</option>
+                                    <option value="steel">Steel</option>
+                                    <option value="van_ribs">Van Ribs (Metal)</option>
+                                </select>
+                            </div>
                             <div>
                                 <label class="text-xs text-gray-500 block mb-1">Stud Size</label>
                                 <select id="wallStudSize_B" class="input-field text-sm">
@@ -385,7 +436,8 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Continuous Insulation (R-Value)</label>
-                            <input type="number" id="wallContinuousInsulation_B" class="input-field text-sm" placeholder="0" value="0">
+                            <input type="number" id="wallContinuousInsulation_B" class="input-field text-sm"
+                                placeholder="0" value="0">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Fastener Type</label>
@@ -397,7 +449,8 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Fastener Density (screws/sq ft)</label>
-                            <input type="number" id="wallFastenerDensity_B" class="input-field text-sm" value="1.0" step="0.1">
+                            <input type="number" id="wallFastenerDensity_B" class="input-field text-sm" value="1.0"
+                                step="0.1">
                         </div>
                     </div>
 
@@ -420,14 +473,17 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Addt'l Insulation (R-Value)</label>
-                            <input type="number" id="wallMassInsulation_B" class="input-field text-sm" placeholder="0" value="0">
+                            <input type="number" id="wallMassInsulation_B" class="input-field text-sm" placeholder="0"
+                                value="0">
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 input-group">
-                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_B" class="input-field" value="50"></div>
-                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_B" class="input-field" value="30"></div>
+                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_B"
+                            class="input-field" value="50"></div>
+                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_B"
+                            class="input-field" value="30"></div>
                 </div>
 
                 <div class="border-t border-gray-200 pt-3 mt-4 mb-4">
@@ -491,12 +547,13 @@
                     </select>
                 </div>
 
-                 <div class="border-t border-green-200 pt-3 mt-4">
+                <div class="border-t border-green-200 pt-3 mt-4">
                     <h4 class="font-semibold text-green-900 mb-2">Thermal Mass</h4>
                     <div class="grid grid-cols-2 gap-2 input-group">
-                         <div>
+                        <div>
                             <label class="input-label">Floor Type</label>
-                            <select id="massMaterial_B" class="input-field" toolparamdescription="Material of the floor mass (wood, concrete, stone, metal).">
+                            <select id="massMaterial_B" class="input-field"
+                                toolparamdescription="Material of the floor mass (wood, concrete, stone, metal).">
                                 <option value="wood">Wood Frame</option>
                                 <option value="concrete">Concrete</option>
                                 <option value="stone" selected>Stabilized Earth</option>
@@ -505,7 +562,8 @@
                         </div>
                         <div>
                             <label class="input-label">Thick (in)</label>
-                            <input type="number" id="slabThickness_B" class="input-field" value="12" toolparamdescription="Thickness of the floor mass in inches.">
+                            <input type="number" id="slabThickness_B" class="input-field" value="12"
+                                toolparamdescription="Thickness of the floor mass in inches.">
                         </div>
                     </div>
                 </div>
@@ -513,46 +571,54 @@
         </div>
 
         <!-- SHARED SIMULATION SETTINGS -->
-         <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_simulation_settings" tooldescription="Update simulation settings" toolautosubmit="true" onsubmit="event.preventDefault()">
+        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_simulation_settings"
+            tooldescription="Update simulation settings" toolautosubmit="true" onsubmit="event.preventDefault()">
             <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Simulation Settings (Shared)</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                 <div>
+                <div>
                     <label class="input-label">Duration</label>
-                    <select id="simDuration" class="input-field bg-gray-50" toolparamdescription="Simulation duration in hours (24 or 168).">
+                    <select id="simDuration" data-model="simDuration" class="input-field bg-gray-50"
+                        toolparamdescription="Simulation duration in hours (24 or 168).">
                         <option value="24">24 Hours</option>
                         <option value="168">7 Days</option>
                     </select>
                 </div>
                 <div>
-                     <label class="input-label">Internal Heat Gain</label>
-                     <div class="flex items-center space-x-2">
-                        <input type="number" id="simInternalGain" class="input-field bg-gray-50" value="400" toolparamdescription="Baseline internal heat gain in BTU/hr.">
+                    <label class="input-label">Internal Heat Gain</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" id="simInternalGain" data-model="simInternalGain"
+                            class="input-field bg-gray-50" value="400"
+                            toolparamdescription="Baseline internal heat gain in BTU/hr.">
                         <span class="text-xs text-gray-500 whitespace-nowrap">BTU/hr</span>
-                     </div>
+                    </div>
                 </div>
                 <div>
                     <label class="input-label">Daily Low (°F)</label>
-                    <input type="number" id="simLowTemp" class="input-field bg-gray-50" value="25" toolparamdescription="Daily low temperature in Fahrenheit.">
+                    <input type="number" id="simLowTemp" data-model="simLowTemp" class="input-field bg-gray-50"
+                        value="25" toolparamdescription="Daily low temperature in Fahrenheit.">
                 </div>
-                 <div>
+                <div>
                     <label class="input-label">Daily High (°F)</label>
-                    <input type="number" id="simHighTemp" class="input-field bg-gray-50" value="50" toolparamdescription="Daily high temperature in Fahrenheit.">
+                    <input type="number" id="simHighTemp" data-model="simHighTemp" class="input-field bg-gray-50"
+                        value="50" toolparamdescription="Daily high temperature in Fahrenheit.">
                 </div>
             </div>
 
             <!-- Hidden Input for Custom Gains Persistence -->
             <input type="hidden" id="customGainsData">
-            
+
             <!-- Quick Internal Gain Table -->
             <details class="mt-4 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden">
-                <summary class="p-3 bg-gray-50 text-sm font-medium text-blue-600 cursor-pointer hover:bg-gray-100 transition-colors">
+                <summary
+                    class="p-3 bg-gray-50 text-sm font-medium text-blue-600 cursor-pointer hover:bg-gray-100 transition-colors">
                     Show Detailed Loads (Occupants & Appliances)
                 </summary>
                 <div id="gainInputsContainer" class="max-h-96 overflow-y-auto p-2 space-y-2">
                     <div class="text-center text-gray-400 py-4">Loading data...</div>
                 </div>
                 <div class="p-2 bg-yellow-50 text-xs text-yellow-800 border-t border-yellow-100">
-                    <strong>Note:</strong> Only sensible heat (temp rise) is calculated. Latent heat (moisture) is excluded from this thermal model.
+                    <strong>Note:</strong> Only sensible heat (temp rise) is calculated. Latent heat (moisture) is
+                    excluded from this thermal model.
                 </div>
             </details>
         </form>
@@ -560,16 +626,19 @@
 
         <!-- RESULTS -->
         <div id="resultsGrid" class="grid grid-cols-1 gap-6"> <!-- JS will toggle lg:grid-cols-2 -->
-            
+
             <!-- Result Cards -->
-            <div id="resultBoxA" class="result-card result-card-a bg-blue-50 p-6 rounded-lg border border-blue-200 flex flex-col items-center justify-center text-center" aria-live="polite">
-                <h3 id="resultHeaderA" class="text-lg font-bold text-blue-900 mb-2">Estimated Results</h3>
+            <div id="resultBoxA"
+                class="result-card result-card-a scenario-box-a p-6 rounded-lg flex flex-col items-center justify-center text-center"
+                aria-live="polite">
+                <h3 id="resultHeaderA" class="text-lg font-bold skin-text-primary mb-2">Estimated Results</h3>
                 <div class="mb-4">
                     <p class="text-4xl font-bold text-blue-600"><span id="resultLoss_A">0</span></p>
                     <p class="text-sm text-blue-800">Peak Heat Loss (BTU/hr)</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_A">0</span> <span class="text-sm text-gray-700">°F/hr</span></p>
+                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_A">0</span> <span
+                            class="text-sm text-gray-700">°F/hr</span></p>
                     <p class="text-xs text-gray-700">Passive Temp Loss</p>
                 </div>
                 <div class="mt-4 w-full text-left text-sm text-gray-700 bg-white p-2 rounded">
@@ -578,17 +647,20 @@
                 </div>
             </div>
 
-            <div id="resultBoxB" class="result-card result-card-b bg-green-50 p-6 rounded-lg border border-green-200 flex flex-col items-center justify-center text-center hidden" aria-live="polite">
-                <h3 class="text-lg font-bold text-green-900 mb-2">Scenario B Results</h3>
+            <div id="resultBoxB"
+                class="result-card result-card-b scenario-box-b p-6 rounded-lg flex flex-col items-center justify-center text-center hidden"
+                aria-live="polite">
+                <h3 class="text-lg font-bold skin-text-secondary mb-2">Scenario B Results</h3>
                 <div class="mb-4">
                     <p class="text-4xl font-bold text-green-600"><span id="resultLoss_B">0</span></p>
                     <p class="text-sm text-green-800">Peak Heat Loss (BTU/hr)</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_B">0</span> <span class="text-sm text-gray-700">°F/hr</span></p>
+                    <p class="text-2xl font-bold text-orange-500"><span id="resultDrop_B">0</span> <span
+                            class="text-sm text-gray-700">°F/hr</span></p>
                     <p class="text-xs text-gray-700">Passive Temp Loss</p>
                 </div>
-                 <div class="mt-4 w-full text-left text-sm text-gray-700 bg-white p-2 rounded">
+                <div class="mt-4 w-full text-left text-sm text-gray-700 bg-white p-2 rounded">
                     <p class="font-semibold border-b pb-1 mb-1">Loss Breakdown:</p>
                     <div id="breakdown_B"></div>
                 </div>
@@ -598,22 +670,26 @@
             <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Heat Loss Analysis</h3>
                 <div class="heatLossChartBox">
-                    <canvas id="heatLossChart" role="img" aria-label="Line chart showing heat loss in BTU per hour across different outdoor temperatures. See result cards for specific values."></canvas>
+                    <canvas id="heatLossChart" role="img"
+                        aria-label="Line chart showing heat loss in BTU per hour across different outdoor temperatures. See result cards for specific values."></canvas>
                 </div>
             </div>
 
             <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Loss Breakdown</h3>
                 <div class="heatLossChartBox">
-                    <canvas id="breakdownChart" role="img" aria-label="Bar chart showing breakdown of heat loss by component (Walls, Roof, Floor, Windows, Doors). See Loss Breakdown list in result cards for details."></canvas>
+                    <canvas id="breakdownChart" role="img"
+                        aria-label="Bar chart showing breakdown of heat loss by component (Walls, Roof, Floor, Windows, Doors). See Loss Breakdown list in result cards for details."></canvas>
                 </div>
             </div>
 
             <div class="lg:col-span-1 lg:col-span-2-dynamic bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Passive Simulation</h3>
-                <p class="text-center text-sm text-gray-700 mb-4">Indoor temperature drift with NO supplemental heating.</p>
+                <p class="text-center text-sm text-gray-700 mb-4">Indoor temperature drift with NO supplemental heating.
+                </p>
                 <div class="heatLossChartBox">
-                    <canvas id="simulationChart" role="img" aria-label="Line chart showing indoor temperature simulation over time without heating."></canvas>
+                    <canvas id="simulationChart" role="img"
+                        aria-label="Line chart showing indoor temperature simulation over time without heating."></canvas>
                 </div>
             </div>
 
@@ -621,7 +697,8 @@
 
         <!-- Clear All Button -->
         <div class="mt-8 mb-8 text-center">
-             <button id="clearAllBtn" class="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-6 rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            <button id="clearAllBtn"
+                class="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-6 rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                 Clear all
             </button>
             <p class="text-xs text-gray-500 mt-2">Resets all inputs. Custom sources are retained but unselected.</p>
@@ -634,7 +711,10 @@
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-gray-900">Help / Documentation</h3>
                 <button id="closeHelpModal" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
                 </button>
             </div>
             <div id="helpContent" class="prose max-w-none text-sm text-gray-700">
@@ -648,4 +728,5 @@
     <script type="module" src="webmcp.js"></script>
     <script src="skin.js"></script>
 </body>
+
 </html>
