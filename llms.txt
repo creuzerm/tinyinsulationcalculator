@@ -34,12 +34,16 @@ Estimates the R-value of a building component using energy balance calculations 
 - `spaceDimensions`: `{ length, width, height }` (ft)
 - `temperatures`: `{ indoor, outdoor }` (F)
 - `hvac`: `{ rate, mode }` (BTU/hr, 'heating'/'cooling')
-- `targetComponent`: `{ area }` (sq ft)
-- `envelope`: `{ ach, windowArea, floorArea, otherWallArea }` (Ach, sq ft)
+- `targetComponent`: `{ area, type }` (sq ft, 'wall'/'ceiling')
+- `surfaceTemperatures`: `{ indoor, outdoor }` (F, optional, for material R-value)
+- `envelope`: `{ achRate, areaWindows, areaOtherWallsCeilings, areaFloor }`
 
 ## Declarative Tools (HTML Forms)
 
 The following HTML forms are instrumented with WebMCP attributes for declarative interaction:
+
+### `estimate_r_value` (Form)
+Declarative form for estimating R-value. Located in `existing_building_estimator.html`. Supports auto-submit.
 
 ### `update_shared_settings`
 Update shared building and climate settings (Shape, Dimensions, Temperature, Vehicle Color).

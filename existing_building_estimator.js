@@ -307,27 +307,55 @@ window.addEventListener('load', () => {
                     targetComponent: {
                         type: "object",
                         properties: {
-                            area: { type: "number" }
+                            area: { type: "number" },
+                            type: { type: "string", enum: ["wall", "ceiling"] }
+                        }
+                    },
+                    surfaceTemperatures: {
+                        type: "object",
+                        properties: {
+                            indoor: { type: "number", description: "Indoor surface temperature of the component." },
+                            outdoor: { type: "number", description: "Outdoor surface temperature of the component." }
+                        }
+                    },
+                    envelope: {
+                        type: "object",
+                        properties: {
+                            achRate: { type: "number", description: "Air changes per hour." },
+                            areaWindows: { type: "number", description: "Total window area (sq ft)." },
+                            areaOtherWallsCeilings: { type: "number", description: "Area of other walls/ceilings (sq ft)." },
+                            areaFloor: { type: "number", description: "Floor area (sq ft)." }
                         }
                     }
                 }
             },
             execute: async (args) => {
                 if (args.spaceDimensions) {
-                    el('spaceLength').value = args.spaceDimensions.length;
-                    el('spaceWidth').value = args.spaceDimensions.width;
-                    el('spaceHeight').value = args.spaceDimensions.height;
+                    if (args.spaceDimensions.length) el('spaceLength').value = args.spaceDimensions.length;
+                    if (args.spaceDimensions.width) el('spaceWidth').value = args.spaceDimensions.width;
+                    if (args.spaceDimensions.height) el('spaceHeight').value = args.spaceDimensions.height;
                 }
                 if (args.temperatures) {
-                    el('tIndoorAir').value = args.temperatures.indoor;
-                    el('tOutdoorAir').value = args.temperatures.outdoor;
+                    if (args.temperatures.indoor) el('tIndoorAir').value = args.temperatures.indoor;
+                    if (args.temperatures.outdoor) el('tOutdoorAir').value = args.temperatures.outdoor;
                 }
                 if (args.hvac) {
-                    el('qHvac').value = args.hvac.rate;
-                    el('hvacMode').value = args.hvac.mode;
+                    if (args.hvac.rate) el('qHvac').value = args.hvac.rate;
+                    if (args.hvac.mode) el('hvacMode').value = args.hvac.mode;
                 }
                 if (args.targetComponent) {
-                    el('targetComponentArea').value = args.targetComponent.area;
+                    if (args.targetComponent.area) el('targetComponentArea').value = args.targetComponent.area;
+                    if (args.targetComponent.type) el('targetComponentType').value = args.targetComponent.type;
+                }
+                if (args.surfaceTemperatures) {
+                    if (args.surfaceTemperatures.indoor) el('tTargetSurfaceIndoor').value = args.surfaceTemperatures.indoor;
+                    if (args.surfaceTemperatures.outdoor) el('tTargetSurfaceOutdoor').value = args.surfaceTemperatures.outdoor;
+                }
+                if (args.envelope) {
+                    if (args.envelope.achRate) el('achRate').value = args.envelope.achRate;
+                    if (args.envelope.areaWindows) el('areaWindows').value = args.envelope.areaWindows;
+                    if (args.envelope.areaOtherWallsCeilings) el('areaOtherWallsCeilings').value = args.envelope.areaOtherWallsCeilings;
+                    if (args.envelope.areaFloor) el('areaFloor').value = args.envelope.areaFloor;
                 }
                 return calculateRValue();
             }
