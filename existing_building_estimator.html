@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-Value Estimator</title>
+    <title>R-Value Estimator - Tiny Insulation</title>
     <meta name="description"
         content="Estimate wall/ceiling R-value using HVAC data and temperature measurements where internal construction is unknown.">
     <meta property="og:title" content="R-Value Estimator">
@@ -18,627 +18,259 @@
         content="Estimate wall/ceiling R-value using HVAC data and temperature measurements where internal construction is unknown.">
     <link rel="canonical" href="https://example.com/existing_building_estimator.html">
     <link rel="icon" href="data:,">
-    <!-- Tailwind CSS CDN -->
+
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: 'var(--color-primary)',
+                            hover: 'var(--color-primary-hover)',
+                            subtle: 'var(--color-primary-subtle)',
+                        },
+                        secondary: {
+                            DEFAULT: 'var(--color-secondary)',
+                            subtle: 'var(--color-secondary-subtle)',
+                        },
+                        accent: 'var(--color-accent)',
+                        app: 'var(--color-bg-app)',
+                        card: 'var(--color-bg-card)',
+                        border: 'var(--color-border)',
+                    },
+                    borderRadius: {
+                        card: 'var(--radius-card)',
+                        input: 'var(--radius-input)',
+                    },
+                    fontFamily: {
+                        heading: ['var(--font-heading)'],
+                        body: ['var(--font-body)'],
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0ffef;
-            /* Light green-gray background for a fresh look */
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: #ffffff;
-            /* White background for the card */
-            border-radius: 1.5rem;
-            /* More rounded corners */
-            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.04);
-            /* Deeper shadow */
-        }
-
-        input[type="number"],
-        select {
-            @apply w-full p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all duration-200 ease-in-out;
-        }
-
-        label {
-            @apply block text-gray-700 text-sm font-semibold mb-1;
-        }
-
-        .section-title {
-            @apply text-2xl font-bold text-gray-800 mb-5 pb-3 border-b-2 border-green-200;
-        }
-
-        .btn {
-            @apply bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105;
-        }
-
-        .result-box {
-            @apply bg-green-50 p-6 rounded-xl border-2 border-green-200 mt-8;
-        }
-
-        .result-text {
-            @apply text-xl font-semibold text-green-800;
-        }
-
-        .error-message {
-            @apply text-red-700 text-sm mt-2;
-        }
-
-        .alert-warning {
-            @apply bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-md mb-4;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="skin.css">
 </head>
 
-<body class="p-4">
+<body class="bg-app font-body">
 
-    <div class="container relative"> <!-- Added relative positioning for the menu -->
-        <!-- Hamburger Menu -->
-        <div class="absolute top-0 right-0 p-4 mr-4 mt-1"> <!-- Adjusted margin for aesthetics -->
-            <button id="menu-btn" class="text-gray-600 hover:text-green-700 focus:outline-none">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
-                    </path>
-                </svg>
-            </button>
-            <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-20 py-1">
-                <a href="index.html"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Tiny Home
-                    Calculator</a>
-                <a href="existing_building_estimator.html"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Existing
-                    Building Estimator</a>
-                <a href="insulationexplorer.html"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Insulation
-                    Explorer</a>
-                <a href="#" id="help-link"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">Help /
-                    Documentation</a>
+    <div class="container mx-auto p-2 md:p-6 max-w-4xl">
+        <header class="text-center mb-8 relative">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">R-Value Estimator</h1>
+            <p class="text-gray-700 max-w-2xl mx-auto">Estimate wall/ceiling R-value using HVAC data and temperature
+                measurements where internal construction is unknown.</p>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex justify-center space-x-2">
+                <button id="copyLinkBtn" data-action="copy-link"
+                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-input shadow-sm flex items-center transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                        </path>
+                    </svg>
+                    Copy Link
+                </button>
             </div>
-        </div>
 
-        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-10 pt-8">R-Value Estimator</h1>
-        <!-- Added pt-8 to avoid overlap with menu -->
-        <p class="text-center text-gray-600 mb-10">Estimate wall/ceiling R-value using HVAC data and temperature
-            measurements where internal construction is unknown.</p>
+            <!-- Hamburger Menu -->
+            <div class="absolute top-0 right-0 p-4">
+                <button id="menu-btn" class="text-gray-500 hover:text-primary focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-card shadow-lg z-20 overflow-hidden">
+                    <a href="index.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-subtle hover:text-primary">Tiny Home Calculator</a>
+                    <a href="existing_building_estimator.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-subtle hover:text-primary">Existing Building Estimator</a>
+                    <a href="insulationexplorer.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-subtle hover:text-primary">Insulation Explorer</a>
+                    <a href="#" id="help-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-subtle hover:text-primary">Help / Documentation</a>
+                </div>
+            </div>
+        </header>
 
-        <div id="error-display" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md hidden mb-4"
-            role="alert">
-            <strong class="font-bold">Error!</strong>
+        <div id="error-display" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-card hidden mb-6" role="alert">
+            <strong class="font-bold">Error:</strong>
             <span id="error-message" class="block sm:inline"></span>
         </div>
 
-        <!-- Section: Space Information -->
-        <div class="mb-8">
-            <h2 class="section-title">1. Space Information & Temperatures</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label for="spaceLength">Length (ft):</label>
-                    <input type="number" id="spaceLength" value="20" placeholder="e.g., 20">
+        <form toolname="estimate_r_value" tooldescription="Estimate building component R-value via energy balance" toolautosubmit="true" onsubmit="event.preventDefault()" class="space-y-6">
+            
+            <!-- Section 1: Temperatures -->
+            <section class="skin-card p-6">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">1. Temperatures & HVAC</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="tIndoorAir" class="input-label">Indoor Air Temp (°F)</label>
+                        <input type="number" id="tIndoorAir" data-model="tIndoorAir" class="input-field" value="70"
+                            toolparamdescription="Target indoor temperature in Fahrenheit.">
+                    </div>
+                    <div>
+                        <label for="tOutdoorAir" class="input-label">Outdoor Air Temp (°F)</label>
+                        <input type="number" id="tOutdoorAir" data-model="tOutdoorAir" class="input-field" value="30"
+                            toolparamdescription="Outdoor ambient temperature in Fahrenheit.">
+                    </div>
+                    <div>
+                        <label for="qHvac" class="input-label">HVAC Load (BTU/hr)</label>
+                        <input type="number" id="qHvac" data-model="qHvac" class="input-field" value="20000"
+                            toolparamdescription="Applied HVAC heating or cooling rate in BTU per hour.">
+                    </div>
+                    <div>
+                        <label for="hvacMode" class="input-label">HVAC Mode</label>
+                        <select id="hvacMode" data-model="hvacMode" class="input-field"
+                            toolparamdescription="Current HVAC operation mode (heating or cooling).">
+                            <option value="heating">Heating</option>
+                            <option value="cooling">Cooling</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label for="spaceWidth">Width (ft):</label>
-                    <input type="number" id="spaceWidth" value="15" placeholder="e.g., 15">
+            </section>
+
+            <!-- Section 2: Target Component -->
+            <section class="skin-card p-6 border-l-4 border-primary">
+                <h2 class="text-xl font-bold mb-4 text-primary border-b border-primary/20 pb-2">2. Target Component</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <label for="targetComponentType" class="input-label">Component Type</label>
+                        <select id="targetComponentType" data-model="targetComponentType" class="input-field">
+                            <option value="wall">Wall</option>
+                            <option value="ceiling">Ceiling</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="targetComponentArea" class="input-label">Target Area (sq ft)</label>
+                        <input type="number" id="targetComponentArea" data-model="targetComponentArea" class="input-field" value="120"
+                            toolparamdescription="Surface area of the component being estimated in square feet.">
+                    </div>
                 </div>
-                <div>
-                    <label for="spaceHeight">Height (ft):</label>
-                    <input type="number" id="spaceHeight" value="8" placeholder="e.g., 8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="tTargetSurfaceIndoor" class="input-label">Indoor Surface Temp (°F)</label>
+                        <input type="number" id="tTargetSurfaceIndoor" data-model="tTargetSurfaceIndoor" class="input-field" placeholder="Optional"
+                            toolparamdescription="Optional: Measured indoor surface temperature for material R-value.">
+                    </div>
+                    <div>
+                        <label for="tTargetSurfaceOutdoor" class="input-label">Outdoor Surface Temp (°F)</label>
+                        <input type="number" id="tTargetSurfaceOutdoor" data-model="tTargetSurfaceOutdoor" class="input-field" placeholder="Optional"
+                            toolparamdescription="Optional: Measured outdoor surface temperature for material R-value.">
+                    </div>
                 </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label for="tIndoorAir">Indoor Air Temperature (&deg;F):</label>
-                    <input type="number" id="tIndoorAir" value="70" placeholder="e.g., 70">
+            </section>
+
+            <!-- Section 3: Space Dimensions & Envelope -->
+            <section class="skin-card p-6">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">3. Envelope & Infiltration</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label for="spaceLength" class="input-label">Space Length (ft)</label>
+                        <input type="number" id="spaceLength" data-model="spaceLength" class="input-field" value="20">
+                    </div>
+                    <div>
+                        <label for="spaceWidth" class="input-label">Space Width (ft)</label>
+                        <input type="number" id="spaceWidth" data-model="spaceWidth" class="input-field" value="15">
+                    </div>
+                    <div>
+                        <label for="spaceHeight" class="input-label">Space Height (ft)</label>
+                        <input type="number" id="spaceHeight" data-model="spaceHeight" class="input-field" value="8">
+                    </div>
                 </div>
-                <div>
-                    <label for="tOutdoorAir">Outdoor Air Temperature (&deg;F):</label>
-                    <input type="number" id="tOutdoorAir" value="30" placeholder="e.g., 30">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="achRate" class="input-label">Air Change Rate (ACH)</label>
+                        <input type="number" id="achRate" data-model="achRate" class="input-field" value="0.5" step="0.1"
+                            toolparamdescription="Air changes per hour (infiltration/ventilation).">
+                    </div>
+                    <div>
+                        <label for="areaWindows" class="input-label">Window Area (sq ft)</label>
+                        <input type="number" id="areaWindows" data-model="areaWindows" class="input-field" value="30">
+                    </div>
+                    <div>
+                        <label for="areaOtherWallsCeilings" class="input-label">Other Walls/Ceilings (sq ft)</label>
+                        <input type="number" id="areaOtherWallsCeilings" data-model="areaOtherWallsCeilings" class="input-field" value="600">
+                    </div>
+                    <div>
+                        <label for="areaFloor" class="input-label">Floor Area (sq ft)</label>
+                        <input type="number" id="areaFloor" data-model="areaFloor" class="input-field" value="300">
+                    </div>
                 </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="qHvac">Applied HVAC Rate (BTUs/Hr):</label>
-                    <input type="number" id="qHvac" value="20000" placeholder="e.g., 20000">
+            </section>
+
+            <button id="calculateBtn" data-action="calculate" class="btn-primary w-full py-4 text-xl shadow-lg">
+                Calculate R-Value
+            </button>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden mt-8 space-y-4">
+            <div class="bg-primary-subtle border-2 border-primary rounded-card p-6 text-center animate-pulse-once">
+                <h2 class="text-2xl font-bold text-primary mb-4">Estimated R-Value Results</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-card shadow-sm border border-primary/10">
+                        <p class="text-sm text-gray-600 uppercase tracking-wide font-bold mb-1">Overall (Air-to-Air)</p>
+                        <p class="text-4xl font-black text-gray-900"><span id="rValueImperialOverall">--</span></p>
+                        <p class="text-xs text-gray-500">ft²·hr·°F/BTU</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-card shadow-sm border border-primary/10">
+                        <p class="text-sm text-gray-600 uppercase tracking-wide font-bold mb-1">Overall (SI)</p>
+                        <p class="text-4xl font-black text-gray-900"><span id="rValueSIOverall">--</span></p>
+                        <p class="text-xs text-gray-500">m²·K/W</p>
+                    </div>
                 </div>
-                <div>
-                    <label for="hvacMode">HVAC Mode:</label>
-                    <select id="hvacMode">
-                        <option value="heating">Heating</option>
-                        <option value="cooling">Cooling</option>
-                    </select>
+
+                <div id="materialRValueImperialRow" class="hidden mt-6 pt-6 border-t border-primary/20">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-gray-600 font-bold mb-1">Material (Surface-to-Surface)</p>
+                            <p class="text-2xl font-bold text-gray-900"><span id="rValueImperialMaterial">--</span> R</p>
+                        </div>
+                        <div id="materialRValueSIRow" class="hidden">
+                            <p class="text-sm text-gray-600 font-bold mb-1">Material (SI)</p>
+                            <p class="text-2xl font-bold text-gray-900"><span id="rValueSIMaterial">--</span> RSI</p>
+                        </div>
+                    </div>
                 </div>
+
+                <p class="text-xs text-gray-600 mt-6 italic">
+                    Disclaimer: This is an estimation based on steady-state assumptions and input defaults.
+                </p>
             </div>
         </div>
 
-        <!-- Section: Target Wall/Ceiling Properties (Unknown R-value) -->
-        <div class="mb-8">
-            <h2 class="section-title">2. Target Component to Estimate R-Value</h2>
-            <p class="text-sm text-gray-600 mb-4">Select the type and area of the wall or ceiling whose R-value you want
-                to estimate. The internal construction of this component is assumed to be unknown, and its R-value will
-                be calculated from the energy balance.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label for="targetComponentType">Component Type:</label>
-                    <select id="targetComponentType">
-                        <option value="wall">Wall</option>
-                        <option value="ceiling">Ceiling</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="targetComponentArea">Target Component Area (ft²):</label>
-                    <input type="number" id="targetComponentArea" value="120"
-                        placeholder="e.g., 120 (e.g., 10x12 ft wall)">
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="tTargetSurfaceIndoor">Target Indoor Surface Temp (&deg;F) (Optional):</label>
-                    <input type="number" id="tTargetSurfaceIndoor" placeholder="e.g., 65 (for material R-value)">
-                    <p class="text-xs text-gray-500 mt-1">If provided, calculates R-value based on surface-to-surface
-                        temps.</p>
-                </div>
-                <div>
-                    <label for="tTargetSurfaceOutdoor">Target Outdoor Surface Temp (&deg;F) (Optional):</label>
-                    <input type="number" id="tTargetSurfaceOutdoor" placeholder="e.g., 35 (for material R-value)">
-                    <p class="text-xs text-gray-500 mt-1">Required if indoor surface temp is provided.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section: Other Gains/Losses (Assumptions) -->
-        <div class="mb-8">
-            <h2 class="section-title">3. Other Heat Gains & Losses (Assumptions)</h2>
-            <div class="alert-warning">
-                <p class="font-bold">Important Assumptions:</p>
-                <ul class="list-disc list-inside text-sm pl-4">
-                    <li>Internal heat gains (from occupants, lights, equipment) and solar heat gains are assumed to be
-                        **zero** for this calculation. For best accuracy, take measurements during periods with no
-                        internal activity and no direct sunlight.</li>
-                    <li>U-values for **other envelope components (windows, non-target walls/ceilings, floor)** are based
-                        on typical default values. This is necessary to balance the energy equation. The accuracy of the
-                        estimated R-value depends heavily on how well these defaults represent your building.</li>
-                </ul>
-            </div>
-
-            <p class="text-sm text-gray-600 mb-4">To accurately estimate the heat transfer through your target
-                component, we need to account for all other heat flows in the space. These values are used as defaults
-                in the calculation.</p>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label for="achRate">Air Change Rate (ACH):</label>
-                    <input type="number" id="achRate" value="0.5" step="0.1" placeholder="e.g., 0.5">
-                    <p class="text-xs text-gray-500 mt-1">Typical: 0.3 (tight) to 1.0+ (leaky) ACH</p>
-                </div>
-            </div>
-
-            <h3 class="font-bold text-gray-700 mb-2">Areas for Other Envelope Components (Default U-Values Used):</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                    <label for="areaWindows">Window Area (ft²):</label>
-                    <input type="number" id="areaWindows" value="30" placeholder="e.g., 30">
-                    <p class="text-xs text-gray-500 mt-1">Default Window U-Value: <span class="font-semibold">2.8
-                            W/m²K</span> (Double-pane)</p>
-                </div>
-                <div>
-                    <label for="areaOtherWallsCeilings">Other Walls/Ceilings Area (ft²):</label>
-                    <input type="number" id="areaOtherWallsCeilings" value="600" placeholder="e.g., 600">
-                    <p class="text-xs text-gray-500 mt-1">Default Other Walls/Ceilings U-Value: <span
-                            class="font-semibold">0.5 W/m²K</span> (Insulated)</p>
-                </div>
-                <div>
-                    <label for="areaFloor">Floor Area (ft²):</label>
-                    <input type="number" id="areaFloor" value="300" placeholder="e.g., 300">
-                    <p class="text-xs text-gray-500 mt-1">Default Floor U-Value: <span class="font-semibold">0.3
-                            W/m²K</span> (Insulated)</p>
-                </div>
-            </div>
-        </div>
-
-        <button id="calculateBtn" class="btn w-full mb-6">Calculate R-Value</button>
-
-        <!-- Section: Results -->
-        <div id="results" class="result-box hidden" aria-live="polite">
-            <h2 class="section-title !mb-2">Results</h2>
-            <p class="result-text mb-2">Estimated Overall R-Value (Air-to-Air, Imperial): <span
-                    id="rValueImperialOverall">--</span> (ft&sup2;&middot;hr&middot;&deg;F/BTU)</p>
-            <p class="result-text mb-4">Estimated Overall R-Value (Air-to-Air, SI): <span id="rValueSIOverall">--</span>
-                (m&sup2;&middot;K/W)</p>
-            <p class="result-text mb-2 hidden" id="materialRValueImperialRow">Estimated Material R-Value
-                (Surface-to-Surface, Imperial): <span id="rValueImperialMaterial">--</span>
-                (ft&sup2;&middot;hr&middot;&deg;F/BTU)</p>
-            <p class="result-text mb-4 hidden" id="materialRValueSIRow">Estimated Material R-Value (Surface-to-Surface,
-                SI): <span id="rValueSIMaterial">--</span> (m&sup2;&middot;K/W)</p>
-            <p class="text-sm text-gray-800 mt-4"><em>Disclaimer: This is an estimation based on steady-state
-                    assumptions and your inputs, and relies on assumed typical U-values for other building components.
-                    Real-world conditions can vary significantly, especially if internal/solar gains are present or the
-                    assumed U-values are not representative.</em></p>
+        <div class="mt-12 text-center space-y-4">
+            <button id="clearAllBtn" data-action="clear-all" class="text-red-600 hover:text-red-700 font-medium text-sm underline transition-colors">
+                Clear all data
+            </button>
+            <p class="text-xs text-gray-500">Values are automatically saved to your browser.</p>
         </div>
 
         <!-- Help Modal -->
-        <div id="helpModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-900">Help / Documentation</h3>
-                    <button id="closeHelpModal" class="text-gray-500 hover:text-gray-700">
+        <div id="helpModal" class="fixed inset-0 bg-gray-950/50 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+            <div class="relative bg-white max-w-2xl w-full shadow-2xl rounded-card overflow-hidden">
+                <div class="flex justify-between items-center p-6 bg-gray-50 border-b">
+                    <h3 class="text-xl font-bold text-gray-900">Documentation</h3>
+                    <button id="closeHelpModal" class="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
-                <div id="helpContent" class="prose max-w-none text-sm text-gray-700">
-                    <!-- Content will be loaded here -->
+                <div id="helpContent" class="p-8 prose prose-sm max-w-none max-h-[70vh] overflow-y-auto">
                     <p class="text-center text-gray-500">Loading...</p>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <script>
-        // Hamburger menu toggle
-        const menuBtn = document.getElementById('menu-btn');
-        const menuDropdown = document.getElementById('menu-dropdown');
-
-        if (menuBtn && menuDropdown) { // Check if elements exist
-            menuBtn.addEventListener('click', (event) => {
-                event.stopPropagation(); // Prevent click from immediately closing menu
-                menuDropdown.classList.toggle('hidden');
-            });
-
-            // Close dropdown if clicking outside
-            document.addEventListener('click', (event) => {
-                if (!menuDropdown.classList.contains('hidden') && !menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
-                    menuDropdown.classList.add('hidden');
-                }
-            });
-        }
-
-        // Help Modal Logic
-        const helpLink = document.getElementById('help-link');
-        const helpModal = document.getElementById('helpModal');
-        const closeHelpModal = document.getElementById('closeHelpModal');
-        const helpContent = document.getElementById('helpContent');
-
-        if (helpLink && helpModal) {
-            helpLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                document.getElementById('menu-dropdown').classList.add('hidden'); // Close menu
-                helpModal.classList.remove('hidden');
-
-                // Fetch README if not already loaded
-                if (helpContent.innerHTML.includes('Loading...')) {
-                    fetch('README.md')
-                        .then(response => response.text())
-                        .then(text => {
-                            helpContent.innerHTML = marked.parse(text);
-                        })
-                        .catch(err => {
-                            helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
-                            console.error(err);
-                        });
-                }
-            });
-
-            closeHelpModal.addEventListener('click', () => {
-                helpModal.classList.add('hidden');
-            });
-
-            // Close on outside click
-            helpModal.addEventListener('click', (e) => {
-                if (e.target === helpModal) {
-                    helpModal.classList.add('hidden');
-                }
-            });
-        }
-
-
-        // Constants for calculations
-        const BTU_TO_W = 0.293071; // 1 BTU/hr = 0.293071 Watts
-        const FT_TO_M = 0.3048; // 1 foot = 0.3048 meters
-        const FAHRENHEIT_TO_CELSIUS_OFFSET = 32;
-        const FAHRENHEIT_TO_CELSIUS_SCALE = 5 / 9;
-        const R_VALUE_IMPERIAL_TO_SI = 0.1761; // 1 (ft^2 * hr * F) / BTU = 0.1761 (m^2 * K) / W
-
-        const AIR_DENSITY_KG_PER_M3 = 1.2; // kg/m^3 at standard conditions
-        const AIR_SPECIFIC_HEAT_J_PER_KG_K = 1000; // J/(kg·K) or 1 kJ/(kg·K)
-
-        // DEFAULT U-VALUES (W/m²K) for other components
-        const DEFAULT_U_WINDOWS = 2.8; // Typical double-pane window
-        const DEFAULT_U_OTHER_WALLS_CEILINGS = 0.5; // Moderately insulated wall/ceiling
-        const DEFAULT_U_FLOOR = 0.3; // Moderately insulated floor/slab
-
-        // DOM Elements
-        const spaceLengthInput = document.getElementById('spaceLength');
-        const spaceWidthInput = document.getElementById('spaceWidth');
-        const spaceHeightInput = document.getElementById('spaceHeight');
-        const tIndoorAirInput = document.getElementById('tIndoorAir');
-        const tOutdoorAirInput = document.getElementById('tOutdoorAir');
-        const qHvacInput = document.getElementById('qHvac');
-        const hvacModeSelect = document.getElementById('hvacMode');
-
-        const targetComponentTypeSelect = document.getElementById('targetComponentType');
-        const targetComponentAreaInput = document.getElementById('targetComponentArea');
-        const tTargetSurfaceIndoorInput = document.getElementById('tTargetSurfaceIndoor');
-        const tTargetSurfaceOutdoorInput = document.getElementById('tTargetSurfaceOutdoor');
-
-        const achRateInput = document.getElementById('achRate');
-        const areaWindowsInput = document.getElementById('areaWindows');
-        const areaOtherWallsCeilingsInput = document.getElementById('areaOtherWallsCeilings');
-        const areaFloorInput = document.getElementById('areaFloor');
-
-        const calculateBtn = document.getElementById('calculateBtn');
-        const resultsDiv = document.getElementById('results');
-        const rValueImperialOverallSpan = document.getElementById('rValueImperialOverall');
-        const rValueSIOverallSpan = document.getElementById('rValueSIOverall');
-        const rValueImperialMaterialSpan = document.getElementById('rValueImperialMaterial');
-        const rValueSIMaterialSpan = document.getElementById('rValueSIMaterial');
-        const materialRValueImperialRow = document.getElementById('materialRValueImperialRow');
-        const materialRValueSIRow = document.getElementById('materialRValueSIRow');
-        const errorDisplay = document.getElementById('error-display');
-        const errorMessageSpan = document.getElementById('error-message');
-
-        // Helper functions for unit conversion
-        function fahrenheitToCelsius(f) {
-            return (f - FAHRENHEIT_TO_CELSIUS_OFFSET) * FAHRENHEIT_TO_CELSIUS_SCALE;
-        }
-
-        function displayError(message) {
-            errorMessageSpan.textContent = message;
-            errorDisplay.classList.remove('hidden');
-            resultsDiv.classList.add('hidden');
-        }
-
-        function hideError() {
-            errorDisplay.classList.add('hidden');
-        }
-
-        // Main calculation logic
-        if (calculateBtn) { // Check if calculateBtn exists
-            calculateBtn.addEventListener('click', () => {
-                hideError();
-                materialRValueImperialRow.classList.add('hidden');
-                materialRValueSIRow.classList.add('hidden');
-
-                // 1. Get all inputs and validate
-                const spaceLengthFt = parseFloat(spaceLengthInput.value);
-                const spaceWidthFt = parseFloat(spaceWidthInput.value);
-                const spaceHeightFt = parseFloat(spaceHeightInput.value);
-                const tIndoorAirF = parseFloat(tIndoorAirInput.value);
-                const tOutdoorAirF = parseFloat(tOutdoorAirInput.value);
-                let qHvacBtuh = parseFloat(qHvacInput.value); // Will adjust sign based on mode
-                const hvacMode = hvacModeSelect.value;
-
-                const targetComponentAreaFt2 = parseFloat(targetComponentAreaInput.value);
-                const tTargetSurfaceIndoorF = parseFloat(tTargetSurfaceIndoorInput.value); // Optional input
-                const tTargetSurfaceOutdoorF = parseFloat(tTargetSurfaceOutdoorInput.value); // Optional input
-
-                const achRate = parseFloat(achRateInput.value);
-                const areaWindowsFt2 = parseFloat(areaWindowsInput.value);
-                const areaOtherWallsCeilingsFt2 = parseFloat(areaOtherWallsCeilingsInput.value);
-                const areaFloorFt2 = parseFloat(areaFloorInput.value);
-
-                // Basic Validation for mandatory inputs
-                const mandatoryInputs = [
-                    spaceLengthFt, spaceWidthFt, spaceHeightFt, tIndoorAirF, tOutdoorAirF, qHvacBtuh,
-                    targetComponentAreaFt2, achRate, areaWindowsFt2,
-                    areaOtherWallsCeilingsFt2, areaFloorFt2
-                ];
-
-                if (mandatoryInputs.some(isNaN) || mandatoryInputs.some(val => val < 0 && val !== qHvacBtuh && !isNaN(val))) {
-                    displayError('Please enter valid, non-negative numbers for all required fields. HVAC rate can be positive or negative depending on mode.');
-                    return;
-                }
-                if (isNaN(qHvacBtuh)) { // Specifically check qHvacBtuh for NaN as it's handled separately for sign
-                    displayError('HVAC Rate must be a valid number.');
-                    return;
-                }
-
-
-                if (targetComponentAreaFt2 === 0) {
-                    displayError('Target component area cannot be zero. Please enter a valid area.');
-                    return;
-                }
-
-                // Validation for optional surface temperatures
-                const hasSurfaceTemps = !isNaN(tTargetSurfaceIndoorF) && !isNaN(tTargetSurfaceOutdoorF);
-                if ((!isNaN(tTargetSurfaceIndoorF) && isNaN(tTargetSurfaceOutdoorF)) || (isNaN(tTargetSurfaceIndoorF) && !isNaN(tTargetSurfaceOutdoorF))) {
-                    displayError('If providing surface temperatures, both Indoor and Outdoor Surface Temperatures for the Target Component must be entered.');
-                    return;
-                }
-
-                // Adjust HVAC rate sign: positive for heating, negative for cooling
-                if (hvacMode === 'cooling') {
-                    qHvacBtuh = -Math.abs(qHvacBtuh); // Ensure it's negative for cooling
-                } else {
-                    qHvacBtuh = Math.abs(qHvacBtuh); // Ensure it's positive for heating
-                }
-
-                // Convert units to SI for calculation consistency
-                const spaceVolumeM3 = (spaceLengthFt * spaceWidthFt * spaceHeightFt) * (FT_TO_M ** 3);
-                const tIndoorAirC = fahrenheitToCelsius(tIndoorAirF);
-                const tOutdoorAirC = fahrenheitToCelsius(tOutdoorAirF);
-                const deltaT_Air_C = tIndoorAirC - tOutdoorAirC; // Temperature difference in Celsius/Kelvin (for air-to-air R-value)
-
-                let tTargetSurfaceIndoorC, tTargetSurfaceOutdoorC, deltaT_Surface_C;
-                if (hasSurfaceTemps) {
-                    tTargetSurfaceIndoorC = fahrenheitToCelsius(tTargetSurfaceIndoorF);
-                    tTargetSurfaceOutdoorC = fahrenheitToCelsius(tTargetSurfaceOutdoorF);
-                    deltaT_Surface_C = tTargetSurfaceIndoorC - tTargetSurfaceOutdoorC; // Temperature difference (for material R-value)
-                }
-
-
-                if (deltaT_Air_C === 0) {
-                    displayError('Temperature difference between indoor and outdoor air cannot be zero for R-value calculation.');
-                    return;
-                }
-
-                const qHvacW = qHvacBtuh * BTU_TO_W;
-                const targetComponentAreaM2 = targetComponentAreaFt2 * (FT_TO_M ** 2);
-                const areaWindowsM2 = areaWindowsFt2 * (FT_TO_M ** 2);
-                const areaOtherWallsCeilingsM2 = areaOtherWallsCeilingsFt2 * (FT_TO_M ** 2);
-                const areaFloorM2 = areaFloorFt2 * (FT_TO_M ** 2);
-
-                // 2. Estimate Other Heat Transfer Components (in Watts)
-                // IMPORTANT ASSUMPTION: qInternal and qSolar are assumed to be ZERO for this calculation.
-                const qInternalW = 0;
-                const qSolarW = 0;
-
-                // Note: Q_values are positive for heat gain to the space, negative for heat loss from the space.
-                // HVAC: Already signed based on heating/cooling mode
-
-                // Transmission through windows (using DEFAULT_U_WINDOWS)
-                const qWindows = DEFAULT_U_WINDOWS * areaWindowsM2 * deltaT_Air_C;
-
-                // Transmission through other walls and ceilings (combined, using DEFAULT_U_OTHER_WALLS_CEILINGS)
-                const qOtherWallsCeilings = DEFAULT_U_OTHER_WALLS_CEILINGS * areaOtherWallsCeilingsM2 * deltaT_Air_C;
-
-                // Transmission through floor (using DEFAULT_U_FLOOR)
-                const qFloor = DEFAULT_U_FLOOR * areaFloorM2 * deltaT_Air_C;
-
-                // Infiltration/Ventilation
-                const qInfiltration = spaceVolumeM3 * achRate / 3600 * AIR_DENSITY_KG_PER_M3 * AIR_SPECIFIC_HEAT_J_PER_KG_K * deltaT_Air_C;
-
-
-                // 3. Perform Energy Balance to find Q_target_component (in Watts)
-                // Energy Balance: Q_HVAC + Q_internal + Q_solar = Q_transmission_total + Q_ventilation
-                // We want to find Q_target_component (part of Q_transmission_total)
-                // Q_transmission_total = Q_target_component + Q_windows + Q_other_walls_ceilings + Q_floor
-                // Rearranging:
-                // Q_target_component = Q_HVAC + Q_internal + Q_solar - (Q_windows + Q_other_walls_ceilings + Q_floor + Q_infiltration)
-
-                const qTargetComponentW = qHvacW + qInternalW + qSolarW - (qWindows + qOtherWallsCeilings + qFloor + qInfiltration);
-
-                // 4. Calculate Heat Flux and Estimated R-value
-                // Heat flux through the target component (Watts/m^2)
-                const qFluxTargetComponentW_per_m2 = qTargetComponentW / targetComponentAreaM2;
-
-                // Calculate Overall R-value (Air-to-Air)
-                const estimatedRValueSIOverall = deltaT_Air_C / qFluxTargetComponentW_per_m2;
-                const estimatedRValueImperialOverall = estimatedRValueSIOverall / R_VALUE_IMPERIAL_TO_SI;
-
-                // Display Overall R-value
-                rValueImperialOverallSpan.textContent = estimatedRValueImperialOverall.toFixed(2);
-                rValueSIOverallSpan.textContent = estimatedRValueSIOverall.toFixed(2);
-
-                // Calculate Material R-value (Surface-to-Surface) if surface temperatures are provided
-                if (hasSurfaceTemps) {
-                    if (deltaT_Surface_C === 0) {
-                        displayError('Temperature difference between indoor and outdoor SURFACE temperatures cannot be zero for Material R-value calculation.');
-                        return;
-                    }
-                    const estimatedRValueSIMaterial = deltaT_Surface_C / qFluxTargetComponentW_per_m2;
-                    const estimatedRValueImperialMaterial = estimatedRValueSIMaterial / R_VALUE_IMPERIAL_TO_SI;
-
-                    rValueImperialMaterialSpan.textContent = estimatedRValueImperialMaterial.toFixed(2);
-                    rValueSIMaterialSpan.textContent = estimatedRValueSIMaterial.toFixed(2);
-                    materialRValueImperialRow.classList.remove('hidden');
-                    materialRValueSIRow.classList.remove('hidden');
-                }
-
-                resultsDiv.classList.remove('hidden');
-            });
-        }
-
-        // WebMCP Tool Registration
-        window.addEventListener('load', async () => {
-            if (window.navigator && window.navigator.modelContext) {
-                window.navigator.modelContext.registerTool({
-                    name: "estimate_r_value",
-                    description: "Estimate the R-value of a building component using energy balance calculations based on HVAC load and temperatures.",
-                    inputSchema: {
-                        type: "object",
-                        properties: {
-                            spaceDimensions: {
-                                type: "object",
-                                properties: {
-                                    length: { type: "number", description: "Length in feet." },
-                                    width: { type: "number", description: "Width in feet." },
-                                    height: { type: "number", description: "Height in feet." }
-                                },
-                                required: ["length", "width", "height"]
-                            },
-                            temperatures: {
-                                type: "object",
-                                properties: {
-                                    indoor: { type: "number", description: "Indoor Air Temp (F)." },
-                                    outdoor: { type: "number", description: "Outdoor Air Temp (F)." }
-                                },
-                                required: ["indoor", "outdoor"]
-                            },
-                            hvac: {
-                                type: "object",
-                                properties: {
-                                    rate: { type: "number", description: "HVAC Rate in BTU/hr." },
-                                    mode: { type: "string", enum: ["heating", "cooling"], description: "HVAC Mode." }
-                                },
-                                required: ["rate", "mode"]
-                            },
-                            targetComponent: {
-                                type: "object",
-                                properties: {
-                                    area: { type: "number", description: "Area of the target component in sq ft." }
-                                },
-                                required: ["area"]
-                            },
-                            envelope: {
-                                type: "object",
-                                properties: {
-                                    ach: { type: "number", description: "Air Changes per Hour." },
-                                    windowArea: { type: "number", description: "Area of windows in sq ft." },
-                                    floorArea: { type: "number", description: "Area of floor in sq ft." },
-                                    otherWallArea: { type: "number", description: "Area of other walls/ceilings in sq ft." }
-                                }
-                            }
-                        },
-                        required: ["spaceDimensions", "temperatures", "hvac", "targetComponent"]
-                    },
-                    execute: async (args) => {
-                        // Set Inputs
-                        document.getElementById('spaceLength').value = args.spaceDimensions.length;
-                        document.getElementById('spaceWidth').value = args.spaceDimensions.width;
-                        document.getElementById('spaceHeight').value = args.spaceDimensions.height;
-                        document.getElementById('tIndoorAir').value = args.temperatures.indoor;
-                        document.getElementById('tOutdoorAir').value = args.temperatures.outdoor;
-                        document.getElementById('qHvac').value = args.hvac.rate;
-                        document.getElementById('hvacMode').value = args.hvac.mode;
-                        document.getElementById('targetComponentArea').value = args.targetComponent.area;
-
-                        if (args.envelope) {
-                            if (args.envelope.ach !== undefined) document.getElementById('achRate').value = args.envelope.ach;
-                            if (args.envelope.windowArea !== undefined) document.getElementById('areaWindows').value = args.envelope.windowArea;
-                            if (args.envelope.floorArea !== undefined) document.getElementById('areaFloor').value = args.envelope.floorArea;
-                            if (args.envelope.otherWallArea !== undefined) document.getElementById('areaOtherWallsCeilings').value = args.envelope.otherWallArea;
-                        }
-
-                        // Trigger Calculation
-                        document.getElementById('calculateBtn').click();
-
-                        // Return Results
-                        const resultsDiv = document.getElementById('results');
-                        if (resultsDiv.classList.contains('hidden')) {
-                            const err = document.getElementById('error-message').innerText;
-                            throw new Error(`Calculation failed: ${err}`);
-                        }
-
-                        return {
-                            rValueImperial: document.getElementById('rValueImperialOverall').textContent,
-                            rValueSI: document.getElementById('rValueSIOverall').textContent
-                        };
-                    }
-                });
-            }
-        });
-    </script>
-    <script type="module" src="webmcp.js"></script>
+    <script src="existing_building_estimator.js"></script>
 </body>
 
 </html>
