@@ -303,7 +303,7 @@ function syncCustomGainsFromDOM() {
     const element = el('customGainsData');
     if (element && element.value) {
         try {
-            customGains = JSON.parse(el.value);
+            customGains = JSON.parse(element.value);
         } catch (e) {
             console.error('Failed to parse custom gains', e);
             customGains = [];
