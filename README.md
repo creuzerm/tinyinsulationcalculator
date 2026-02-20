@@ -120,10 +120,32 @@ To reset the calculator, use the **"Clear all"** button at the bottom of the pag
 * **1D Heat Flow:** Calculations assume one-dimensional heat flow through assemblies. Thermal bridging is approximated via the "Air Sealing" penalty or user-adjusted R-values.
 
 ## 6. Future Roadmap: TODO
-* Bring the Existing Building Estimator in line with the rest of the project
-* Allow sending values from the sub tools to the main tool
-  * Existing Building Estimator can send to the main tiny home calculator as A or B
-  * Insulation Explorer can send to the main tiny home calculator as A or B for the wall, ceiling or floor.
-* Unify the experience. If we need seperate calculators, keep them, but integrate them
-* Improve the WebMCP support
-* Better help documentation
+
+### 🔗 Integration & Interop
+- [ ] **Cross-tool data flow:** Allow the Insulation Explorer to send a calculated R-value directly into the main calculator's Wall, Roof, or Floor R-value for Scenario A or B.
+- [ ] **Cross-tool data flow:** Allow the Existing Building Estimator to push its estimated R-value into the main calculator as Scenario A or B.
+- [ ] **Unified navigation:** Add a persistent toolbar or sidebar linking all three tools, replacing per-page hamburger menus.
+- [ ] **Shared state layer:** Consider a shared `state.js` module so tools can pass data without URL params or localStorage hacks.
+
+### 🎨 UX & Polish
+- [ ] **Responsive chart sizing:** Charts can overflow or be too small on mobile; investigate responsive Chart.js options.
+- [ ] **Existing Building Estimator parity:** Align the estimator's look, feel, and CSS variables with the main calculator (it currently uses an older style).
+- [ ] **Input validation & error messaging:** Add visible validation (e.g., "R-value must be > 0") on the main calculator; the estimator already has error display but the main tool does not.
+- [ ] **Improved help documentation:** The Help modal loads `methods.md` raw; consider writing a user-friendly help guide separate from the engineering reference.
+- [ ] **Loading states:** Show spinners or skeleton UI while `internal_gains.json` and `materials.json` are fetched.
+
+### 🧪 Testing
+- [ ] **Insulation Explorer tests:** `insulationexplorer.html` inline JS has no dedicated tests beyond `insulation_logic.test.js` — add tests for the UI coordination (A/B toggle, serialization, layer management).
+- [ ] **End-to-end browser tests:** Add browser-based smoke tests (e.g., with Playwright) to verify the full page lifecycle, charting, and WebMCP tool registration.
+- [ ] **Snapshot the verification scenarios:** Codify Scenarios A, B, C from `AGENTS.md` as formal Jest test cases to prevent regression.
+
+### 📚 Documentation
+- [ ] **Canonical URLs:** Replace `https://example.com/` placeholders in `<meta>` tags and `<link rel="canonical">` with the actual deployed URL.
+- [ ] **User-facing help guide:** Write a standalone help document (not `methods.md`) explaining how to use each tool, with screenshots.
+- [ ] **`llms.txt` sync:** Ensure `llms.txt` stays up-to-date when tools are added or modified.
+
+### 🏗️ Architecture
+- [ ] **Remove debug artifacts:** Clean up `debug_error.txt`, `debug_eval.js`, `debug_success.txt` from the repo.
+- [ ] **Extract Insulation Explorer inline JS:** Move the ~360 lines of inline `<script>` in `insulationexplorer.html` into a dedicated `insulation_explorer.js` module for testability.
+- [ ] **WebMCP tool: `runSimulation`** goal tools `applyPreset(name)` and `getDetailedResults()` are implemented; consider adding `runSimulation(days)` return format improvements (currently returns full data series, could add summary stats).
+- [ ] **Service Worker / PWA:** Consider adding offline support via a service worker for field use (jobsite, van build).
