@@ -310,6 +310,10 @@ Test environment: `jsdom` (configured in `jest.config.json`). Tests mock DOM, Ch
 
 GitHub Actions (`.github/workflows/test.yml`): Runs `npm test` on push/PR to `main` using Node 20 on `ubuntu-latest`.
 
+### 7.4 TypeScript & Jest Environment
+When adding TypeScript tooling to Node/Jest projects:
+- Always pin `typescript` to standard stable releases (`"typescript": "^5.7.3"`) rather than floating major tags. `ts-jest` relies on stable TypeScript compiler host APIs.
+
 ## 8. Verification Scenarios
 
 Run these after making changes to validate calculator integrity.
@@ -377,3 +381,13 @@ When adding or modifying material properties, thermal constants, or physical coe
 For pure client-side static JS files that are evaluated or imported in Jest test environments:
 - Attach primary calculation functions and helpers to `window` (`if (typeof window !== 'undefined') window.func = func`) so inline HTML scripts and DOM events can access them.
 - Export key functions via `if (typeof module !== 'undefined') module.exports = { ... }` so Node/Jest can import them directly without DOM `eval` side effects.
+
+### 11.4 Headless Execution & DOM Safety
+When writing or modifying core calculation logic in shared JavaScript files (`calculator.js`, `existing_building_estimator.js`):
+1. **Prioritize Input Payload over DOM**: Core calculation functions (e.g. `calculateHeatLoss`) MUST check arguments passed in parameter objects (e.g. `data.height`, `data.buildingShape`) before falling back to `document.getElementById(...)`.
+2. **Safe Fallbacks**: Never assume `document.getElementById(...)` returns non-null or valid numbers in headless (Node/Jest/MCP) environments. Always provide numeric default fallbacks (e.g., `|| 8`) to prevent `NaN` propagation.
+
+### 11.5 MCP Tool Schema & Enum Aliasing
+When defining Zod parameter schemas for MCP tools:
+1. **Include Legacy & Friendly Aliases**: Ensure Zod enums accept all acceptable input aliases recognized by the underlying engine (e.g., `airSealing: z.enum(["passive_house", "tight", "good", "average", "leaky", "poor"])`).
+2. **Prevent Schema Validation Failures**: Strict Zod enums without legacy aliases trigger `-32602` JSON-RPC errors when external LLM agents send alternative valid descriptor names.
