@@ -20,7 +20,7 @@ const BTU_TO_W = 0.293071;
 const FT_TO_M = 0.3048;
 const FAHRENHEIT_TO_CELSIUS_OFFSET = 32;
 const FAHRENHEIT_TO_CELSIUS_SCALE = 5 / 9;
-const R_VALUE_IMPERIAL_TO_SI = 0.1761;
+const R_VALUE_IMPERIAL_TO_SI = 0.1761101838;
 
 const AIR_DENSITY_KG_PER_M3 = 1.2;
 const AIR_SPECIFIC_HEAT_J_PER_KG_K = 1000;
@@ -362,3 +362,20 @@ window.addEventListener('load', () => {
         });
     }
 });
+
+if (typeof window !== 'undefined') {
+    window.calculateRValue = calculateRValue;
+    window.clearAll = clearAll;
+    window.saveToLocalStorage = saveToLocalStorage;
+    window.loadFromLocalStorage = loadFromLocalStorage;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = {
+        calculateRValue,
+        clearAll,
+        saveToLocalStorage,
+        loadFromLocalStorage,
+        R_VALUE_IMPERIAL_TO_SI
+    };
+}

@@ -77,57 +77,90 @@ Derives surface areas from `buildingShape`:
 
 | Shape | Floor | Roof | Walls | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `rectangle` | L×W | L×W (flat) or 2×L×slopeLen (pitched) | 2(L×H)+2(W×H) + gable ends | Supports configurable roof pitch |
+| `rectangle` | L×W | 2×L×slopeLen + gable ends (if pitched) | 2(L×H)+2(W×H) | Gable triangle area is assigned to roof assembly. Pitch is X:12 slope ratio (`rise = (W/2) * (pitch/12)`). |
 | `a-frame` | L×W | 2×L×√((W/2)²+H²) | 2×(0.5×W×H) end walls | No vertical side walls |
-| `gothic-arch` | L×W | L×(π×W/2) arch perimeter | π×(W/2)² ends + 2×L×SpringH | Optional spring walls |
+| `gothic-arch` | L×W | L×(π×W/2) arch perimeter | π×(W/2)² arch ends + 2(L×SpringH) side walls + 2(W×SpringH) end walls | Full end wall includes arch semicircles + spring wall rectangles |
 | `cargo-van` | L×W | L×W | 2(L×H)+2(W×H) | Floor is **air-coupled**, not ground-coupled |
 
 ### 3.2 Effective R-Value (calculator.js → `calculateEffectiveR`)
 
-Walls use assembly-based R-value calculation, **not** a simple nominal R-value:
+Walls and Roofs use assembly-based R-value calculation, **not** simple nominal R-values:
 
 * **Stick Frame (Wood/Steel/Van Ribs):** Parallel Path Method with framing factors and ASHRAE steel correction factors. Accounts for cavity insulation, continuous insulation, and fastener point-load losses (chi-value method).
+  * Framing factors ($f_f$): 16" o.c. = 0.25, 24" o.c. = 0.22, Wood truss = 0.12, Van ribs = 0.10.
+  * Stud depths: 2x4 = 3.5", 2x6 = 5.5", 2x8 = 7.25", 2x10 = 9.25", 2x12 = 11.25".
 * **Mass Wall:** Series summation of mass material R-value + additional insulation + air films.
-* **Air Films:** Interior R=0.68, Exterior R=0.17 (automatically added).
+* **Direction-Specific Air Films:**
+  * Walls: Interior R=0.68, Exterior R=0.17.
+  * Roof/Ceiling: Interior R=0.61 (heat flow up), Exterior R=0.17.
+  * Floor: Interior R=0.92 (heat flow down), Exterior R=0.17.
+* **Base Gypsum/Sheathing R=1.0:** Applied to **wall assemblies only** (R-0.45 gypsum + R-0.62 OSB allowance). Roof and floor assemblies stand on their own inputs.
+* **Thinsulate SM600L:** Rated at $R = 3.15$ per inch ($R = 5.2$ total at 1.65" thickness).
 
-Steel correction factors from `STEEL_CORRECTION_FACTORS`:
+Steel correction factors from `STEEL_CORRECTION_FACTORS` (multiplies nominal cavity R directly: $R_{eff\_cav} = R_{cav} \times F_{steel}$):
 * 2×4 @16"oc: 0.46, @24"oc: 0.55
 * 2×6 @16"oc: 0.37, @24"oc: 0.45
+* 2×8 @16"oc: 0.30, @24"oc: 0.35 (extrapolated)
 * Van Ribs: 0.25 (severe penalty)
 
-### 3.3 Heat Loss (calculator.js → `calculateHeatLoss`)
+Continuous Insulation (CI) Fastener Correction (ISO 10211 Point Thermal Transmittance):
+$$U_{eff\_ci} = \frac{1}{R_{ci}} + (\chi \cdot n) \implies R_{eff\_ci} = \frac{1}{U_{eff\_ci}}$$
+where $\chi$ is point transmittance ($\text{BTU/h}\cdot^\circ\text{F}$ per fastener) and $n$ is fastener density per $\text{ft}^2$.
 
-$$Q_{total} = Q_{envelope} + Q_{floor}$$
+### 3.3 Heat Loss & Infiltration (calculator.js → `calculateHeatLoss`)
+
+$$Q_{total} = Q_{envelope} + Q_{floor} + Q_{infiltration}$$
 
 * **Envelope (Air Coupled):** $Q_{env} = \left(\frac{A_{wall}}{R_{wall}} + \frac{A_{roof}}{R_{roof}} + \frac{A_{window}}{R_{win}} + \frac{A_{door}}{R_{door}}\right) \times (T_{in} - T_{out})$
-* **Floor:** Ground-coupled for buildings ($\Delta T = T_{in} - T_{ground}$), Air-coupled for vehicles ($\Delta T = T_{in} - T_{out}$).
-* **Air Sealing Penalty:** If `airSealing === 'poor'`, $Q_{envelope} \times 1.25$.
+* **Infiltration Loss (ACH-based):** $Q_{infil} = V \times ACH \times 0.018 \times (T_{in} - T_{out})$
+  * Tightness levels: Passive House ($ACH=0.15$), Tight ($ACH=0.35$), Average ($ACH=0.50$), Leaky ($ACH=1.00$).
+* **Floor Loss:**
+  * **Ground-Coupled (Slab-on-Grade):** Calculated via ASHRAE F-factor perimeter method:
+    $$Q_{floor} = F \times P \times (T_{in} - T_{out})$$
+    (F-factors: Uninsulated=0.73, R-5=0.54, R-10=0.43, R-15=0.36 BTU/hr·ft·°F).
+  * **Air-Coupled (Vehicles / Stilts):** $Q_{floor} = \frac{A_{floor}}{R_{floor}} \times (T_{in} - T_{out})$.
+  * **Skirted Buffer Zone:** Solved via steady-state nodal balance (see Section 3.4).
 
 ### 3.4 Buffer Zone / Skirting
 
-Solves for $T_{buffer}$ via nodal steady-state balance when skirting R-value > 0:
+Solves for $T_{buffer}$ via nodal steady-state balance when skirting R-value > 0 and height > 0:
 
-$$T_{buffer} = \frac{T_{in} \cdot UA_{floor} + T_{out} \cdot (UA_{skirt} + Q_{vent}) + T_{ground} \cdot UA_{ground}}{UA_{floor} + UA_{skirt} + UA_{ground} + Q_{vent}}$$
+$$T_{buffer} = \frac{T_{in} \cdot U_f + T_{out} \cdot (U_s + Q_v) + T_{ground} \cdot U_g}{U_f + U_s + U_g + Q_v}$$
 
-Skirting ACH constants: Sealed=0.5, Vented=5.0, Leaky=20.0.
+* $U_f = A_{floor} / R_{floor}$
+* $U_s = (P \times h_{skirt}) / R_{skirt}$
+* $U_g = A_{floor} / 5.0$ (Ground resistance $R=5.0 \text{ hr}\cdot\text{ft}^2\cdot^\circ\text{F/BTU}$)
+* Skirting ACH constants ($Q_v = V_{skirt} \cdot ACH \cdot 0.018$): Sealed=0.5, Vented=5.0, Leaky=20.0.
 
 ### 3.5 Thermal Battery (calculator.js → `calculateMassCapacity`)
 
 $$C_{th} = C_{floor} + C_{structure}$$
 
 * $C_{floor} = (A \times t/12) \times D \times C_p$
-  * Concrete: D=145, Cp=0.2 | Stone/Earth: D=135, Cp=0.2 | Wood: D=30, Cp=0.4
-* $C_{structure} = A_{envelope} \times 1.5$ BTU/°F (stability baseline)
+  * Concrete: D=145 lb/ft³, Cp=0.20
+  * Stone (Granite/Limestone): D=160 lb/ft³, Cp=0.19, R=0.08/in
+  * Rammed Earth: D=120 lb/ft³, Cp=0.22, R=0.14/in
+  * Packed Soil: D=100 lb/ft³, Cp=0.20, R=0.20/in
+  * Wood: D=30 lb/ft³, Cp=0.40
+  * Metal (Steel): D=490 lb/ft³, Cp=0.12
+* $C_{structure} = A_{envelope} \times 1.5$ BTU/°F (structural mass baseline)
 
 ### 3.6 Passive Simulation (calculator.js → `calculateSimulationData`)
 
-Finite-difference time stepping at **1-minute sub-steps** (60 per displayed hour):
+Finite-difference time stepping at **1-minute sub-steps** (60 per displayed hour) with sub-step outdoor temperature interpolation:
 
 $$T_{in}^{(t+1)} = T_{in}^{(t)} + \frac{Q_{gains} - Q_{loss}}{C_{th}} \times \Delta t$$
 
-* Solar gains applied 9 AM–5 PM only.
+* **Outdoor Temperature Model:** Diurnal cosine wave with sunrise minimum (~6 AM) and afternoon maximum (~3 PM):
+  $$T_{out}(h, m) = T_{avg} - A_{amp} \cos\left(\frac{\pi (h + m/60 - 6)}{12}\right)$$
+* **Ground Temperature Model:** Small diurnal variation (1°F amplitude, 6-hour lag behind air temp):
+  $$T_{ground}(h) = T_{ground\_avg} - 1.0 \cos\left(\frac{\pi (h - 12)}{12}\right)$$
+* **Physics-Based Solar Gain Model:**
+  $$Q_{solar} = A_{window} \times SHGC \times I_{peak} \times \sin\left(\frac{\pi (h - h_{sunrise})}{h_{sunset} - h_{sunrise}}\right)$$
+  * SHGC derived from window type: single=0.86, double=0.76, low-e=0.40.
+  * Winter vertical peak irradiance $I_{peak} = 120 \text{ BTU/hr}\cdot\text{ft}^2$.
+  * Vehicle Color toggle: "Dark" applies 1.5× solar gain multiplier.
 * Internal gains from `internal_gains.json` (sensible heat only; latent excluded).
-* Vehicle Color toggle: "Dark" applies 1.5× solar gain multiplier.
 
 ### 3.7 Insulation Explorer (insulation_calculator.js → `calculate`)
 
@@ -139,9 +172,10 @@ Computes assembly R-value with separate Winter (heat-up) and Summer (heat-down) 
 
 Reverse-engineers R-value from HVAC load using energy balance:
 1. Calculates infiltration loss from ACH rate, space volume, and ΔT.
-2. Subtracts known losses (windows, other walls/ceilings, floor) using default U-values.
-3. Solves for target component U-value from remaining heat balance.
-4. Optionally calculates material-only R-value from surface temperatures.
+2. Uses `R_VALUE_IMPERIAL_TO_SI = 0.1761101838` for precise unit conversions.
+3. Subtracts known losses (windows, other walls/ceilings, floor) using default U-values.
+4. Solves for target component U-value from remaining heat balance (assuming zero internal/solar gains for a conservative baseline).
+5. Optionally calculates material-only R-value from surface temperatures.
 
 ## 4. Implemented Features
 
@@ -184,14 +218,29 @@ Reverse-engineers R-value from HVAC load using energy balance:
 - [x] Declarative WebMCP form: `estimate_r_value`
 - [x] Imperative WebMCP tool: `estimate_r_value`
 
-## 5. WebMCP Integration
+## 5. MCP Integration (WebMCP & Backend MCP Server)
 
-### 5.1 Architectural Directive
+### 5.1 Overview & Architecture
 
-* **Client-side only.** DO NOT create backend MCP servers. All tool logic runs in the browser.
-* Polyfill: `@mcp-b/global` loaded via ESM from CDN (with local fallback).
+This project supports two Model Context Protocol (MCP) integrations:
+1. **Client-Side WebMCP:** In-browser tools exposing SPA features to browser-based AI agents via `@mcp-b/global`.
+2. **Backend MCP Server (`/mcp-server/`):** Standalone Node.js / TypeScript MCP server built with `@modelcontextprotocol/sdk`. Exposes core thermal physics tools, JSON resource libraries, and audit prompts for desktop AI clients (e.g. Claude Desktop, Antigravity, Cursor) via `stdio` or `http/sse` transports.
 
-### 5.2 Registered Imperative Tools
+### 5.2 Backend MCP Server Tools & Capabilities
+
+Start the backend MCP server using `npm run mcp:start` (stdio) or `npm run mcp:start -- --sse` (HTTP/SSE).
+
+| Type | Name / URI | Description |
+| :--- | :--- | :--- |
+| **Tool** | `calculate_heat_loss` | Computes envelope heat loss, UA summation, infiltration, floor coupling, and thermal mass. |
+| **Tool** | `calculate_assembly_rvalue` | Computes effective winter/summer R-values for custom material stacks (radiant barriers, compression). |
+| **Tool** | `estimate_r_value_from_hvac` | Reverse-engineers component R-value from empirical HVAC load and temperature differentials. |
+| **Tool** | `run_passive_simulation` | Runs 24h / 7-day finite-difference diurnal thermal simulation with 1-minute time steps. |
+| **Resource** | `materials://library` | Read-only JSON resource exposing full `materials.json` library. |
+| **Resource** | `internal_gains://library` | Read-only JSON resource exposing full `internal_gains.json` occupant & appliance gains. |
+| **Prompt** | `audit_tiny_home_insulation` | Prompt preset guiding AI assistants through a systematic tiny structure thermal audit. |
+
+### 5.3 Registered Imperative WebMCP Tools (Browser)
 
 Registered via `window.navigator.modelContext.registerTool()`:
 
@@ -204,7 +253,7 @@ Registered via `window.navigator.modelContext.registerTool()`:
 | `calculate_assembly` | `insulationexplorer.html` | Calculate R-value for a material stack |
 | `estimate_r_value` | `existing_building_estimator.js` | Estimate component R-value from HVAC data |
 
-### 5.3 Declarative Form Tools
+### 5.4 Declarative Form Tools
 
 Annotated with `toolname`, `tooldescription`, `toolparamdescription`, `toolautosubmit`:
 
@@ -216,13 +265,11 @@ Annotated with `toolname`, `tooldescription`, `toolparamdescription`, `toolautos
 | `update_simulation_settings` | `index.html` |
 | `estimate_r_value` (form) | `existing_building_estimator.html` |
 
-### 5.4 Discovery
+### 5.5 Discovery & Testing
 
-All tools are indexed in `llms.txt` at the repository root for agent discovery.
-
-### 5.5 Testing
-
-Mock tool responses via `window.navigator.modelContextTesting.setMockToolResponse("tool_name", mockResponse)`.
+- All tools are indexed in `llms.txt` at the repository root.
+- Backend MCP Server tests: `npm run mcp:test` (`mcp-server/mcp_server.test.ts`).
+- WebMCP Browser tests: `npm test` using Jest & jsdom with `setMockToolResponse`.
 
 ## 6. Skinning & Extension Architecture
 
@@ -308,3 +355,25 @@ Run these after making changes to validate calculator integrity.
 3. **Keyboard Navigation:** All interactive elements focusable and operable.
 4. **Color Contrast:** WCAG AA minimum.
 5. **Screen Reader:** Charts described via ARIA; results announced dynamically.
+
+## 11. Maintenance Rules
+
+### 11.1 AGENTS.md Code Sync
+When modifying any formula, constant, or calculation logic in the codebase, the corresponding section in AGENTS.md **MUST** be updated in the same changeset. Specifically:
+- Section 3 (Core Physics & Formulas) must match the actual code in `calculator.js`, `insulation_calculator.js`, and `existing_building_estimator.js`
+- All physical constants and their values must match what is defined in source code
+- All verification scenarios (Section 8) must be re-validated after formula changes
+
+Before making changes to calculation logic, **always read the relevant source code** rather than relying solely on AGENTS.md descriptions, as they may have drifted.
+
+### 11.2 Engineering Constants Verification
+When adding or modifying material properties, thermal constants, or physical coefficients:
+1. **Cite the source** in a code comment (e.g., `// ASHRAE Fundamentals Ch. 26`, `// Manufacturer datasheet`)
+2. **Verify units** — distinguish between R-per-inch vs R-total, per-fastener vs per-sqft, etc.
+3. **Cross-check against authoritative sources**: ASHRAE Handbook of Fundamentals, manufacturer datasheets, ISO standards, or DOE/ORNL publications
+4. **For R-values**: Always confirm whether the value is per-inch or total. If a product has a fixed thickness (e.g., Thinsulate SM600L at 1.65"), store as `r_total` not `r_inch` to avoid misapplication at different depths.
+
+### 11.3 Vanilla JS Dual-Export Pattern
+For pure client-side static JS files that are evaluated or imported in Jest test environments:
+- Attach primary calculation functions and helpers to `window` (`if (typeof window !== 'undefined') window.func = func`) so inline HTML scripts and DOM events can access them.
+- Export key functions via `if (typeof module !== 'undefined') module.exports = { ... }` so Node/Jest can import them directly without DOM `eval` side effects.

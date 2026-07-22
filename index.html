@@ -225,6 +225,8 @@
                                     <option value="2x4">2x4 (3.5")</option>
                                     <option value="2x6">2x6 (5.5")</option>
                                     <option value="2x8">2x8 (7.25")</option>
+                                    <option value="2x10">2x10 (9.25")</option>
+                                    <option value="2x12">2x12 (11.25")</option>
                                 </select>
                             </div>
                             <div>
@@ -356,12 +358,13 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="input-group">
-                    <label class="input-label">Air Sealing</label>
+                    <label class="input-label">Building Tightness (Air Sealing)</label>
                     <select id="airSealing_A" class="input-field">
-                        <option value="good">Good (Airtight)</option>
-                        <option value="poor" selected>Poor (Standard)</option>
+                        <option value="passive_house">Passive House (0.15 ACH)</option>
+                        <option value="tight">Tight (0.35 ACH)</option>
+                        <option value="average" selected>Average (0.50 ACH)</option>
+                        <option value="leaky">Leaky (1.00 ACH)</option>
                     </select>
                 </div>
 
@@ -371,10 +374,12 @@
                         <div>
                             <label class="input-label">Floor Type</label>
                             <select id="massMaterial_A" class="input-field"
-                                toolparamdescription="Material of the floor mass (wood, concrete, stone, metal).">
+                                toolparamdescription="Material of the floor mass (wood, concrete, stone, rammed_earth, packed_soil, metal).">
                                 <option value="wood" selected>Wood Frame</option>
                                 <option value="concrete">Concrete</option>
-                                <option value="stone">Stabilized Earth</option>
+                                <option value="stone">Natural Stone</option>
+                                <option value="rammed_earth">Rammed Earth</option>
+                                <option value="packed_soil">Packed Soil</option>
                                 <option value="metal">Sheet Metal / Van Floor</option>
                             </select>
                         </div>
@@ -388,12 +393,6 @@
             </form>
 
             <!-- SCENARIO B (Initially Hidden) -->
-            <form id="scenarioBoxB" class="scenario-card scenario-card-b scenario-box-b p-4 rounded-lg shadow-sm hidden"
-                toolname="update_scenario_b" tooldescription="Update Scenario B construction details"
-                toolautosubmit="true" onsubmit="event.preventDefault()">
-                <h3 class="text-xl font-bold mb-4 scenario-header-b pb-2">Scenario B (Comparison)</h3>
-
-                <!-- Presets -->
                 <div class="input-group">
                     <label class="input-label">Quick Preset</label>
                     <select id="insulationPreset_B" data-model="insulationPreset_B" class="input-field"

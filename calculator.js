@@ -67,7 +67,7 @@ const MATERIALS = {
 
     // Van Life Specifics
     havelock_wool: { r_inch: 3.6 }, // Common sheep wool insulation
-    thinsulate_sm600: { r_inch: 5.2 }, // 3M Thinsulate (approximate based on thickness)
+    thinsulate_sm600: { r_inch: 3.15 }, // 3M Thinsulate SM600L (R-5.2 at 1.65" depth -> R-3.15/inch)
     xps_foam_board: { r_inch: 5.0 }, // Rigid foam for floors
     armaflex_foam: { r_inch: 4.0 }, // Black flexible foam
     polyiso_board: { r_inch: 6.0 }, // High R-value rigid board
@@ -80,6 +80,9 @@ const MATERIALS = {
 
     // Air Films
     air_film_int: { r_total: 0.68 },
+    air_film_wall_int: { r_total: 0.68 },
+    air_film_roof_int: { r_total: 0.61 },
+    air_film_floor_int: { r_total: 0.92 },
     air_film_ext: { r_total: 0.17 }
 };
 
@@ -718,7 +721,7 @@ function toggleScenarioAssemblyUI(suffix) {
 // --- CALCULATION LOGIC ---
 
 function getSurfaceAreas() {
-    const shape = el('buildingShape').value;
+    const shape = el('buildingShape')?.value || 'rectangle';
     const L = parseFloat(el('length')?.value) || 0;
     const W = parseFloat(el('width')?.value) || 0;
 
@@ -735,8 +738,8 @@ function getSurfaceAreas() {
         } else {
             const rise = (W / 2) * (pitch / 12);
             const slope = Math.sqrt((W / 2) ** 2 + rise ** 2);
-            areas.roof = L * slope * 2;
-            areas.wall += (W * rise);
+            const gableArea = 2 * (0.5 * W * rise);
+            areas.roof = (2 * L * slope) + gableArea;
         }
     } else if (shape === 'a-frame') {
         const H = parseFloat(el('height')?.value) || 0;
@@ -749,15 +752,13 @@ function getSurfaceAreas() {
         const spring = parseFloat(el('springWallHeight')?.value) || 0;
         const r = W / 2;
         areas.floor = L * W;
-        areas.wall = (2 * L * spring) + (Math.PI * r ** 2);
+        areas.wall = (2 * L * spring) + (Math.PI * r ** 2) + (2 * W * spring);
         areas.roof = L * (Math.PI * r);
         areas.perimeter = (2 * L) + (2 * W);
     } else if (shape === 'cargo-van') {
-        // User inputs: L (Cargo Length), W (Floor Width), H (Interior Height)
         const H = parseFloat(el('height')?.value) || 0;
         areas.floor = L * W;
         areas.roof = L * W;
-        // Walls + Sliding Door + Rear Doors approximation
         areas.wall = (2 * L * H) + (2 * W * H);
         areas.perimeter = (2 * L) + (2 * W);
     }
@@ -766,18 +767,26 @@ function getSurfaceAreas() {
     return areas;
 }
 
-function calculateEffectiveR(assembly) {
-    // Mandatory Air Films (R-0.68 Interior + R-0.17 Exterior)
-    let r_total = MATERIALS.air_film_int.r_total + MATERIALS.air_film_ext.r_total;
+function calculateEffectiveR(assembly, surfaceType = 'wall') {
+    // Direction-Specific Air Films
+    let intFilm = MATERIALS.air_film_wall_int.r_total;
+    if (surfaceType === 'roof') intFilm = MATERIALS.air_film_roof_int.r_total;
+    if (surfaceType === 'floor') intFilm = MATERIALS.air_film_floor_int.r_total;
 
-    // Add Gypsum/Sheathing defaults (R-1.0)
-    r_total += 1.0;
+    let r_total = intFilm + MATERIALS.air_film_ext.r_total;
+
+    // Add Gypsum/Sheathing defaults (R-1.0) ONLY for wall assemblies
+    if (surfaceType === 'wall') {
+        r_total += 1.0;
+    }
 
     if (assembly.type === 'stick') {
         // Stud Depth
         let depth = 3.5;
         if (assembly.studSize === '2x6') depth = 5.5;
         if (assembly.studSize === '2x8') depth = 7.25;
+        if (assembly.studSize === '2x10') depth = 9.25;
+        if (assembly.studSize === '2x12') depth = 11.25;
 
         // Cavity Insulation R
         const insType = assembly.cavityInsulation || 'fiberglass_batt';
@@ -785,19 +794,15 @@ function calculateEffectiveR(assembly) {
         let r_cavity = depth * insRPerInch;
 
         // Determine Calculation Method based on Material
-        const mat = assembly.studMaterial || 'wood'; // Default to wood
+        const mat = assembly.studMaterial || 'wood';
 
         if (mat === 'steel') {
-            // Steel: Use Correction Factors
-            const sizeKey = assembly.studSize;
-            const spaceKey = assembly.spacing;
-            const factor = STEEL_CORRECTION_FACTORS[sizeKey]?.[spaceKey] || 0.46; // Fallback to 0.46 if not found
-
-            // Effective Cavity R = Nominal Cavity R * Factor
+            const sizeKey = assembly.studSize || '2x4';
+            const spaceKey = assembly.spacing || '16';
+            const factor = STEEL_CORRECTION_FACTORS[sizeKey]?.[spaceKey] || 0.46;
             r_total += (r_cavity * factor);
 
         } else if (mat === 'van_ribs') {
-            // Van Ribs: Severe thermal bridging
             const factor = STEEL_CORRECTION_FACTORS['van_ribs'].default;
             r_total += (r_cavity * factor);
 
@@ -810,7 +815,7 @@ function calculateEffectiveR(assembly) {
             const r_stud = depth * studRPerInch;
 
             const u_stud = r_stud > 0 ? 1 / r_stud : 0;
-            const u_cavity_final = r_cavity > 0 ? 1 / r_cavity : 1 / 0.9; // Empty cavity R~0.9
+            const u_cavity_final = r_cavity > 0 ? 1 / r_cavity : 1 / 0.9;
 
             const u_effective = (framingFactor * u_stud) + ((1 - framingFactor) * u_cavity_final);
 
@@ -819,16 +824,11 @@ function calculateEffectiveR(assembly) {
             }
         }
 
-        // Add Continuous Insulation (Series) with Fastener Correction
+        // Continuous Insulation (Series) with Fastener Correction
         const ci = parseFloat(assembly.continuousInsulation) || 0;
 
         if (ci > 0) {
-            // Determine Chi Value
             const fType = assembly.fastenerType || 'galvanized';
-            // map studMaterial from select values to keys in FASTENER_CHI_VALUES if needed,
-            // but select values 'wood', 'steel', 'van_ribs' match keys in FASTENER_CHI_VALUES exactly (except 'wood' vs 'wood_stud' in MATERIALS, but getScenarioData gets value directly)
-            // Let's check getScenarioData. It gets value from select.
-            // Select options: wood, steel, van_ribs.
             const sMat = assembly.studMaterial || 'wood';
 
             const chiTable = FASTENER_CHI_VALUES[fType] || FASTENER_CHI_VALUES['galvanized'];
@@ -836,9 +836,6 @@ function calculateEffectiveR(assembly) {
 
             const density = parseFloat(assembly.fastenerDensity) || 0;
 
-            // Calculate Effective CI R-Value
-            // U_effective = U_nominal + (Chi * Density)
-            // R_effective = 1 / U_effective
             const u_nominal = 1 / ci;
             const u_effective = u_nominal + (chi * density);
             const r_effective_ci = 1 / u_effective;
@@ -847,23 +844,18 @@ function calculateEffectiveR(assembly) {
         }
 
     } else if (assembly.type === 'mass') {
-        // Series Calculation
         const matType = assembly.massMaterial || 'cmu_standard';
         const thickness = parseFloat(assembly.massThickness) || 8;
         const ci = parseFloat(assembly.massInsulation) || 0;
 
-        // Mass Layer
         if (MATERIALS[matType]) {
             if (MATERIALS[matType].r_total) {
-                // Fixed R (like CMU block)
                 r_total += MATERIALS[matType].r_total;
             } else if (MATERIALS[matType].r_inch) {
-                // Per inch
                 r_total += (thickness * MATERIALS[matType].r_inch);
             }
         }
 
-        // Insulation Layer (Series)
         r_total += ci;
     }
 
@@ -957,61 +949,46 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     const ua_win = data.wArea / rW_win;
     const ua_door = data.dArea / rD_door;
 
-    // DETECT FLOOR COUPLING CONTEXT
-    const shape = document.getElementById('buildingShape')?.value;
-    // Floor is Air Coupled if it is a vehicle OR if the user selected a raised floor type (Wood/Metal)
-    // Concrete and Stone (Earth) are assumed to be Ground Coupled (Slab on Grade)
+    const shape = data.buildingShape || (typeof document !== 'undefined' ? document.getElementById('buildingShape')?.value : undefined) || 'rectangle';
     const isAirCoupled = (shape === 'cargo-van') || (data.massMat === 'wood' || data.massMat === 'metal');
 
     let lossFloor = 0;
     let ua_floor_to_air = 0;
     let ua_floor_to_ground = 0;
 
-    // SKIRTING / BUFFER ZONE LOGIC
     if (data.skirtR > 0 && data.skirtHeight > 0) {
-        // Definitions
-        // U_f: Floor Conductance (Area / R_floor)
         const U_f = areas.floor / safeR(data.rFloor);
-
-        // U_s: Skirting Conductance (Perimeter * Height / R_skirt)
         const U_s = (areas.perimeter * data.skirtHeight) / safeR(data.skirtR);
+        const U_g = areas.floor / 5.0;
 
-        // U_g: Ground Conductance (Area / 1.0)
-        const U_g = areas.floor / 1.0;
-
-        // Q_v: Ventilation (Volume * ACH * 0.018)
-        // Volume = Area * Height
         const volume = areas.floor * data.skirtHeight;
-        let ach = 5.0; // Default vented
+        let ach = 5.0;
         if (data.skirtSeal === 'sealed') ach = 0.5;
         else if (data.skirtSeal === 'leaky') ach = 20.0;
         const Q_v = volume * ach * 0.018;
 
         const U_sigma = U_f + U_s + U_g + Q_v;
-
-        // Calculate K factors for effective UA mapping
-        // Heat Loss Floor = K1 * (Ti - To) + K2 * (Ti - Tg)
         const K1 = (U_f * (U_s + Q_v)) / U_sigma;
         const K2 = (U_f * U_g) / U_sigma;
 
         ua_floor_to_air = K1;
         ua_floor_to_ground = K2;
-
         lossFloor = (K1 * deltaT_Air) + (K2 * deltaT_Ground);
-
     } else if (isAirCoupled) {
-        // Standard Air Coupled (Stilts, Vehicle, etc)
         const U_f = areas.floor / safeR(data.rFloor);
         ua_floor_to_air = U_f;
         ua_floor_to_ground = 0;
         lossFloor = U_f * deltaT_Air;
-
     } else {
-        // Standard Ground Coupled (Slab on Grade)
-        const U_f = areas.floor / safeR(data.rFloor);
-        ua_floor_to_air = 0;
-        ua_floor_to_ground = U_f;
-        lossFloor = U_f * deltaT_Ground;
+        const slabEdge = data.slabEdgeInsulation || 'none';
+        let F = 0.73;
+        if (slabEdge === 'r5') F = 0.54;
+        else if (slabEdge === 'r10') F = 0.43;
+        else if (slabEdge === 'r15') F = 0.36;
+
+        lossFloor = F * areas.perimeter * deltaT_Air;
+        ua_floor_to_air = F * areas.perimeter;
+        ua_floor_to_ground = 0;
     }
 
     const lossWall = ua_wall * deltaT_Air;
@@ -1019,20 +996,19 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     const lossWindow = ua_win * deltaT_Air;
     const lossDoor = ua_door * deltaT_Air;
 
-    let ua = ua_wall + ua_roof + ua_win + ua_door + ua_floor_to_air;
+    let ach = 0.50;
+    const tightness = data.tightness || 'average';
+    if (tightness === 'passive_house') ach = 0.15;
+    else if (tightness === 'tight' || tightness === 'good') ach = 0.35;
+    else if (tightness === 'average') ach = 0.50;
+    else if (tightness === 'leaky' || tightness === 'poor') ach = 1.00;
+
+    const bHeight = data.height || (typeof document !== 'undefined' ? parseFloat(document.getElementById('height')?.value || '') : NaN) || 8;
+    const volume = areas.floor * bHeight;
+    const infiltrationLoss = volume * ach * 0.018 * deltaT_Air;
+
+    let ua = ua_wall + ua_roof + ua_win + ua_door + ua_floor_to_air + (volume * ach * 0.018);
     let uaFloor = ua_floor_to_ground;
-
-    let infiltrationLoss = 0;
-    if (data.sealing === 'poor') {
-        // Infiltration adds 25% to envelope losses (simplified)
-        // Note: Applying to floor loss as well for simplicity, though debatably applies less to ground coupled
-        infiltrationLoss = (lossWall + lossRoof + lossWindow + lossDoor + lossFloor) * 0.25;
-
-        // Increase UAs effectively
-        ua *= 1.25;
-        uaFloor *= 1.25;
-    }
-
     const totalLoss = lossWall + lossRoof + lossWindow + lossDoor + lossFloor + infiltrationLoss;
 
     return {
@@ -1049,10 +1025,12 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
 }
 
 function calculateMassCapacity(areas, data) {
-    let density = 145, specHeat = 0.2;
-    if (data.massMat === 'stone') { density = 135; specHeat = 0.2; }
-    if (data.massMat === 'wood') { density = 30; specHeat = 0.4; }
-    if (data.massMat === 'metal') { density = 490; specHeat = 0.12; }
+    let density = 145, specHeat = 0.20;
+    if (data.massMat === 'stone') { density = 160; specHeat = 0.19; }
+    else if (data.massMat === 'rammed_earth') { density = 120; specHeat = 0.22; }
+    else if (data.massMat === 'packed_soil') { density = 100; specHeat = 0.20; }
+    else if (data.massMat === 'wood') { density = 30; specHeat = 0.40; }
+    else if (data.massMat === 'metal') { density = 490; specHeat = 0.12; }
 
     const vol = areas.floor * (data.thickness / 12);
     const mass = vol * density;
@@ -1227,12 +1205,16 @@ function updateHeatLossChart(isAB, areas, tIn, tGround, dataA, dataB) {
 }
 
 function calculateSimulationData(params) {
-    const { isAB, lossA, lossB, capA, capB, tIn, tGround, duration, low, high, iGain, buildingShape, vehicleColor } = params;
-    const sGainBase = 1000;
+    const { isAB, lossA, lossB, capA, capB, tIn, tGround, duration, low, high, iGain, buildingShape, vehicleColor, windowArea } = params;
 
     const isVehicle = (buildingShape === 'cargo-van');
     const solarMult = (isVehicle && vehicleColor === 'dark') ? 1.5 : 1.0;
-    const sGain = sGainBase * solarMult;
+
+    const winArea = windowArea !== undefined ? windowArea : (parseFloat(document.getElementById('windowArea_A')?.value) || 0);
+    const winType = params.windowType || 'double';
+    let shgc = 0.76;
+    if (winType === 'single') shgc = 0.86;
+    else if (winType === 'low-e' || winType === 'triple') shgc = 0.40;
 
     const labels = [];
     const simA = [];
@@ -1252,19 +1234,29 @@ function calculateSimulationData(params) {
         const avg = (high + low) / 2;
         const amp = (high - low) / 2;
         const hDay = h % 24;
-        const tOut = avg - amp * Math.cos(Math.PI * (hDay - 4) / 12);
+
+        // Outdoor diurnal temperature model: min at 6 AM, max at 3 PM
+        const tOut = avg - amp * Math.cos(Math.PI * (hDay - 6) / 12);
         simOut.push(tOut);
 
-        let sol = (hDay >= 9 && hDay <= 16) ? sGain : 0;
-        const gains = iGain + sol;
-
         for (let m = 0; m < stepsPerHour; m++) {
-            const loadA = (lossA.ua * (currA - tOut)) + (lossA.uaFloor * (currA - tGround));
+            const hStep = hDay + (m / stepsPerHour);
+            const tOutStep = avg - amp * Math.cos(Math.PI * (hStep - 6) / 12);
+            const tGroundStep = tGround - 1.0 * Math.cos(Math.PI * (hStep - 12) / 12);
+
+            let sol = 0;
+            if (hDay >= 7 && hDay <= 17) {
+                const irradiance = 120 * Math.sin(Math.PI * (hDay - 7) / 10);
+                sol = winArea * shgc * irradiance * solarMult;
+            }
+            const gains = iGain + sol;
+
+            const loadA = (lossA.ua * (currA - tOutStep)) + (lossA.uaFloor * (currA - tGroundStep));
             const rateA = (gains - loadA) / Math.max(capA, 50);
             currA += rateA * dt;
 
             if (isAB && lossB) {
-                const loadB = (lossB.ua * (currB - tOut)) + (lossB.uaFloor * (currB - tGround));
+                const loadB = (lossB.ua * (currB - tOutStep)) + (lossB.uaFloor * (currB - tGroundStep));
                 const rateB = (gains - loadB) / Math.max(capB, 50);
                 currB += rateB * dt;
             }

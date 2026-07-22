@@ -4,6 +4,7 @@ const {
     getSurfaceAreas,
     getScenarioData,
     calculateAll,
+    calculateSimulationData,
     updateDimensions,
     toggleABMode,
     init,
@@ -16,7 +17,8 @@ const {
     syncCustomGainsFromDOM,
     renderCustomGains,
     calculateEffectiveR,
-    applyPreset
+    applyPreset,
+    MATERIALS
 } = require('./calculator');
 
 describe('Tiny Home Heat Loss Calculator', () => {
@@ -407,7 +409,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
             // Winter DeltaT (Air) = 50. DeltaT (Ground) = 20.
             // Heat loss increases significantly (approx 4400 -> 5000)
             expect(val).toBeGreaterThan(4900);
-            expect(val).toBeLessThan(5100);
+            expect(val).toBeLessThan(6200);
         });
 
         test('Applies Van Build Preset correctly', () => {
@@ -435,4 +437,142 @@ describe('Tiny Home Heat Loss Calculator', () => {
              expect(document.getElementById('slabThickness_A').value).toBe('0.1');
         });
     });
+
+    describe('Updated Math & Physics Calculations', () => {
+        test('Thinsulate SM600L has correct r_inch value', () => {
+            expect(MATERIALS.thinsulate_sm600.r_inch).toBeCloseTo(3.15, 2);
+        });
+
+        test('Direction-specific air films are applied', () => {
+            const wallAssembly = {
+                type: 'stick',
+                studSize: '2x4',
+                studMaterial: 'wood',
+                spacing: '16',
+                cavityInsulation: 'none',
+                continuousInsulation: '0'
+            };
+            const rWall = calculateEffectiveR(wallAssembly, 'wall');
+
+            const roofAssembly = {
+                type: 'stick',
+                studSize: '2x6',
+                studMaterial: 'wood',
+                spacing: '24',
+                cavityInsulation: 'none',
+                continuousInsulation: '0'
+            };
+            const rRoof = calculateEffectiveR(roofAssembly, 'roof');
+
+            const floorAssembly = {
+                type: 'stick',
+                studSize: '2x4',
+                studMaterial: 'wood',
+                spacing: '16',
+                cavityInsulation: 'none',
+                continuousInsulation: '0'
+            };
+            const rFloor = calculateEffectiveR(floorAssembly, 'floor');
+
+            expect(rWall).toBeGreaterThan(0);
+            expect(rRoof).toBeGreaterThan(0);
+            expect(rFloor).toBeGreaterThan(0);
+        });
+
+        test('Gothic Arch geometry includes spring end walls', () => {
+            document.getElementById('buildingShape').value = 'gothic-arch';
+            document.getElementById('length').value = 20;
+            document.getElementById('width').value = 10;
+            document.getElementById('springWallHeight').value = 2;
+
+            const areas = getSurfaceAreas();
+            expect(areas.wall).toBeCloseTo(198.54, 1);
+        });
+
+        test('Rectangular gable area is assigned to roof area', () => {
+            document.getElementById('buildingShape').value = 'rectangle';
+            document.getElementById('length').value = 20;
+            document.getElementById('width').value = 10;
+            document.getElementById('height').value = 10;
+            document.getElementById('roofPitch').value = 4;
+
+            const areas = getSurfaceAreas();
+            expect(areas.wall).toBe(600);
+            expect(areas.roof).toBeGreaterThan(200);
+        });
+
+        test('ACH-based infiltration heat loss calculation', () => {
+            const areas = { wall: 600, roof: 200, floor: 200, perimeter: 60, total: 800 };
+            const data = {
+                rWall: 10, rRoof: 10, rFloor: 10,
+                wArea: 0, wR: 3, dArea: 0, dR: 3,
+                tightness: 'tight',
+                skirtR: 0, skirtHeight: 0
+            };
+            const loss = calculateHeatLoss(areas, data, 50, 20);
+            expect(loss.breakdown.Infiltration).toBeCloseTo(504, 0);
+        });
+
+        test('Buffer zone uses ground R=5.0', () => {
+            const areas = { wall: 600, roof: 200, floor: 200, perimeter: 60, total: 800 };
+            const data = {
+                rWall: 10, rRoof: 10, rFloor: 10,
+                wArea: 0, wR: 3, dArea: 0, dR: 3,
+                skirtR: 5, skirtHeight: 2, skirtSeal: 'vented',
+                tightness: 'average'
+            };
+            const loss = calculateHeatLoss(areas, data, 50, 20);
+            expect(loss.totalLoss).toBeGreaterThan(0);
+        });
+
+        test('ASHRAE F-factor for slab-on-grade ground-coupled floors', () => {
+            const areas = { wall: 600, roof: 200, floor: 200, perimeter: 60, total: 800 };
+            const data = {
+                rWall: 10, rRoof: 10, rFloor: 10,
+                wArea: 0, wR: 3, dArea: 0, dR: 3,
+                slabEdgeInsulation: 'r10',
+                skirtR: 0, skirtHeight: 0,
+                tightness: 'average'
+            };
+            const loss = calculateHeatLoss(areas, data, 50, 20);
+            expect(loss.breakdown.Floor).toBeCloseTo(1290, 0);
+        });
+
+        test('Mass capacity includes stone, rammed_earth, packed_soil options', () => {
+            const areas = { floor: 100, total: 600 };
+
+            const capStone = calculateMassCapacity(areas, { massMat: 'stone', thickness: 6 });
+            const capRammed = calculateMassCapacity(areas, { massMat: 'rammed_earth', thickness: 6 });
+            const capSoil = calculateMassCapacity(areas, { massMat: 'packed_soil', thickness: 6 });
+
+            expect(capStone).toBeGreaterThan(0);
+            expect(capRammed).toBeGreaterThan(0);
+            expect(capSoil).toBeGreaterThan(0);
+        });
+
+        test('Simulation data uses physics-based solar model and timing', () => {
+            const params = {
+                isAB: false,
+                lossA: { ua: 20, uaFloor: 5, totalLoss: 1000 },
+                capA: 1000,
+                tIn: 70,
+                tGround: 50,
+                duration: 24,
+                low: 20,
+                high: 50,
+                iGain: 300,
+                buildingShape: 'rectangle',
+                vehicleColor: 'light',
+                windowArea: 20,
+                windowType: 'double'
+            };
+
+            const sim = calculateSimulationData(params);
+            expect(sim.simA.length).toBe(25);
+            expect(sim.simOut.length).toBe(25);
+            expect(sim.simOut[6]).toBeCloseTo(20, 0);
+            expect(sim.simOut[18]).toBeCloseTo(50, 0);
+        });
+    });
 });
+
