@@ -1210,7 +1210,8 @@ function calculateSimulationData(params) {
     const isVehicle = (buildingShape === 'cargo-van');
     const solarMult = (isVehicle && vehicleColor === 'dark') ? 1.5 : 1.0;
 
-    const winArea = windowArea !== undefined ? windowArea : (parseFloat(document.getElementById('windowArea_A')?.value) || 0);
+    const doc = typeof document !== 'undefined' ? document : null;
+    const winArea = windowArea !== undefined ? windowArea : (parseFloat(doc?.getElementById('windowArea_A')?.value) || 0);
     const winType = params.windowType || 'double';
     let shgc = 0.76;
     if (winType === 'single') shgc = 0.86;
@@ -1227,37 +1228,70 @@ function calculateSimulationData(params) {
     const stepsPerHour = 60;
     const dt = 1 / stepsPerHour;
 
-    for (let h = 0; h <= duration; h++) {
-        if (h % 24 === 0) labels.push(`Day ${h / 24 + 1}`);
-        else labels.push('');
+    // Optimizations: pre-calculate constants outside the loop
+    const avg = (high + low) / 2;
+    const amp = (high - low) / 2;
+    const piOver12 = Math.PI / 12;
+    const piOver10 = Math.PI / 10;
+    const effectiveCapA = Math.max(capA, 50);
+    const effectiveCapB = isAB && lossB ? Math.max(capB, 50) : 1;
+    const solarConstant = winArea * shgc * solarMult * 120;
 
-        const avg = (high + low) / 2;
-        const amp = (high - low) / 2;
+    // Avoid property lookups in inner loop
+    const uaA = lossA.ua;
+    const uaFloorA = lossA.uaFloor;
+    const uaB = lossB ? lossB.ua : 0;
+    const uaFloorB = lossB ? lossB.uaFloor : 0;
+
+    // Precompute 24-hour diurnal cycle (1440 steps) to avoid math functions in inner loop
+    const tOutSteps = new Float64Array(24 * stepsPerHour);
+    const tGroundSteps = new Float64Array(24 * stepsPerHour);
+    const solSteps = new Float64Array(24 * stepsPerHour);
+
+    for (let hDay = 0; hDay < 24; hDay++) {
+        for (let m = 0; m < stepsPerHour; m++) {
+            const idx = hDay * stepsPerHour + m;
+            const hStep = hDay + (m / stepsPerHour);
+
+            tOutSteps[idx] = avg - amp * Math.cos(piOver12 * (hStep - 6));
+            tGroundSteps[idx] = tGround - 1.0 * Math.cos(piOver12 * (hStep - 12));
+
+            if (hDay >= 7 && hDay <= 17) {
+                const irradiance = Math.sin(piOver10 * (hDay - 7));
+                solSteps[idx] = solarConstant * irradiance;
+            } else {
+                solSteps[idx] = 0;
+            }
+        }
+    }
+
+    for (let h = 0; h <= duration; h++) {
         const hDay = h % 24;
 
+        if (hDay === 0) labels.push(`Day ${h / 24 + 1}`);
+        else labels.push('');
+
         // Outdoor diurnal temperature model: min at 6 AM, max at 3 PM
-        const tOut = avg - amp * Math.cos(Math.PI * (hDay - 6) / 12);
+        const tOut = avg - amp * Math.cos(piOver12 * (hDay - 6));
         simOut.push(tOut);
 
+        const stepOffset = hDay * stepsPerHour;
         for (let m = 0; m < stepsPerHour; m++) {
-            const hStep = hDay + (m / stepsPerHour);
-            const tOutStep = avg - amp * Math.cos(Math.PI * (hStep - 6) / 12);
-            const tGroundStep = tGround - 1.0 * Math.cos(Math.PI * (hStep - 12) / 12);
+            const idx = stepOffset + m;
 
-            let sol = 0;
-            if (hDay >= 7 && hDay <= 17) {
-                const irradiance = 120 * Math.sin(Math.PI * (hDay - 7) / 10);
-                sol = winArea * shgc * irradiance * solarMult;
-            }
+            const tOutStep = tOutSteps[idx];
+            const tGroundStep = tGroundSteps[idx];
+            const sol = solSteps[idx];
+
             const gains = iGain + sol;
 
-            const loadA = (lossA.ua * (currA - tOutStep)) + (lossA.uaFloor * (currA - tGroundStep));
-            const rateA = (gains - loadA) / Math.max(capA, 50);
+            const loadA = (uaA * (currA - tOutStep)) + (uaFloorA * (currA - tGroundStep));
+            const rateA = (gains - loadA) / effectiveCapA;
             currA += rateA * dt;
 
             if (isAB && lossB) {
-                const loadB = (lossB.ua * (currB - tOutStep)) + (lossB.uaFloor * (currB - tGroundStep));
-                const rateB = (gains - loadB) / Math.max(capB, 50);
+                const loadB = (uaB * (currB - tOutStep)) + (uaFloorB * (currB - tGroundStep));
+                const rateB = (gains - loadB) / effectiveCapB;
                 currB += rateB * dt;
             }
         }
