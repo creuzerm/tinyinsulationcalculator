@@ -147,7 +147,38 @@
                         vehicleColor: document.getElementById('vehicleColor').value
                     });
 
-                    return simData;
+                    // Calculate summary stats
+                    const lossA = results.scenarioA.loss;
+                    const ua = lossA.ua;
+                    const uaFloor = lossA.uaFloor;
+                    const tIn = results.temperatures.tIn;
+                    const tGround = results.temperatures.tGround;
+                    
+                    // Duration from params or default to value in DOM
+                    const duration = params.duration || parseInt(document.getElementById('simDuration').value) || 24;
+                    const low = parseFloat(document.getElementById('simLowTemp').value) || 15;
+                    const high = parseFloat(document.getElementById('simHighTemp').value) || 35;
+                    const avgTemp = (low + high) / 2;
+
+                    const peakDeltaT = Math.max(0, tIn - low);
+                    const peakHeatingLoadBTUPerHour = Math.round((ua * peakDeltaT) + (uaFloor * Math.max(0, tIn - tGround)));
+
+                    const avgDeltaT = Math.max(0, tIn - avgTemp);
+                    const averageDailyHeatLossBTU = Math.round(((ua * avgDeltaT) + (uaFloor * Math.max(0, tIn - tGround))) * 24);
+
+                    const annualHeatingDegreeHours = Math.round(duration * avgDeltaT);
+                    
+                    const summaryText = `Simulation run for ${duration} hours. Peak heating load is ${peakHeatingLoadBTUPerHour} BTU/hr. Average daily heat loss is ${averageDailyHeatLossBTU} BTU.`;
+
+                    return {
+                        ...simData,
+                        summaryStats: {
+                            peakHeatingLoadBTUPerHour,
+                            annualHeatingDegreeHours,
+                            averageDailyHeatLossBTU,
+                            summary: summaryText
+                        }
+                    };
                 }
                 throw new Error("Simulation functions not available.");
             }

@@ -193,6 +193,12 @@ describe('WebMCP Integration', () => {
         expect(result).toBeDefined();
         expect(result.simA.length).toBeGreaterThan(20);
         expect(result.labels).toBeDefined();
+
+        // Verify new summary stats
+        expect(result.summaryStats).toBeDefined();
+        expect(result.summaryStats.peakHeatingLoadBTUPerHour).toBeGreaterThan(0);
+        expect(result.summaryStats.averageDailyHeatLossBTU).toBeGreaterThan(0);
+        expect(typeof result.summaryStats.summary).toBe('string');
     });
 
     test('get_detailed_results tool should return result object', async () => {
