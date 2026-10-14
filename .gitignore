@@ -1,1 +1,4 @@
 node_modules/
+debug_error.txt
+debug_eval.js
+debug_success.txt
