@@ -529,6 +529,16 @@ const dimensionTemplates = {
     `
 };
 
+const PRESET_CONFIGS = {
+    code_min: { type: 'stick', studSize: '2x4', spacing: '16', cavIns: 'fiberglass_batt', ci: '0', r: 38, f: 10 },
+    high_perf: { type: 'stick', studSize: '2x6', spacing: '24', cavIns: 'mineral_wool', ci: '5', r: 50, f: 20 },
+    passive_house: { type: 'stick', studSize: '2x6', spacing: '24', cavIns: 'mineral_wool', ci: '15', r: 60, f: 30 },
+    passivhaus: { type: 'stick', studSize: '2x6', spacing: '24', cavIns: 'mineral_wool', ci: '15', r: 60, f: 30 },
+    van_build: { type: 'stick', studSize: '2x4', spacing: '24', cavIns: 'thinsulate_sm600', ci: '0', studMat: 'van_ribs', r: 12, f: 5, massMat: 'metal', massThick: 0.1 },
+    uninsulated: { type: 'stick', studSize: '2x4', spacing: '16', cavIns: 'none', ci: '0', r: 4, f: 1 },
+    poor: { type: 'stick', studSize: '2x4', spacing: '16', cavIns: 'none', ci: '0', r: 4, f: 1 }
+};
+
 function applyPreset(suffix) {
     const preset = el(`insulationPreset${suffix}`).value;
     if (!preset) return;
@@ -563,59 +573,36 @@ function applyPreset(suffix) {
         }
     };
 
-    switch (preset) {
-        case 'code_min':
-            // Stick Frame, 2x4, 16oc, Fiberglass, No CI. Result ~R-13 nominal, Eff ~11
-            setAssembly('stick', '2x4', '16', 'fiberglass_batt', '0');
-            if (r) r.value = 38;
-            if (f) f.value = 10;
-            break;
-        case 'high_perf':
-            // Stick Frame, 2x6, 24oc, Mineral Wool, R-5 CI. Result ~R-23 nominal + 5
-            setAssembly('stick', '2x6', '24', 'mineral_wool', '5');
-            if (r) r.value = 50;
-            if (f) f.value = 20;
-            break;
-        case 'passive_house':
-            // Double Stud or Thick Mass? Let's do 2x8 + R-10 CI for simulation or similar
-            // Or better: Stick, 2x6, 24oc, Mineral Wool, R-15 CI
-            setAssembly('stick', '2x6', '24', 'mineral_wool', '15');
-            if (r) r.value = 60;
-            if (f) f.value = 30;
-            break;
-        case 'van_build':
-            // Stick, 2x4 (approx depth), Van Ribs, 24oc, Thinsulate, 0 CI
-            // Note: 2x4 is 3.5" deep, Thinsulate is R-5.2/in.
-            // Effective R will be heavily penalized by van_ribs factor (0.25).
-            setAssembly('stick', '2x4', '24', 'thinsulate_sm600', '0');
-            // We need to override the material to van_ribs, but setAssembly defaults to wood for stick.
-            // We'll manually set it after calling setAssembly, or update setAssembly.
-            // Let's update the element directly here to be safe and simple.
+    const config = PRESET_CONFIGS[preset];
+    if (config) {
+        setAssembly(config.type, config.studSize, config.spacing, config.cavIns, config.ci, config.massMat, config.massThick, config.massIns);
+
+        if (config.studMat) {
             const matEl = el(`wallStudMaterial${suffix}`);
             if (matEl) {
-                matEl.value = 'van_ribs';
+                matEl.value = config.studMat;
                 saveInputToLocalStorage(matEl);
             }
-            if (r) r.value = 12; // Approx 2 inches of thinsulate/foam
-            if (f) f.value = 5;  // Approx 1 inch of foam
+        }
 
-            const massMat = el(`massMaterial${suffix}`);
-            if (massMat) {
-                massMat.value = 'metal';
-                saveInputToLocalStorage(massMat);
+        if (config.massMat) {
+            const massMatEl = el(`massMaterial${suffix}`);
+            if (massMatEl) {
+                massMatEl.value = config.massMat;
+                saveInputToLocalStorage(massMatEl);
             }
-            const massThick = el(`slabThickness${suffix}`);
-            if (massThick) {
-                massThick.value = 0.1; // Thin sheet metal skin
-                saveInputToLocalStorage(massThick);
+        }
+
+        if (config.massThick !== undefined) {
+            const massThickEl = el(`slabThickness${suffix}`);
+            if (massThickEl) {
+                massThickEl.value = config.massThick;
+                saveInputToLocalStorage(massThickEl);
             }
-            break;
-        case 'uninsulated':
-            // Stick, 2x4, 16oc, None
-            setAssembly('stick', '2x4', '16', 'none', '0');
-            if (r) r.value = 4;
-            if (f) f.value = 1;
-            break;
+        }
+
+        if (r && config.r !== undefined) r.value = config.r;
+        if (f && config.f !== undefined) f.value = config.f;
     }
 
     saveInputToLocalStorage(el(`insulationPreset${suffix}`));
