@@ -14,6 +14,46 @@ This project is an exploration tool designed to estimate the heating load and pa
 
 * **Passive Simulation:** Simulates indoor temperature drift over 24 hours or 7 days ("Coasting") based on internal gains, solar exposure, and thermal mass.
 
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 20+
+- npm 10+ (or Python 3.10+ for static serving)
+
+### Installation
+```bash
+git clone https://github.com/creuzerm/tinyinsulationcalculator.git
+cd tinyinsulationcalculator
+npm install
+```
+
+### Local Development Server
+Serve the project root locally:
+```bash
+# Using Node / npx serve (binds to port 8080)
+npx serve .
+
+# Or using Python
+python -m http.server 8080
+```
+Open [http://localhost:8080](http://localhost:8080) in your browser.
+
+---
+
+## 🧪 Testing & Verification
+
+The test harness uses [Jest](https://jestjs.io/) to verify thermal calculations, R-value accumulation, WebMCP schemas, and UI state logic:
+
+```bash
+# Run all unit tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+---
+
 ## 2. Core Methodologies
 
 ### 2.1 Heat Loss (UA Method)
