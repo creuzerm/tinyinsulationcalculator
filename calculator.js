@@ -1438,13 +1438,6 @@ function init() {
     toggleABMode();
     calculateAll();
 
-    const menuBtn = el('menu-btn');
-    if (menuBtn) {
-        menuBtn.addEventListener('click', () => {
-            el('menu-dropdown').classList.toggle('hidden');
-        });
-    }
-
     const helpLink = el('help-link');
     const helpModal = el('helpModal');
     const closeHelpModal = el('closeHelpModal');
@@ -1453,7 +1446,6 @@ function init() {
     if (helpLink && helpModal) {
         helpLink.addEventListener('click', (e) => {
             e.preventDefault();
-            el('menu-dropdown').classList.add('hidden');
             helpModal.classList.remove('hidden');
 
             if (helpContent.innerHTML.includes('Loading...')) {

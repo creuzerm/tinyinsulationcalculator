@@ -47,8 +47,6 @@ describe('Existing Building Estimator Logic', () => {
             <button id="calculateBtn"></button>
             <button id="clearAllBtn"></button>
             <button id="copyLinkBtn"></button>
-            <div id="menu-btn"></div>
-            <div id="menu-dropdown"></div>
         `;
 
         // Mock localStorage

@@ -244,17 +244,6 @@ window.addEventListener('load', () => {
     el('clearAllBtn')?.addEventListener('click', clearAll);
     el('copyLinkBtn')?.addEventListener('click', copyShareLink);
 
-    // Hamburger menu toggle
-    const menuBtn = document.getElementById('menu-btn');
-    const menuDropdown = document.getElementById('menu-dropdown');
-    if (menuBtn && menuDropdown) {
-        menuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            menuDropdown.classList.toggle('hidden');
-        });
-        document.addEventListener('click', () => menuDropdown.classList.add('hidden'));
-    }
-
     // Help Modal
     const helpLink = el('help-link');
     const helpModal = el('helpModal');

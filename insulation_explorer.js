@@ -181,19 +181,39 @@
              // Wait for materials to load so tool registration has correct enum
              await materialsLoadedPromise;
 
-             // Menu Toggle Logic
-             const menuBtn = document.getElementById('menu-btn');
-             const menuDropdown = document.getElementById('menu-dropdown');
-             if (menuBtn && menuDropdown) {
-                 menuBtn.addEventListener('click', (e) => {
-                     e.stopPropagation();
-                     menuDropdown.classList.toggle('hidden');
+             // Help Modal
+             const helpLink = document.getElementById('help-link');
+             const helpModal = document.getElementById('helpModal');
+             const closeHelpModal = document.getElementById('closeHelpModal');
+             const helpContent = document.getElementById('helpContent');
+
+             if (helpLink && helpModal) {
+                 helpLink.addEventListener('click', (e) => {
+                     e.preventDefault();
+                     helpModal.classList.remove('hidden');
+
+                     if (helpContent && helpContent.innerHTML.includes('Loading...')) {
+                         Promise.all([
+                             fetch('README.md').then(res => res.text()),
+                             fetch('methods.md').then(res => res.text())
+                         ]).then(([readme, methods]) => {
+                             helpContent.innerHTML = marked.parse(readme + '\n<hr>\n' + methods);
+                         }).catch(err => {
+                             helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
+                             console.error('Error loading documentation:', err);
+                         });
+                     }
                  });
-                 document.addEventListener('click', (event) => {
-                    if (!menuDropdown.classList.contains('hidden') && !menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
-                        menuDropdown.classList.add('hidden');
-                    }
-                });
+
+                 closeHelpModal.addEventListener('click', () => {
+                     helpModal.classList.add('hidden');
+                 });
+
+                 helpModal.addEventListener('click', (e) => {
+                     if (e.target === helpModal) {
+                         helpModal.classList.add('hidden');
+                     }
+                 });
              }
 
              if (window.navigator && window.navigator.modelContext) {
