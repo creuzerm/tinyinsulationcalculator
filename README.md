@@ -135,7 +135,7 @@ To reset the calculator, use the **"Clear all"** button at the bottom of the pag
 - [ ] **Loading states:** Show spinners or skeleton UI while `internal_gains.json` and `materials.json` are fetched.
 
 ### 🧪 Testing
-- [ ] **Insulation Explorer tests:** `insulationexplorer.html` inline JS has no dedicated tests beyond `insulation_logic.test.js` — add tests for the UI coordination (A/B toggle, serialization, layer management).
+- [x] **Insulation Explorer tests:** `insulationexplorer.html` inline JS has no dedicated tests beyond `insulation_logic.test.js` — add tests for the UI coordination (A/B toggle, serialization, layer management).
 - [ ] **End-to-end browser tests:** Add browser-based smoke tests (e.g., with Playwright) to verify the full page lifecycle, charting, and WebMCP tool registration.
 - [ ] **Snapshot the verification scenarios:** Codify Scenarios A, B, C from `AGENTS.md` as formal Jest test cases to prevent regression.
 

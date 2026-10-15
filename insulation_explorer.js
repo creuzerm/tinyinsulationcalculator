@@ -127,6 +127,41 @@
             render();
         }
 
+        
+        function updateThickness(id, newThickness) {
+            let layer = stacks.A.find(l => l.id === id);
+            if (!layer) {
+                layer = stacks.B.find(l => l.id === id);
+            }
+            if (layer) {
+                layer.thickness = parseFloat(newThickness) || 0;
+            }
+            render();
+        }
+
+        function calculateStack(stack) {
+            let totalR = 0;
+            let totalCost = 0;
+            let totalThickness = 0;
+            let hasVaporBarrier = false;
+            
+            for (const layer of stack) {
+                totalR += (layer.r || 0);
+                totalCost += (layer.cost || 0);
+                totalThickness += (layer.thickness || 0);
+                if (layer.type === 'vapor') {
+                    hasVaporBarrier = true;
+                }
+            }
+            
+            return {
+                totalR,
+                totalCost,
+                totalThickness,
+                hasVaporBarrier
+            };
+        }
+
         function resetStack() {
             stacks[activeStackId] = [];
             render();
@@ -362,6 +397,8 @@
 window.initStack = initStack;
 window.addLayer = addLayer;
 window.removeLayer = removeLayer;
+window.updateThickness = updateThickness;
+window.calculateStack = calculateStack;
 window.moveLayer = moveLayer;
 window.resetStack = resetStack;
 window.render = render;
@@ -378,6 +415,8 @@ export {
     initStack,
     addLayer,
     removeLayer,
+    updateThickness,
+    calculateStack,
     moveLayer,
     resetStack,
     render,
