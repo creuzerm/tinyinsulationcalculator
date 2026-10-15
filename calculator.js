@@ -1450,10 +1450,10 @@ function init() {
 
             if (helpContent.innerHTML.includes('Loading...')) {
                 Promise.all([
-                    fetch('README.md').then(res => res.text()),
+                    fetch('help.md').then(res => res.text()),
                     fetch('methods.md').then(res => res.text())
-                ]).then(([readme, methods]) => {
-                    helpContent.innerHTML = marked.parse(readme + '\n<hr>\n' + methods);
+                ]).then(([help, methods]) => {
+                    helpContent.innerHTML = marked.parse(help + '\n<hr>\n' + methods);
                 }).catch(err => {
                     helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
                     console.error(err);

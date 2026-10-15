@@ -254,9 +254,15 @@ window.addEventListener('load', () => {
             helpModal.classList.remove('hidden');
             const helpContent = el('helpContent');
             if (helpContent && helpContent.innerHTML.includes('Loading...')) {
-                fetch('README.md')
-                    .then(r => r.text())
-                    .then(t => { helpContent.innerHTML = marked.parse(t); });
+                Promise.all([
+                    fetch('help.md').then(r => r.text()),
+                    fetch('methods.md').then(r => r.text())
+                ]).then(([help, methods]) => {
+                    helpContent.innerHTML = marked.parse(help + '\n<hr>\n' + methods);
+                }).catch(err => {
+                    helpContent.innerHTML = '<p class="text-red-500">Failed to load documentation.</p>';
+                    console.error('Error loading documentation:', err);
+                });
             }
         });
         closeHelpModal?.addEventListener('click', () => helpModal.classList.add('hidden'));
