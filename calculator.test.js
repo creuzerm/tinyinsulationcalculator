@@ -58,6 +58,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
 
             <!-- Scenario A -->
             <select id="insulationPreset_A"><option value="">Select</option></select>
+            <select id="glazingPreset_A"><option value="custom">Custom</option></select>
 
             <select id="wallAssemblyType_A"><option value="stick">Stick</option><option value="mass">Mass</option></select>
             <div id="group_stick_A">
@@ -102,6 +103,7 @@ describe('Tiny Home Heat Loss Calculator', () => {
              <div id="scenariosGrid">
                 <div id="scenarioBoxB" class="hidden">
                     <select id="insulationPreset_B"><option value="">Select</option></select>
+                    <select id="glazingPreset_B"><option value="custom">Custom</option></select>
 
                     <select id="wallAssemblyType_B"><option value="stick">Stick</option></select>
                     <div id="group_stick_B">
@@ -140,6 +142,10 @@ describe('Tiny Home Heat Loss Calculator', () => {
 
             <div id="headerA"></div>
             <div id="resultHeaderA"></div>
+
+            <!-- Share & Copy Buttons -->
+            <button id="copyLinkBtn">Copy Link</button>
+            <button id="shareBtn" class="hidden">Share</button>
 
             <!-- Charts (Mock Canvas) -->
             <canvas id="heatLossChart"></canvas>
@@ -572,6 +578,70 @@ describe('Tiny Home Heat Loss Calculator', () => {
             expect(sim.simOut.length).toBe(25);
             expect(sim.simOut[6]).toBeCloseTo(20, 0);
             expect(sim.simOut[18]).toBeCloseTo(50, 0);
+        });
+    });
+
+    describe('Copy Share Link Functionality', () => {
+        let alertSpy;
+        let consoleErrorSpy;
+
+        beforeEach(() => {
+            alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+            consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+            jest.useFakeTimers();
+
+            Object.defineProperty(navigator, 'clipboard', {
+                value: {
+                    writeText: jest.fn()
+                },
+                writable: true,
+                configurable: true
+            });
+        });
+
+        afterEach(() => {
+            alertSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
+            jest.useRealTimers();
+        });
+
+        test('copyLinkBtn copies URL and temporarily updates button text on success', async () => {
+            navigator.clipboard.writeText.mockResolvedValueOnce(undefined);
+
+            init();
+
+            const copyBtn = document.getElementById('copyLinkBtn');
+            const originalText = copyBtn.innerHTML;
+
+            copyBtn.click();
+
+            expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+                expect.stringContaining('http://localhost')
+            );
+
+            await Promise.resolve();
+
+            expect(copyBtn.innerHTML).toContain('Copied!');
+
+            jest.advanceTimersByTime(2000);
+
+            expect(copyBtn.innerHTML).toBe(originalText);
+        });
+
+        test('copyLinkBtn handles rejection and logs error and alerts user on failure', async () => {
+            const mockError = new Error('Clipboard write permission denied');
+            navigator.clipboard.writeText.mockRejectedValueOnce(mockError);
+
+            init();
+
+            const copyBtn = document.getElementById('copyLinkBtn');
+            copyBtn.click();
+
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to copy: ', mockError);
+            expect(alertSpy).toHaveBeenCalledWith('Failed to copy URL to clipboard');
         });
     });
 });
