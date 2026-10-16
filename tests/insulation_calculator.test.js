@@ -137,4 +137,70 @@ describe('Insulation Calculator', () => {
             expect(result.warnings[0]).toContain('Your insulation + air gaps (4") are thicker than your framing (3.5").');
         });
     });
+
+    describe('Edge Cases & Boundary Conditions', () => {
+        test('Handles missing conductivity and thickness gracefully', () => {
+            const stack = [
+                { type: 'insulation' }, // Missing r and thickness
+                { type: 'structure', r: 2.0 } // Missing thickness
+            ];
+
+            const result = calculate(stack);
+
+            // Expected: 0.85 (film) + 0 + 2.0 = 2.85 -> "2.9"
+            expect(result.r_winter).toBe("2.9");
+            expect(result.r_summer).toBe("2.9");
+            expect(result.warnings).toEqual([]);
+        });
+
+        test('Prevents false warnings from floating point precision rounding', () => {
+            const stack = [
+                { type: 'structure', r: 2.0, thickness: 3.0 },
+                { type: 'insulation', r: 5.0, thickness: 1.0 },
+                { type: 'insulation', r: 5.0, thickness: 1.0 },
+                { type: 'insulation', r: 5.0, thickness: 0.333333333333 },
+                { type: 'insulation', r: 5.0, thickness: 0.333333333333 },
+                { type: 'insulation', r: 5.0, thickness: 0.333333333333 }
+            ];
+
+            const result = calculate(stack);
+
+            // Total thickness is 2.0 + 0.999999999999 = 2.999999999999 which is < 3.0
+            // No compression warning should be given
+            expect(result.warnings).toEqual([]);
+        });
+
+        test('Warns about extreme insulation thickness', () => {
+            const stack = [
+                { type: 'insulation', r: 100, thickness: 150 }
+            ];
+
+            const result = calculate(stack);
+
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(result.warnings[0]).toContain('Extreme insulation thickness (150")');
+        });
+
+        test('Adds note for thermal bridging near zero', () => {
+            const stack = [
+                { type: 'insulation', r: 0.005, thickness: 1 }
+            ];
+
+            const result = calculate(stack);
+
+            expect(result.notes.length).toBeGreaterThan(0);
+            expect(result.notes[0]).toContain('near-zero thermal resistance (0.005)');
+        });
+
+        test('Warns about negative ambient temperatures', () => {
+            const stack = [
+                { type: 'insulation', r: 10, thickness: 2 }
+            ];
+
+            const result = calculate(stack, { ambientTemperature: -10 });
+
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(result.warnings[0]).toContain('Negative ambient temperatures detected');
+        });
+    });
 });

@@ -1,5 +1,5 @@
 // The Physics Engine
-function calculate(currentStack) {
+function calculate(currentStack, options = {}) {
     let totalR_winter = 0;
     let totalR_summer = 0;
     let warnings = [];
@@ -9,10 +9,24 @@ function calculate(currentStack) {
     totalR_winter += 0.85;
     totalR_summer += 0.85; // simplified
 
+    if (options.ambientTemperature !== undefined && options.ambientTemperature < 0) {
+        warnings.push("Negative ambient temperatures detected. Ensure proper vapor barriers are in place to prevent condensation.");
+    }
+
     // Scan stack for context
     currentStack.forEach((layer, index) => {
-        let r_up = layer.r; // Heat flow up (Winter)
-        let r_down = layer.r; // Heat flow down (Summer)
+        // Fallbacks for missing properties
+        const r_val = layer.r || 0;
+        const thickness = layer.thickness || 0;
+        layer.r = r_val;
+        layer.thickness = thickness;
+
+        if (r_val > 0 && r_val < 0.01) {
+            notes.push(`Layer at position ${index + 1} has near-zero thermal resistance (${r_val}). Significant thermal bridging may occur.`);
+        }
+
+        let r_up = r_val; // Heat flow up (Winter)
+        let r_down = r_val; // Heat flow down (Summer)
         let layerNote = "";
 
         // --- LOGIC: Radiant Barriers ---
@@ -59,8 +73,16 @@ function calculate(currentStack) {
     const structureLayer = currentStack.find(l => l.type === 'structure');
     const insulationThickness = currentStack.filter(l => l.type === 'insulation' || l.type === 'air').reduce((sum, l) => sum + l.thickness, 0);
 
-    if (structureLayer && insulationThickness > structureLayer.thickness) {
-        warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${insulationThickness}") are thicker than your framing (${structureLayer.thickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
+    if (insulationThickness > 100) {
+        warnings.push(`Warning: Extreme insulation thickness (${insulationThickness}"). This is physically unrealistic and may indicate an input error.`);
+    }
+
+    // Use a small epsilon to avoid floating point precision issues on thickness comparison
+    const EPSILON = 0.0001;
+    if (structureLayer && (insulationThickness - structureLayer.thickness > EPSILON)) {
+        // Format to handle long floating point decimals
+        const formattedInsThickness = parseFloat(insulationThickness.toFixed(3));
+        warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${formattedInsThickness}") are thicker than your framing (${structureLayer.thickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
     }
 
     return { r_winter: totalR_winter.toFixed(1), r_summer: totalR_summer.toFixed(1), warnings, notes };
