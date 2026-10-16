@@ -9,8 +9,12 @@ function calculate(currentStack) {
     totalR_winter += 0.85;
     totalR_summer += 0.85; // simplified
 
+    let structureLayer = null;
+    let insulationThickness = 0;
+
     // Scan stack for context
-    currentStack.forEach((layer, index) => {
+    for (let index = 0; index < currentStack.length; index++) {
+        const layer = currentStack[index];
         let r_up = layer.r; // Heat flow up (Winter)
         let r_down = layer.r; // Heat flow down (Summer)
         let layerNote = "";
@@ -53,11 +57,15 @@ function calculate(currentStack) {
 
         totalR_winter += r_up;
         totalR_summer += r_down;
-    });
 
-    // Check thickness conflicts
-    const structureLayer = currentStack.find(l => l.type === 'structure');
-    const insulationThickness = currentStack.filter(l => l.type === 'insulation' || l.type === 'air').reduce((sum, l) => sum + l.thickness, 0);
+        if (layer.type === 'structure' && !structureLayer) {
+            structureLayer = layer;
+        }
+
+        if (layer.type === 'insulation' || layer.type === 'air') {
+            insulationThickness += layer.thickness;
+        }
+    }
 
     if (structureLayer && insulationThickness > structureLayer.thickness) {
         warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${insulationThickness}") are thicker than your framing (${structureLayer.thickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
