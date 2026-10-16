@@ -211,4 +211,108 @@ describe('WebMCP Integration', () => {
         expect(result.scenarioA).toBeDefined();
         expect(result.scenarioA.loss.totalLoss).toBeGreaterThan(0);
     });
+
+    describe('Error Paths and Parameter Validation', () => {
+        test('tool registration directly calls window.navigator.modelContext.registerTool', () => {
+            // Re-run the polyfill creation logic with a mock registerTool to spy on it directly
+            const registerSpy = jest.fn();
+            const fakeModelContext = { registerTool: registerSpy };
+
+            // Re-eval script with the fake modelContext
+            const prevModelContext = window.navigator.modelContext;
+            window.navigator.modelContext = fakeModelContext;
+            eval(webmcpScript);
+
+            // Check that registerTool was called for our tools
+            expect(registerSpy).toHaveBeenCalled();
+            expect(registerSpy.mock.calls.some(call => call[0].name === 'apply_preset')).toBe(true);
+            expect(registerSpy.mock.calls.some(call => call[0].name === 'set_dimensions')).toBe(true);
+            expect(registerSpy.mock.calls.some(call => call[0].name === 'run_simulation')).toBe(true);
+
+            window.navigator.modelContext = prevModelContext; // Restore
+        });
+
+        test('run_simulation tool parameter validation with empty params falls back to defaults from DOM', async () => {
+            const tool = window.aiTools['run_simulation'];
+            await window.aiTools['set_dimensions']({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {});
+
+            // Set up DOM defaults explicitly to test against them
+            document.getElementById('simDuration').value = "48";
+            document.getElementById('simLowTemp').value = "10";
+            document.getElementById('simHighTemp').value = "40";
+
+            const result = await tool({}, {}); // Empty params, should use DOM values
+            expect(result).toBeDefined();
+            expect(result.summaryStats).toBeDefined();
+
+            // Duration logic: if duration is missing in params, it falls back to DOM value which is 48
+            expect(result.summaryStats.summary).toContain("Simulation run for 48 hours");
+        });
+
+        test('apply_preset tool should throw error with invalid suffix element', async () => {
+            const tool = window.aiTools['apply_preset'];
+            await expect(tool({ suffix: '_INVALID', preset: 'van_build' }, {})).rejects.toThrow("Failed to apply preset. Element or function not found.");
+        });
+
+        test('apply_preset tool should throw error when window.applyPreset is missing', async () => {
+            const tool = window.aiTools['apply_preset'];
+            const originalFn = window.applyPreset;
+            window.applyPreset = undefined;
+
+            await expect(tool({ suffix: '_A', preset: 'van_build' }, {})).rejects.toThrow("Failed to apply preset. Element or function not found.");
+
+            window.applyPreset = originalFn; // Restore
+        });
+
+        test('set_dimensions tool should throw error when shape element is missing', async () => {
+            const tool = window.aiTools['set_dimensions'];
+            const shapeEl = document.getElementById('buildingShape');
+            shapeEl.id = 'buildingShapeHidden'; // Temporarily hide
+
+            await expect(tool({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {})).rejects.toThrow("Failed to set dimensions.");
+
+            document.getElementById('buildingShapeHidden').id = 'buildingShape'; // Restore
+        });
+
+        test('set_dimensions tool should throw error when window.updateDimensions is missing', async () => {
+            const tool = window.aiTools['set_dimensions'];
+            const originalFn = window.updateDimensions;
+            window.updateDimensions = undefined;
+
+            await expect(tool({ shape: 'rectangle', length: 10, width: 10, height: 10 }, {})).rejects.toThrow("Failed to set dimensions.");
+
+            window.updateDimensions = originalFn; // Restore
+        });
+
+        test('run_simulation tool should throw error when window.calculateAll returns falsy', async () => {
+            const tool = window.aiTools['run_simulation'];
+            const originalFn = window.calculateAll;
+            window.calculateAll = jest.fn(() => null);
+
+            const result = await tool({ duration: 24 }, {});
+            expect(result).toBe("Calculation failed (invalid areas).");
+
+            window.calculateAll = originalFn; // Restore
+        });
+
+        test('run_simulation tool should throw error when simulation functions are missing', async () => {
+            const tool = window.aiTools['run_simulation'];
+            const originalFn = window.calculateSimulationData;
+            window.calculateSimulationData = undefined;
+
+            await expect(tool({ duration: 24 }, {})).rejects.toThrow("Simulation functions not available.");
+
+            window.calculateSimulationData = originalFn; // Restore
+        });
+
+        test('get_detailed_results tool should throw error when window.calculateAll is missing', async () => {
+            const tool = window.aiTools['get_detailed_results'];
+            const originalFn = window.calculateAll;
+            window.calculateAll = undefined;
+
+            await expect(tool({}, {})).rejects.toThrow("Calculation function not available.");
+
+            window.calculateAll = originalFn; // Restore
+        });
+    });
 });
