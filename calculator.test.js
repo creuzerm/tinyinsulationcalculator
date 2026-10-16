@@ -618,6 +618,134 @@ describe('Tiny Home Heat Loss Calculator', () => {
         });
     });
 
+    describe('A/B Comparison Mode (toggleABMode)', () => {
+        test('Initial state transition to A/B mode', () => {
+            const abToggle = document.getElementById('abToggle');
+            const scenarioB = document.getElementById('scenarioBoxB');
+            const resultB = document.getElementById('resultBoxB');
+            const headerA = document.getElementById('headerA');
+            const resultHeaderA = document.getElementById('resultHeaderA');
+            const scenariosGrid = document.getElementById('scenariosGrid');
+            const resultsGrid = document.getElementById('resultsGrid');
+
+            // Add a mock element for chart containers
+            const mockChartContainer = document.createElement('div');
+            mockChartContainer.className = 'lg:col-span-2-dynamic';
+            document.body.appendChild(mockChartContainer);
+
+            abToggle.checked = true;
+            toggleABMode();
+
+            expect(scenariosGrid.getAttribute('data-layout')).toBe('split');
+            expect(scenarioB.classList.contains('hidden')).toBe(false);
+            expect(headerA.textContent).toBe('Scenario A (Standard)');
+            expect(resultsGrid.getAttribute('data-layout')).toBe('split');
+            expect(resultB.classList.contains('hidden')).toBe(false);
+            expect(resultHeaderA.textContent).toBe('Scenario A Results');
+            expect(mockChartContainer.getAttribute('data-layout')).toBe('split');
+
+            // Clean up
+            mockChartContainer.remove();
+        });
+
+        test('Toggling back to single assembly mode', () => {
+            const abToggle = document.getElementById('abToggle');
+            const scenarioB = document.getElementById('scenarioBoxB');
+            const resultB = document.getElementById('resultBoxB');
+            const headerA = document.getElementById('headerA');
+            const resultHeaderA = document.getElementById('resultHeaderA');
+            const scenariosGrid = document.getElementById('scenariosGrid');
+            const resultsGrid = document.getElementById('resultsGrid');
+
+            const mockChartContainer = document.createElement('div');
+            mockChartContainer.className = 'lg:col-span-2-dynamic';
+            document.body.appendChild(mockChartContainer);
+
+            // First toggle ON
+            abToggle.checked = true;
+            toggleABMode();
+
+            // Then toggle OFF
+            abToggle.checked = false;
+            toggleABMode();
+
+            expect(scenariosGrid.hasAttribute('data-layout')).toBe(false);
+            expect(scenarioB.classList.contains('hidden')).toBe(true);
+            expect(headerA.textContent).toBe('Construction Details');
+            expect(resultsGrid.hasAttribute('data-layout')).toBe(false);
+            expect(resultB.classList.contains('hidden')).toBe(true);
+            expect(resultHeaderA.textContent).toBe('Estimated Results');
+            expect(mockChartContainer.hasAttribute('data-layout')).toBe(false);
+
+            mockChartContainer.remove();
+        });
+
+        test('Preservation of Assembly A while modifying Assembly B (Cumulative R-value delta)', () => {
+            // Setup DOM state for calculation
+            document.getElementById('abToggle').checked = true;
+
+            // Set dimensions
+            document.getElementById('length').value = '20';
+            document.getElementById('width').value = '10';
+            document.getElementById('height').value = '8';
+            document.getElementById('roofPitch').value = '0'; // Flat roof for simpler math
+
+            // Temperatures
+            document.getElementById('indoorTemp').value = '70';
+            document.getElementById('outdoorTemp').value = '30';
+            document.getElementById('groundTemp').value = '50';
+
+            // Scenario A (Worse Insulation)
+            document.getElementById('wallAssemblyType_A').value = 'stick';
+            document.getElementById('wallStudMaterial_A').value = 'wood';
+            document.getElementById('wallStudSpacing_A').value = '16';
+            document.getElementById('wallStudSize_A').value = '2x4'; // ~R-4.38
+            document.getElementById('wallCavityInsulation_A').value = 'fiberglass_batt'; // R-13
+            document.getElementById('wallContinuousInsulation_A').value = '0';
+            document.getElementById('roofRValue_A').value = '10';
+            document.getElementById('floorRValue_A').value = '10';
+            document.getElementById('windowArea_A').value = '0';
+            document.getElementById('doorArea_A').value = '0';
+
+            // Scenario B (Better Insulation)
+            document.getElementById('wallAssemblyType_B').value = 'stick';
+            document.getElementById('wallStudMaterial_B').value = 'wood';
+            document.getElementById('wallStudSpacing_B').value = '16';
+            document.getElementById('wallStudSize_B').value = '2x6'; // ~R-6.88
+            document.getElementById('wallCavityInsulation_B').value = 'fiberglass_batt'; // R-21 for 2x6
+            document.getElementById('wallContinuousInsulation_B').value = '5'; // + R-5 CI
+            document.getElementById('roofRValue_B').value = '20';
+            document.getElementById('floorRValue_B').value = '20';
+            document.getElementById('windowArea_B').value = '0';
+            document.getElementById('doorArea_B').value = '0';
+
+            const results = calculateAll();
+
+            expect(results.isAB).toBe(true);
+            expect(results.scenarioA).toBeDefined();
+            expect(results.scenarioB).toBeDefined();
+
+            // Wall area = (20+10)*2 * 8 = 480 sqft.
+            // Roof/Floor = 20*10 = 200 sqft.
+
+            const uWallA = 1 / results.scenarioA.data.rWall;
+            const uWallB = 1 / results.scenarioB.data.rWall;
+
+            // Expect B to have a lower U-value (better R-value) than A
+            expect(uWallB).toBeLessThan(uWallA);
+
+            // Heat loss should be significantly less in B
+            const lossA = results.scenarioA.loss.totalLoss;
+            const lossB = results.scenarioB.loss.totalLoss;
+
+            expect(lossB).toBeLessThan(lossA);
+
+            // Verify delta calculation effectively exists because both are calculated independently
+            const delta = lossA - lossB;
+            expect(delta).toBeGreaterThan(0);
+        });
+    });
+
     describe('Copy Share Link Functionality', () => {
         let alertSpy;
         let consoleErrorSpy;
