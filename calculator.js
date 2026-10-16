@@ -1273,11 +1273,12 @@ function calculateSimulationData(params) {
         if (hDay === 0) labels.push(`Day ${h / 24 + 1}`);
         else labels.push('');
 
+        const stepOffset = hDay * stepsPerHour;
+
         // Outdoor diurnal temperature model: min at 6 AM, max at 3 PM
-        const tOut = avg - amp * Math.cos(piOver12 * (hDay - 6));
+        const tOut = tOutSteps[stepOffset];
         simOut.push(tOut);
 
-        const stepOffset = hDay * stepsPerHour;
         for (let m = 0; m < stepsPerHour; m++) {
             const idx = stepOffset + m;
 
