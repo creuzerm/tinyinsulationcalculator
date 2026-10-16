@@ -45,6 +45,9 @@ const FASTENER_CHI_VALUES = {
     adhesive: { steel: 0, van_ribs: 0, wood: 0 }
 };
 
+const _assemblyCache = new Map();
+const _ciCache = new Map();
+
 const MATERIALS = {
     // Framing
     wood_stud: { r_inch: 1.25, type: 'framing' },
@@ -755,6 +758,11 @@ function getSurfaceAreas() {
 }
 
 function calculateEffectiveR(assembly, surfaceType = 'wall') {
+    const cacheKey = JSON.stringify(assembly) + '_' + surfaceType;
+    if (_assemblyCache.has(cacheKey)) {
+        return _assemblyCache.get(cacheKey);
+    }
+
     // Direction-Specific Air Films
     let intFilm = MATERIALS.air_film_wall_int.r_total;
     if (surfaceType === 'roof') intFilm = MATERIALS.air_film_roof_int.r_total;
@@ -817,17 +825,23 @@ function calculateEffectiveR(assembly, surfaceType = 'wall') {
         if (ci > 0) {
             const fType = assembly.fastenerType || 'galvanized';
             const sMat = assembly.studMaterial || 'wood';
-
-            const chiTable = FASTENER_CHI_VALUES[fType] || FASTENER_CHI_VALUES['galvanized'];
-            const chi = chiTable[sMat] !== undefined ? chiTable[sMat] : FASTENER_CHI_VALUES.galvanized.wood;
-
             const density = parseFloat(assembly.fastenerDensity) || 0;
 
-            const u_nominal = 1 / ci;
-            const u_effective = u_nominal + (chi * density);
-            const r_effective_ci = 1 / u_effective;
+            const ciKey = `${ci}_${fType}_${sMat}_${density}`;
 
-            r_total += r_effective_ci;
+            if (_ciCache.has(ciKey)) {
+                r_total += _ciCache.get(ciKey);
+            } else {
+                const chiTable = FASTENER_CHI_VALUES[fType] || FASTENER_CHI_VALUES['galvanized'];
+                const chi = chiTable[sMat] !== undefined ? chiTable[sMat] : FASTENER_CHI_VALUES.galvanized.wood;
+
+                const u_nominal = 1 / ci;
+                const u_effective = u_nominal + (chi * density);
+                const r_effective_ci = 1 / u_effective;
+
+                _ciCache.set(ciKey, r_effective_ci);
+                r_total += r_effective_ci;
+            }
         }
 
     } else if (assembly.type === 'mass') {
@@ -846,6 +860,7 @@ function calculateEffectiveR(assembly, surfaceType = 'wall') {
         r_total += ci;
     }
 
+    _assemblyCache.set(cacheKey, r_total);
     return r_total;
 }
 
