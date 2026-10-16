@@ -197,6 +197,27 @@ describe('Tiny Home Heat Loss Calculator', () => {
     // --- TESTS ---
 
     describe('Internal Gains Calculator', () => {
+        test('syncCustomGainsFromDOM gracefully handles malformed JSON fallback', () => {
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+            const hidden = document.getElementById('customGainsData');
+
+            // Set malformed JSON
+            hidden.value = '{ malformed json ]';
+
+            // Sync
+            syncCustomGainsFromDOM();
+
+            expect(consoleSpy).toHaveBeenCalledWith('Failed to parse custom gains', expect.any(Error));
+
+            // Render should not crash and container should be empty (or clear previous elements)
+            renderCustomGains();
+            const container = document.getElementById('gainInputsContainer');
+            // Since customGains is reset to [], renderCustomGains should leave container empty
+            expect(container.innerHTML).not.toContain('<div class="flex items-center gap-2 mb-2 p-2'); // checks no custom items are rendered
+
+            consoleSpy.mockRestore();
+        });
+
         test('loadGainData fetches and renders table', async () => {
             await loadGainData();
 
@@ -445,6 +466,22 @@ describe('Tiny Home Heat Loss Calculator', () => {
     });
 
     describe('Updated Math & Physics Calculations', () => {
+        test('calculateHeatLoss Zero Area & Negative Edge Cases', () => {
+            const areas = { wall: 0, roof: 0, floor: 0, perimeter: 0, total: 0 };
+            const data = {
+                rWall: 0, rRoof: 0, rFloor: 0, // Should be bumped to 0.1 by safeR
+                wArea: 10, wR: 0, dArea: 10, dR: 0, // netWall = 0 - 20 = -20. Shifts to roof, roof becomes -20, Math.max(0) makes it 0.
+                tightness: 'average',
+                skirtR: 0, skirtHeight: 0
+            };
+            const loss = calculateHeatLoss(areas, data, 50, 20);
+
+            // Expected: Safe execution without throwing.
+            // UAs should be well-defined (e.g. wall/roof areas are 0, window/door 10/0.1=100)
+            expect(loss.totalLoss).not.toBeNaN();
+            expect(loss.totalLoss).toBeGreaterThanOrEqual(0);
+        });
+
         test('Thinsulate SM600L has correct r_inch value', () => {
             expect(MATERIALS.thinsulate_sm600.r_inch).toBeCloseTo(3.15, 2);
         });
