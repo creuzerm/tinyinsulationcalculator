@@ -1,13 +1,24 @@
 // The Physics Engine
-function calculate(currentStack) {
+function calculate(currentStack, options = { orientation: 'wall' }) {
     let totalR_winter = 0;
     let totalR_summer = 0;
     let warnings = [];
     let notes = [];
 
-    // Basic air films (Exterior + Interior)
-    totalR_winter += 0.85;
-    totalR_summer += 0.85; // simplified
+    const r_se = 0.17; // Exterior air film
+
+    // Basic air films (Exterior + Interior) based on orientation
+    if (options.orientation === 'roof') {
+        totalR_winter += r_se + 0.61; // Heat flow up
+        totalR_summer += r_se + 0.92; // Heat flow down
+    } else if (options.orientation === 'floor') {
+        totalR_winter += r_se + 0.92; // Heat flow down
+        totalR_summer += r_se + 0.61; // Heat flow up
+    } else {
+        // 'wall' or default
+        totalR_winter += r_se + 0.68;
+        totalR_summer += r_se + 0.68;
+    }
 
     // Scan stack for context
     currentStack.forEach((layer, index) => {

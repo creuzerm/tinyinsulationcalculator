@@ -22,9 +22,9 @@ describe('Insulation Calculator', () => {
             const stack = [];
             const result = calculate(stack);
             
-            // Expected: 0.85 (winter film) -> "0.8" or "0.9" (0.85 toFixed(1) is "0.8")
-            expect(result.r_winter).toBe("0.8");
-            expect(result.r_summer).toBe("0.8");
+            // Expected: 0.85 (winter film) -> "0.9" (0.85 toFixed(1) is "0.9" with proper float math)
+            expect(result.r_winter).toBe("0.9");
+            expect(result.r_summer).toBe("0.9");
             expect(result.warnings).toEqual([]);
         });
 
@@ -35,8 +35,8 @@ describe('Insulation Calculator', () => {
             ];
             const result = calculate(stack);
             
-            expect(result.r_winter).toBe("0.8");
-            expect(result.r_summer).toBe("0.8");
+            expect(result.r_winter).toBe("0.9");
+            expect(result.r_summer).toBe("0.9");
             expect(result.warnings).toEqual([]);
         });
     });
@@ -99,6 +99,30 @@ describe('Insulation Calculator', () => {
             // 4.65 in binary float rounds to "4.7"
             expect(result.r_winter).toBe("4.7");
             expect(result.r_summer).toBe("4.7");
+        });
+    });
+
+    describe('Air Films (Boundary Layers)', () => {
+        test('Vertical wall uses 0.68 + 0.17 = 0.85', () => {
+            const result = calculate([], { orientation: 'wall' });
+            expect(result.r_winter).toBe("0.9"); // 0.85 toFixed(1)
+            expect(result.r_summer).toBe("0.9");
+        });
+
+        test('Horizontal ceiling (roof) uses 0.61 up / 0.92 down + 0.17', () => {
+            const result = calculate([], { orientation: 'roof' });
+            // Winter (heat flow up): 0.61 + 0.17 = 0.78 -> "0.8"
+            expect(result.r_winter).toBe("0.8");
+            // Summer (heat flow down): 0.92 + 0.17 = 1.09 -> "1.1"
+            expect(result.r_summer).toBe("1.1");
+        });
+
+        test('Horizontal floor uses 0.92 down / 0.61 up + 0.17', () => {
+            const result = calculate([], { orientation: 'floor' });
+            // Winter (heat flow down): 0.92 + 0.17 = 1.09 -> "1.1"
+            expect(result.r_winter).toBe("1.1");
+            // Summer (heat flow up): 0.61 + 0.17 = 0.78 -> "0.8"
+            expect(result.r_summer).toBe("0.8");
         });
     });
 
