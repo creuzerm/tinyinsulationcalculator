@@ -20,11 +20,22 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
         totalR_summer += r_se + 0.68;
     }
 
+    let structureLayer = null;
+    let insulationThickness = 0;
+
     // Scan stack for context
     currentStack.forEach((layer, index) => {
         let r_up = layer.r; // Heat flow up (Winter)
         let r_down = layer.r; // Heat flow down (Summer)
         let layerNote = "";
+
+        if (!structureLayer && layer.type === 'structure') {
+            structureLayer = layer;
+        }
+
+        if (layer.type === 'insulation' || layer.type === 'air') {
+            insulationThickness += layer.thickness;
+        }
 
         // --- LOGIC: Radiant Barriers ---
         if (layer.type === 'radiant') {
@@ -67,9 +78,6 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
     });
 
     // Check thickness conflicts
-    const structureLayer = currentStack.find(l => l.type === 'structure');
-    const insulationThickness = currentStack.filter(l => l.type === 'insulation' || l.type === 'air').reduce((sum, l) => sum + l.thickness, 0);
-
     if (structureLayer && insulationThickness > structureLayer.thickness) {
         warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${insulationThickness}") are thicker than your framing (${structureLayer.thickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
     }
