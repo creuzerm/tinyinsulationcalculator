@@ -262,6 +262,8 @@
 
             container.innerHTML = '<div class="assembly-header">Exterior Air Film</div>';
 
+            const fragment = document.createDocumentFragment();
+
             currentStack.forEach((layer, index) => {
                 const div = document.createElement('div');
                 div.className = `layer layer-type-${layer.type}`;
@@ -276,8 +278,10 @@
                         <button onclick="removeLayer(${layer.id})" style="color:red" aria-label="Remove Layer">×</button>
                     </div>
                 `;
-                container.appendChild(div);
+                fragment.appendChild(div);
             });
+
+            container.appendChild(fragment);
 
             const results = calculate(currentStack);
 
