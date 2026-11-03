@@ -1,3 +1,4 @@
+// Security Note: Use DOM construction or textContent for rendering dynamic data instead of innerHTML to prevent XSS.
 // Skin Logic
 (function() {
     // 1. Non-Destructive Header Updates
