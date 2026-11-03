@@ -25,8 +25,10 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
 
     // Scan stack for context
     currentStack.forEach((layer, index) => {
-        let r_up = layer.r; // Heat flow up (Winter)
-        let r_down = layer.r; // Heat flow down (Summer)
+        let layer_r = parseFloat(layer.r);
+        if (isNaN(layer_r)) layer_r = 0;
+        let r_up = layer_r; // Heat flow up (Winter)
+        let r_down = layer_r; // Heat flow down (Summer)
         let layerNote = "";
 
         if (!structureLayer && layer.type === 'structure') {
@@ -57,8 +59,8 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
                 layerNote = "ACTIVE (Reflecting Heat)";
             } else {
                 // Radiant Barrier INACTIVE (Conduction only)
-                r_down = layer.r;
-                r_up = layer.r;
+                r_down = layer_r;
+                r_up = layer_r;
                 warnings.push(`Radiant layer at position ${index + 1} has no air gap! It is acting as a conductor only.`);
                 layerNote = "INACTIVE (No Air Gap)";
             }
@@ -78,11 +80,28 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
     });
 
     // Check thickness conflicts
-    if (structureLayer && insulationThickness > structureLayer.thickness) {
-        warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${insulationThickness}") are thicker than your framing (${structureLayer.thickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
+    let structureThickness = structureLayer ? parseFloat(structureLayer.thickness) : NaN;
+    if (isNaN(structureThickness)) structureThickness = 0;
+
+    if (structureLayer && insulationThickness > structureThickness) {
+        warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${insulationThickness}") are thicker than your framing (${structureThickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
     }
 
-    return { r_winter: totalR_winter.toFixed(1), r_summer: totalR_summer.toFixed(1), warnings, notes };
+    // Round to 1 decimal place to prevent microscopic float variations (like 1.11e-16) from failing zero-checks
+    let final_r_winter = parseFloat(totalR_winter.toFixed(1));
+    let final_r_summer = parseFloat(totalR_summer.toFixed(1));
+
+    let u_winter = final_r_winter > 0 ? (1 / final_r_winter).toFixed(3) : "Infinity";
+    let u_summer = final_r_summer > 0 ? (1 / final_r_summer).toFixed(3) : "Infinity";
+
+    return {
+        r_winter: final_r_winter.toFixed(1),
+        r_summer: final_r_summer.toFixed(1),
+        u_winter: u_winter,
+        u_summer: u_summer,
+        warnings,
+        notes
+    };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

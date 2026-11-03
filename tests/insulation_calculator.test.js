@@ -39,6 +39,43 @@ describe('Insulation Calculator', () => {
             expect(result.r_summer).toBe("0.9");
             expect(result.warnings).toEqual([]);
         });
+
+        test('Non-numeric r-values and thicknesses are handled safely', () => {
+            const stack = [
+                { type: 'structure', r: 'abc', thickness: 'def' },
+                { type: 'insulation', r: null, thickness: undefined }
+            ];
+            const result = calculate(stack);
+
+            expect(result.r_winter).toBe("0.9");
+            expect(result.r_summer).toBe("0.9");
+            expect(result.warnings).toEqual([]);
+        });
+
+        test('U-value division-by-zero protection returns Infinity', () => {
+            // Air film for wall is 0.85. Using -0.85 will make totalR exactly 0.
+            const stack = [
+                { type: 'insulation', r: -0.85, thickness: 1 }
+            ];
+            const result = calculate(stack);
+
+            expect(result.r_winter).toBe("0.0");
+            expect(result.r_summer).toBe("0.0");
+            expect(result.u_winter).toBe("Infinity");
+            expect(result.u_summer).toBe("Infinity");
+        });
+
+        test('U-value calculates correctly for valid R-values', () => {
+            const stack = [
+                { type: 'insulation', r: 10, thickness: 2 } // Total R: 10 + 0.85 = 10.85
+            ];
+            const result = calculate(stack);
+
+            // totalR is 10.85 -> rounded to 1 decimal place = 10.8 in Node due to float mechanics
+            // U = 1 / 10.8 = 0.09259... => 0.093
+            expect(result.u_winter).toBe("0.093");
+            expect(result.u_summer).toBe("0.093");
+        });
     });
 
     describe('Radiant barriers', () => {
