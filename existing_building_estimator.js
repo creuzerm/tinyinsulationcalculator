@@ -363,6 +363,8 @@ if (typeof window !== 'undefined') {
     window.clearAll = clearAll;
     window.saveToLocalStorage = saveToLocalStorage;
     window.loadFromLocalStorage = loadFromLocalStorage;
+    window.serializeConfig = serializeConfig;
+    window.deserializeConfig = deserializeConfig;
 }
 
 if (typeof module !== 'undefined') {

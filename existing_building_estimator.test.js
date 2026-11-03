@@ -1,4 +1,8 @@
 /**
+ * @jest-environment jsdom
+ */
+
+/**
  * existing_building_estimator.test.js
  */
 
@@ -25,8 +29,8 @@ describe('Existing Building Estimator Logic', () => {
             <input type="number" id="tIndoorAir" value="70">
             <input type="number" id="tOutdoorAir" value="30">
             <input type="number" id="qHvac" value="20000">
-            <select id="hvacMode"><option value="heating" selected>Heating</option></select>
-            <select id="targetComponentType"><option value="wall">Wall</option></select>
+            <select id="hvacMode"><option value="heating" selected>Heating</option><option value="cooling">Cooling</option></select>
+            <select id="targetComponentType"><option value="wall" selected>Wall</option><option value="ceiling">Ceiling</option></select>
             <input type="number" id="targetComponentArea" value="120">
             <input type="number" id="tTargetSurfaceIndoor" value="">
             <input type="number" id="tTargetSurfaceOutdoor" value="">
@@ -125,5 +129,111 @@ describe('Existing Building Estimator Logic', () => {
         window.saveToLocalStorage();
 
         expect(localStorage.getItem('estim_spaceLength')).toBe('42');
+    });
+
+    describe('deserializeConfig', () => {
+        function setUrlSearch(search) {
+            const url = new URL(window.location.href);
+            url.search = search;
+            window.history.pushState({}, '', url);
+        }
+
+        afterEach(() => {
+            setUrlSearch('');
+        });
+
+        test('deserializeConfig populates fields and returns true when matching params exist', () => {
+            setUrlSearch('?spaceLength=45&tIndoorAir=75&hvacMode=cooling');
+
+            const hasParams = window.deserializeConfig();
+
+            expect(hasParams).toBe(true);
+            expect(document.getElementById('spaceLength').value).toBe('45');
+            expect(document.getElementById('tIndoorAir').value).toBe('75');
+            expect(document.getElementById('hvacMode').value).toBe('cooling');
+            // Unspecified fields in query remain unchanged from default mock value
+            expect(document.getElementById('spaceWidth').value).toBe('15');
+        });
+
+        test('deserializeConfig returns false when query string is empty', () => {
+            setUrlSearch('');
+
+            const hasParams = window.deserializeConfig();
+
+            expect(hasParams).toBe(false);
+            expect(document.getElementById('spaceLength').value).toBe('20');
+        });
+
+        test('deserializeConfig returns false when query string has only unrelated params', () => {
+            setUrlSearch('?unrelated=123&foo=bar');
+
+            const hasParams = window.deserializeConfig();
+
+            expect(hasParams).toBe(false);
+            expect(document.getElementById('spaceLength').value).toBe('20');
+        });
+
+        test('deserializeConfig handles missing DOM elements gracefully', () => {
+            // Remove spaceHeight element from DOM
+            const heightEl = document.getElementById('spaceHeight');
+            heightEl.parentNode.removeChild(heightEl);
+
+            setUrlSearch('?spaceHeight=12&spaceLength=35');
+
+            const hasParams = window.deserializeConfig();
+
+            expect(hasParams).toBe(true);
+            expect(document.getElementById('spaceLength').value).toBe('35');
+            expect(document.getElementById('spaceHeight')).toBeNull();
+        });
+
+        test('deserializeConfig returns false if only matching param is for a missing DOM element', () => {
+            // Remove spaceHeight element from DOM
+            const heightEl = document.getElementById('spaceHeight');
+            heightEl.parentNode.removeChild(heightEl);
+
+            setUrlSearch('?spaceHeight=12');
+
+            const hasParams = window.deserializeConfig();
+
+            expect(hasParams).toBe(false);
+        });
+
+        test('deserializeConfig deserializes all CONFIG_FIELDS and roundtrips with serializeConfig', () => {
+            const fullConfig = {
+                spaceLength: '30',
+                spaceWidth: '25',
+                spaceHeight: '10',
+                tIndoorAir: '68',
+                tOutdoorAir: '20',
+                qHvac: '25000',
+                hvacMode: 'heating',
+                targetComponentType: 'wall',
+                targetComponentArea: '200',
+                tTargetSurfaceIndoor: '62',
+                tTargetSurfaceOutdoor: '25',
+                achRate: '0.35',
+                areaWindows: '45',
+                areaOtherWallsCeilings: '800',
+                areaFloor: '400'
+            };
+
+            const searchParams = new URLSearchParams(fullConfig).toString();
+            setUrlSearch(`?${searchParams}`);
+
+            const hasParams = window.deserializeConfig();
+
+            expect(hasParams).toBe(true);
+            Object.keys(fullConfig).forEach(id => {
+                expect(document.getElementById(id).value).toBe(fullConfig[id]);
+            });
+
+            // Verify window.serializeConfig produces equivalent query string
+            const serialized = window.serializeConfig();
+            const serializedParams = new URLSearchParams(serialized);
+            Object.keys(fullConfig).forEach(id => {
+                expect(serializedParams.get(id)).toBe(fullConfig[id]);
+            });
+        });
     });
 });
