@@ -8,7 +8,7 @@
 
         if (h1) {
              // Update Text Content (Tone of Voice)
-             h1.innerText = "Tiny Home Heat Loss Calculator";
+             h1.textContent = "Tiny Home Heat Loss Calculator";
 
              // Inject Branding Icon (Prepend instead of Replace)
              if (!document.getElementById('brand-icon')) {
@@ -22,7 +22,7 @@
         }
 
         if (p) {
-            p.innerText = "Estimate heating load and thermal battery capacity...";
+            p.textContent = "Estimate heating load and thermal battery capacity...";
         }
     }
 
@@ -34,7 +34,7 @@
 
         const btn = document.createElement('button');
         btn.id = 'runThermalCheckBtn';
-        btn.innerText = 'Run Thermal Check';
+        btn.textContent = 'Run Thermal Check';
         btn.className = 'btn-run-thermal-check';
 
         btn.addEventListener('click', () => {
