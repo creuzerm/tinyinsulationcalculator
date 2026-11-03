@@ -371,6 +371,8 @@ if (typeof module !== 'undefined') {
         clearAll,
         saveToLocalStorage,
         loadFromLocalStorage,
+        serializeConfig,
+        deserializeConfig,
         R_VALUE_IMPERIAL_TO_SI
     };
 }
