@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ai-prompt-api" content="supported">
+    <title>Solar Kiln & Greenhouse Thermal Simulator</title>
+    <meta name="description"
+        content="Simulate transpired solar air collector thermal output, multi-layer greenhouse glazing R-values, firewood drying dwell time, and heat pump substitution ROI.">
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: 'var(--color-primary)',
+                            hover: 'var(--color-primary-hover)',
+                            subtle: 'var(--color-primary-subtle)',
+                        },
+                        secondary: {
+                            DEFAULT: 'var(--color-secondary)',
+                            subtle: 'var(--color-secondary-subtle)',
+                        },
+                        accent: 'var(--color-accent)',
+                        solar: {
+                            DEFAULT: 'var(--color-solar, #f59e0b)',
+                            subtle: 'var(--color-solar-subtle, #fffbeb)',
+                        },
+                        drying: {
+                            DEFAULT: 'var(--color-drying, #06b6d4)',
+                            subtle: 'var(--color-drying-subtle, #ecfeff)',
+                        },
+                        savings: 'var(--color-savings, #16a34a)',
+                        app: 'var(--color-bg-app)',
+                        card: 'var(--color-bg-card)',
+                        border: 'var(--color-border)',
+                    },
+                    borderRadius: {
+                        card: 'var(--radius-card)',
+                        input: 'var(--radius-input)',
+                    },
+                    fontFamily: {
+                        heading: ['var(--font-heading)'],
+                        body: ['var(--font-body)'],
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="skin.css">
+</head>
+
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+
+    <div class="container mx-auto p-2 md:p-6 max-w-7xl">
+        <!-- Persistent Suite Navigation Bar -->
+        <nav class="app-nav flex flex-wrap justify-center gap-4 mb-6 text-sm font-medium border-b pb-4">
+            <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">Tiny Home Calculator</a>
+            <a href="existing_building_estimator.html" class="text-gray-600 hover:text-primary transition-colors">Existing Building Estimator</a>
+            <a href="insulationexplorer.html" class="text-gray-600 hover:text-primary transition-colors">Insulation Explorer</a>
+            <a href="solar_kiln.html" class="text-primary font-bold border-b-2 border-primary pb-1">Solar Kiln & Greenhouse</a>
+            <a href="#" id="help-link" class="text-gray-600 hover:text-primary transition-colors">Help / Documentation</a>
+        </nav>
+
+        <header class="app-header text-center mb-6">
+            <h1 id="appTitle" class="text-3xl md:text-4xl font-bold text-gray-900">Solar Kiln & Greenhouse Thermal Simulator</h1>
+            <p id="appSubtitle" class="text-gray-600 mt-2 max-w-2xl mx-auto">
+                Model transpired solar collector thermal output, multi-layer greenhouse glazing R-values, wood moisture evaporation dwell times, and central heat pump substitution economics.
+            </p>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Form Column (Left) -->
+            <div class="lg:col-span-5 space-y-6">
+                <form id="solarKilnForm"
+                    toolname="calculate_solar_kiln_performance"
+                    tooldescription="Calculates solar firewood kiln drying time, wood moisture mass loss, multi-layer glazing optical/thermal R-values, psychrometric downdraft buoyancy, and financial ROI against a central air heat pump."
+                    toolaction="calculate_solar_kiln"
+                    class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-5">
+
+                    <div class="border-b pb-3">
+                        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            <span>🪵</span> Wood Stack & Moisture Target
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-1">Configure batch volume, species density, and target dryness.</p>
+                    </div>
+
+                    <!-- Preset Selector -->
+                    <div>
+                        <label for="volumePreset" class="block text-sm font-medium text-gray-700 mb-1">Standard Volume Preset</label>
+                        <select id="volumePreset" data-action="apply-kiln-preset"
+                            toolparamdescription="Standard wood stack volume preset (1 Basement Bay, 1 Cubic Yard Rack, 1 Pallet Dryer, 2 Pallets, 1 Full Cord)"
+                            class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
+                            <option value="half_basement_rack">1 Basement Bay (12 cu ft / ~0.10 cord)</option>
+                            <option value="full_basement_rack_1yd" selected>Full Basement Rack / 1 yd³ (27 cu ft / ~0.21 cord)</option>
+                            <option value="single_outdoor_pallet">1 Outdoor Pallet Dryer (42.7 cu ft / 0.33 cord)</option>
+                            <option value="twin_outdoor_pallets">2 Outdoor Pallet Dryers Flip-Flop (85.3 cu ft / 0.67 cord)</option>
+                            <option value="full_cord">1 Full Cord (128 cu ft / 1.00 cord)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="grossVolumeCuFt" class="block text-xs font-medium text-gray-700">Gross Stack (cu ft)</label>
+                            <input type="number" id="grossVolumeCuFt" data-model="grossVolumeCuFt" step="0.5" min="5" max="500" value="27.0"
+                                toolparamdescription="Gross stacked volume of firewood in cubic feet"
+                                class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
+                        </div>
+                        <div>
+                            <label for="woodSpecies" class="block text-xs font-medium text-gray-700">Hardwood Species</label>
+                            <select id="woodSpecies" data-model="woodSpecies"
+                                toolparamdescription="Hardwood species preset determining oven-dry density and gross heating energy"
+                                class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
+                                <option value="ne_ky_mixed_hardwood" selected>Mixed Hardwood (36 lb/ft³)</option>
+                                <option value="white_oak_hickory">Oak / Hickory (42 lb/ft³)</option>
+                                <option value="soft_maple_poplar">Maple / Poplar (29 lb/ft³)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="initialMcPct" class="block text-xs font-medium text-gray-700">Initial Moisture (% MC)</label>
+                            <input type="number" id="initialMcPct" data-model="initialMcPct" min="20" max="100" value="50"
+                                toolparamdescription="Initial wood moisture content percentage on dry basis (e.g. 50% semi-seasoned, 75% green)"
+                                class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
+                        </div>
+                        <div>
+                            <label for="targetMcPct" class="block text-xs font-medium text-gray-700">Target Moisture (% MC)</label>
+                            <input type="number" id="targetMcPct" data-model="targetMcPct" min="10" max="30" value="20"
+                                toolparamdescription="Target stove-ready moisture content percentage (typically 18-20%)"
+                                class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
+                        </div>
+                    </div>
+
+                    <!-- 2-Stage Drying Finisher Toggle -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
+                        <input type="checkbox" id="useBasementFinisher" data-model="useBasementFinisher" checked
+                            toolparamdescription="Enable 2-stage finishing: Stage 1 outdoor kiln to 26% FSP, Stage 2 indoor basement rack finishing"
+                            class="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <div>
+                            <label for="useBasementFinisher" class="text-xs font-semibold text-blue-900 cursor-pointer">
+                                Enable 2-Stage Hybrid Finishing (Recommended)
+                            </label>
+                            <p class="text-[11px] text-blue-700 mt-0.5">
+                                Outdoor solar kiln removes free water down to Fiber Saturation Point (~26% MC). Indoor basement finisher rack desorbs remaining bound water using waste house heat, accelerating outdoor batch turnaround.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Progressive Disclosure Accordion: Solar Hardware & Physics -->
+                    <details id="advanced-options" class="group border-t pt-3">
+                        <summary class="flex justify-between items-center cursor-pointer text-sm font-medium text-gray-700 select-none">
+                            <span class="flex items-center gap-2">☀️ <span>Solar Collectors, Glazing & Climate</span></span>
+                            <span class="text-xs text-primary group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+
+                        <div class="mt-4 space-y-4 text-sm">
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label for="numCollectors" class="block text-[11px] text-gray-600">Collectors (3'x8')</label>
+                                    <input type="number" id="numCollectors" data-model="numCollectors" min="1" max="6" value="2"
+                                        toolparamdescription="Number of transpired screen solar air collector panels attached to active box"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                </div>
+                                <div>
+                                    <label for="collectorGlazingLayers" class="block text-[11px] text-gray-600">Collector Film</label>
+                                    <select id="collectorGlazingLayers" data-model="collectorGlazingLayers"
+                                        toolparamdescription="Number of 6-mil UV film layers on solar collectors (1 to 3 layers)"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                        <option value="1" selected>1 Layer (88% τ)</option>
+                                        <option value="2">2 Layers (77% τ)</option>
+                                        <option value="3">3 Layers (68% τ)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="boxGlazingLayers" class="block text-[11px] text-gray-600">Box Glazing</label>
+                                    <select id="boxGlazingLayers" data-model="boxGlazingLayers"
+                                        toolparamdescription="Number of 6-mil UV film layers on pallet drying box walls (1 to 3 layers)"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                        <option value="1">1 Layer (R-0.85)</option>
+                                        <option value="2" selected>2 Layers (R-1.80)</option>
+                                        <option value="3">3 Layers (R-2.70)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="northWallReflectix" data-model="northWallReflectix" checked
+                                    toolparamdescription="True if north wall includes inner reflective foil and 3.5 in dead air gap (R-3.55)"
+                                    class="h-4 w-4 text-primary border-gray-300 rounded">
+                                <label for="northWallReflectix" class="text-xs text-gray-700 cursor-pointer">
+                                    North Wall Radiant Foil Barrier (R-3.55 Credit)
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 pt-1">
+                                <div>
+                                    <label for="splitDiameterInches" class="block text-[11px] text-gray-600">Split Diameter (in)</label>
+                                    <input type="number" id="splitDiameterInches" data-model="splitDiameterInches" step="0.25" min="1" max="8" value="2.75"
+                                        toolparamdescription="Average split thickness in inches (diffusion scales to 1.5 power)"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                </div>
+                                <div class="flex items-center pt-4">
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                                        <input type="checkbox" id="isUnsplitRound" data-model="isUnsplitRound"
+                                            toolparamdescription="True if firewood pieces are unsplit round logs with intact bark (2.2x diffusion penalty)"
+                                            class="h-4 w-4 text-primary border-gray-300 rounded">
+                                        <span>Unsplit Round Timber</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label for="ambientTempF" class="block text-[11px] text-gray-600">Cold Temp (°F)</label>
+                                    <input type="number" id="ambientTempF" data-model="ambientTempF" value="32"
+                                        toolparamdescription="Ambient cold outdoor daytime temperature in deg F"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                </div>
+                                <div>
+                                    <label for="internalKilnTempF" class="block text-[11px] text-gray-600">Kiln Plenum (°F)</label>
+                                    <input type="number" id="internalKilnTempF" data-model="internalKilnTempF" value="80"
+                                        toolparamdescription="Target operating internal kiln temperature in deg F"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                </div>
+                                <div>
+                                    <label for="sunHoursPerDay" class="block text-[11px] text-gray-600">Sun Hours/Day</label>
+                                    <input type="number" id="sunHoursPerDay" data-model="sunHoursPerDay" step="0.5" value="5.0"
+                                        toolparamdescription="Peak clear equivalent sun hours per day"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                </div>
+                            </div>
+
+                            <div class="border-t pt-2 space-y-2">
+                                <span class="text-xs font-semibold text-gray-700">Heat Pump Economic Parameters</span>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label for="electricRatePerKwh" class="block text-[11px] text-gray-600">Rate ($/kWh)</label>
+                                        <input type="number" id="electricRatePerKwh" data-model="electricRatePerKwh" step="0.005" value="0.169"
+                                            toolparamdescription="Grid electricity price in dollars per kWh"
+                                            class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                    </div>
+                                    <div>
+                                        <label for="heatPumpCop" class="block text-[11px] text-gray-600">Heat Pump COP</label>
+                                        <input type="number" id="heatPumpCop" data-model="heatPumpCop" step="0.1" value="2.40"
+                                            toolparamdescription="Seasonal COP of central air heat pump (ASHRAE Zone 4A default 2.40)"
+                                            class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                    </div>
+                                    <div>
+                                        <label for="buildCostUsd" class="block text-[11px] text-gray-600">Build Capex ($)</label>
+                                        <input type="number" id="buildCostUsd" data-model="buildCostUsd" value="234.0"
+                                            toolparamdescription="Total DIY solar kiln construction cost in USD"
+                                            class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <button type="submit" id="calculateSolarKilnBtn" data-action="calculate-solar-kiln"
+                        class="w-full bg-primary hover:bg-primary-hover text-white font-semibold py-2.5 px-4 rounded-md shadow-sm transition-colors text-sm">
+                        Calculate Solar Drying & ROI
+                    </button>
+                </form>
+            </div>
+
+            <!-- Results Column (Right) -->
+            <div id="solarKilnResults" class="lg:col-span-7 space-y-5">
+
+                <!-- Hero Metric Card: Dwell Time -->
+                <div class="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-6 rounded-lg shadow-sm">
+                    <span class="text-xs uppercase tracking-wider font-semibold opacity-90">Required Drying Dwell Time</span>
+                    <div class="mt-2 flex flex-wrap items-baseline gap-3">
+                        <span data-output="outdoorDwellDays" class="text-4xl md:text-5xl font-extrabold tracking-tight">-- Clear Days</span>
+                        <span data-output="calendarDays" class="text-sm font-medium opacity-90 bg-black/20 px-3 py-1 rounded-full">-- Calendar Days</span>
+                    </div>
+                    <p class="text-xs opacity-90 mt-3 border-t border-white/20 pt-2 flex items-center justify-between">
+                        <span>Daily Water Evaporation: <strong data-output="waterEvapGalPerDay" class="font-bold">-- gal/day</strong> (<span data-output="waterEvapLbsPerDay">-- lbs/day</span>)</span>
+                        <span>Net Solar Gain: <strong data-output="totalNetDailyBtu">-- BTU/day</strong></span>
+                    </p>
+                </div>
+
+                <!-- 2x2 Breakdown Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <!-- Water & Biomass Energy Budget -->
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-1.5 mb-3">
+                            <span>💧</span> Moisture & Biomass Load
+                        </h3>
+                        <dl class="space-y-2 text-xs">
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Gross Volume & Stack:</dt>
+                                <dd class="font-medium text-gray-900" data-output="cordsEquivalent">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Oven-Dry Biomass:</dt>
+                                <dd class="font-medium text-gray-900" data-output="ovenDryWeightLbs">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Total Water to Evaporate:</dt>
+                                <dd class="font-semibold text-cyan-700" data-output="totalWaterGallons">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Stage 1 Outdoor Removal:</dt>
+                                <dd class="text-gray-700" data-output="outdoorWaterLbs">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <dt class="text-gray-500">Stage 2 Indoor Finisher:</dt>
+                                <dd class="text-gray-700" data-output="indoorWaterLbs">--</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Thermal Heat Balance -->
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-1.5 mb-3">
+                            <span>☀️</span> Daily Solar Thermal Balance
+                        </h3>
+                        <dl class="space-y-2 text-xs">
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Transpired Collector Gain:</dt>
+                                <dd class="font-medium text-amber-700" data-output="collectorGainBtu">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Pallet Box Glazing Gain:</dt>
+                                <dd class="font-medium text-amber-600" data-output="boxPassiveSolarGainBtu">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Daytime Wall Conduction Loss:</dt>
+                                <dd class="font-medium text-red-600" data-output="daytimeWallLossBtu">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Split Diffusion Multiplier:</dt>
+                                <dd class="font-medium text-gray-900" data-output="splitMultiplier">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <dt class="text-gray-500">Downdraft Density Buoyancy:</dt>
+                                <dd class="font-medium text-emerald-700" data-output="densityDelta">--</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                </div>
+
+                <!-- Heat Pump Substitution ROI Card -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-emerald-200">
+                    <div class="flex items-center justify-between border-b pb-3 mb-3">
+                        <h3 class="text-sm font-bold text-emerald-900 flex items-center gap-1.5">
+                            <span>⚡</span> Firewood vs. Central Heat Pump Financial ROI
+                        </h3>
+                        <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
+                            ASHRAE Zone 4A
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-4">
+                        <div class="bg-emerald-50/50 p-2.5 rounded border border-emerald-100">
+                            <span class="text-[11px] text-gray-500 block">Drying Heat Bonus</span>
+                            <strong data-output="dryingBonusMmbtuPerCord" class="text-sm font-bold text-emerald-700 block mt-0.5">--</strong>
+                        </div>
+                        <div class="bg-emerald-50/50 p-2.5 rounded border border-emerald-100">
+                            <span class="text-[11px] text-gray-500 block">Heat Pump MMBTU</span>
+                            <strong data-output="costPerMmbtuHeatPump" class="text-sm font-bold text-gray-800 block mt-0.5">--</strong>
+                        </div>
+                        <div class="bg-emerald-50/50 p-2.5 rounded border border-emerald-100">
+                            <span class="text-[11px] text-gray-500 block">Season Heat Value</span>
+                            <strong data-output="seasonalValueVsHeatPump" class="text-sm font-bold text-emerald-800 block mt-0.5">--</strong>
+                        </div>
+                        <div class="bg-emerald-50/50 p-2.5 rounded border border-emerald-100">
+                            <span class="text-[11px] text-gray-500 block">Capex Payback</span>
+                            <strong data-output="paybackWeeksTotalHeat" class="text-sm font-bold text-emerald-600 block mt-0.5">--</strong>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-gray-600 bg-gray-50 p-3 rounded">
+                        <strong>Engineering Ground Truth:</strong> Drying timber from ~50% green down to &lt;20% stove-ready raises wood stove burn efficiency from 45.8% to 72.0%, yielding <strong data-output="dryingBonusMmbtuPerCord">+6.28 MMBTU/cord</strong> (+57.1% more usable room heat from the exact same wood). At $0.169/kWh electricity, the solar kiln completely pays for its DIY materials in <strong data-output="paybackWeeksTotalHeat">--</strong>.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Help / Documentation Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col shadow-xl">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">User Guide & Engineering Reference</h3>
+                <button id="closeHelpModal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+            <div id="helpContent" class="p-6 overflow-y-auto prose max-w-none text-sm text-gray-700">
+                <p>Loading documentation...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="calculator.js"></script>
+    <script type="module" src="solar_kiln.js"></script>
+    <script src="webmcp.js"></script>
+    <script src="skin.js"></script>
+</body>
+
+</html>

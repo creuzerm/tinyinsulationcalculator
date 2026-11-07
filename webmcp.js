@@ -193,6 +193,90 @@
                 }
                 throw new Error("Calculation function not available.");
             }
+        },
+        {
+            name: "calculate_solar_kiln_performance",
+            description: "Calculates solar firewood kiln drying time, glazing optical/thermal R-values, psychrometric air buoyancy, and financial ROI against a central air heat pump.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    grossVolumeCuFt: { type: "number", description: "Gross stacked wood volume in cu ft (27 = 1 yd3/basement rack, 42.7 = 1 pallet, 128 = 1 cord)", default: 27.0 },
+                    initialMcPct: { type: "number", description: "Initial wood moisture content % on dry basis (e.g. 75 green, 50 semi-seasoned)", default: 50 },
+                    targetMcPct: { type: "number", description: "Final stove-ready moisture content % (typically 18-20%)", default: 20 },
+                    useBasementFinisher: { type: "boolean", description: "True if finishing bound water (<26% MC) in indoor 60F low-humidity basement rack", default: true },
+                    splitDiameterInches: { type: "number", description: "Average thickness/diameter of wood splits in inches", default: 2.75 },
+                    isUnsplitRound: { type: "boolean", description: "True if logs are unsplit rounds with intact bark", default: false },
+                    numCollectors: { type: "number", description: "Number of 36x96 transpired screen solar collectors attached to active box", default: 2 },
+                    collectorGlazingLayers: { type: "number", description: "Layers of 6-mil UV film on solar collectors (1-3)", default: 1 },
+                    boxGlazingLayers: { type: "number", description: "Layers of 6-mil UV film on pallet box walls (1-3)", default: 2 },
+                    electricRatePerKwh: { type: "number", description: "Local electricity rate in $/kWh (0.169 KY Power, 0.138 KY Co-op)", default: 0.169 },
+                    heatPumpCop: { type: "number", description: "Seasonal Coefficient of Performance of central heat pump", default: 2.4 },
+                    cordsProcessedPerSeason: { type: "number", description: "Total cords processed through kiln over 150-day winter", default: 1.5 },
+                    buildCostUsd: { type: "number", description: "Total DIY solar kiln build cost in USD", default: 234 }
+                }
+            },
+            execute: async (params = {}) => {
+                const calc = (typeof window !== 'undefined' && window.calculateWoodMoistureLoad) ? window : (typeof require !== 'undefined' ? require('./calculator.js') : null);
+                if (!calc || !calc.calculateWoodMoistureLoad) {
+                    throw new Error("Solar kiln calculator engine not available.");
+                }
+
+                const grossVolumeCuFt = params.grossVolumeCuFt ?? 27.0;
+                const initialMcPct = params.initialMcPct ?? 50;
+                const targetMcPct = params.targetMcPct ?? 20;
+                const useBasementFinisher = params.useBasementFinisher ?? true;
+                const splitDiameterInches = params.splitDiameterInches ?? 2.75;
+                const isUnsplitRound = params.isUnsplitRound ?? false;
+                const numCollectors = params.numCollectors ?? 2;
+                const collectorGlazingLayers = params.collectorGlazingLayers ?? 1;
+                const boxGlazingLayers = params.boxGlazingLayers ?? 2;
+                const electricRatePerKwh = params.electricRatePerKwh ?? 0.169;
+                const heatPumpCop = params.heatPumpCop ?? 2.4;
+                const cordsProcessedPerSeason = params.cordsProcessedPerSeason ?? 1.5;
+                const buildCostUsd = params.buildCostUsd ?? 234.0;
+
+                const woodLoad = calc.calculateWoodMoistureLoad({
+                    grossVolumeCuFt,
+                    initialMcPct,
+                    targetMcPct,
+                    useBasementFinisher,
+                    splitDiameterInches,
+                    isUnsplitRound
+                });
+
+                const kilnBalance = calc.calculateSolarKilnBalance({
+                    numCollectors,
+                    collectorGlazingLayers,
+                    boxGlazingLayers,
+                    woodLoadResult: woodLoad
+                });
+
+                const heatPumpRoi = calc.calculateKilnHeatPumpROI({
+                    cordsProcessedPerSeason,
+                    electricRatePerKwh,
+                    heatPumpCop,
+                    buildCostUsd
+                });
+
+                const summaryText = `Solar kiln drying for ${woodLoad.cordsEquivalent} cords (${grossVolumeCuFt} cu ft) from ${initialMcPct}% to ${targetMcPct}% MC requires ~${kilnBalance.outdoorDwellDays} clear solar days. Water to evaporate: ${woodLoad.totalWaterGallons} gal (${woodLoad.totalWaterLbs} lbs). Net daily heat gain: ${kilnBalance.totalNetDailyBtu} BTU/day. Seasonal firewood value vs heat pump: $${heatPumpRoi.seasonalValueVsHeatPump} (payback ${heatPumpRoi.paybackWeeksTotalHeat} weeks).`;
+
+                return {
+                    summaryStats: {
+                        outdoorDwellDays: kilnBalance.outdoorDwellDays,
+                        waterEvapLbsPerDay: kilnBalance.waterEvapLbsPerDay,
+                        waterEvapGalPerDay: kilnBalance.waterEvapGalPerDay,
+                        totalNetDailyBtu: kilnBalance.totalNetDailyBtu,
+                        cordsEquivalent: woodLoad.cordsEquivalent,
+                        totalWaterGallons: woodLoad.totalWaterGallons,
+                        seasonalValueVsHeatPumpUsd: heatPumpRoi.seasonalValueVsHeatPump,
+                        paybackWeeksTotalHeat: heatPumpRoi.paybackWeeksTotalHeat,
+                        summary: summaryText
+                    },
+                    woodLoad,
+                    kilnBalance,
+                    heatPumpRoi
+                };
+            }
         }
     ];
 

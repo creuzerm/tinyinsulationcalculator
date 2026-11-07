@@ -466,4 +466,128 @@ export function registerTools(server: McpServer): void {
       };
     }
   );
+
+  server.tool(
+    "calculate_solar_kiln_performance",
+    "Calculates solar firewood kiln drying time, glazing optical/thermal R-values, psychrometric air buoyancy, and financial ROI against a central air heat pump.",
+    {
+      grossVolumeCuFt: z
+        .number()
+        .optional()
+        .default(27.0)
+        .describe("Gross stacked wood volume in cu ft (27 = 1 yd3/basement rack, 42.7 = 1 pallet, 128 = 1 cord)"),
+      initialMcPct: z
+        .number()
+        .optional()
+        .default(50)
+        .describe("Initial wood moisture content % on dry basis (e.g. 75 green, 50 semi-seasoned)"),
+      targetMcPct: z
+        .number()
+        .optional()
+        .default(20)
+        .describe("Final stove-ready moisture content % (typically 18-20%)"),
+      useBasementFinisher: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("True if finishing bound water (<26% MC) in indoor 60F low-humidity basement rack"),
+      splitDiameterInches: z
+        .number()
+        .optional()
+        .default(2.75)
+        .describe("Average thickness/diameter of wood splits in inches"),
+      isUnsplitRound: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("True if logs are unsplit rounds with intact bark"),
+      numCollectors: z
+        .number()
+        .optional()
+        .default(2)
+        .describe("Number of 36x96 transpired screen solar collectors attached to active box"),
+      collectorGlazingLayers: z
+        .number()
+        .optional()
+        .default(1)
+        .describe("Layers of 6-mil UV film on solar collectors (1-3)"),
+      boxGlazingLayers: z
+        .number()
+        .optional()
+        .default(2)
+        .describe("Layers of 6-mil UV film on pallet box walls (1-3)"),
+      electricRatePerKwh: z
+        .number()
+        .optional()
+        .default(0.169)
+        .describe("Local electricity rate in $/kWh (0.169 KY Power, 0.138 KY Co-op)"),
+      heatPumpCop: z
+        .number()
+        .optional()
+        .default(2.40)
+        .describe("Seasonal Coefficient of Performance of central heat pump"),
+      cordsProcessedPerSeason: z
+        .number()
+        .optional()
+        .default(1.5)
+        .describe("Total cords processed through kiln over 150-day winter"),
+      buildCostUsd: z
+        .number()
+        .optional()
+        .default(234.0)
+        .describe("Total DIY solar kiln build cost in USD")
+    },
+    async (args) => {
+      const woodLoad = calculator.calculateWoodMoistureLoad({
+        grossVolumeCuFt: args.grossVolumeCuFt,
+        initialMcPct: args.initialMcPct,
+        targetMcPct: args.targetMcPct,
+        useBasementFinisher: args.useBasementFinisher,
+        splitDiameterInches: args.splitDiameterInches,
+        isUnsplitRound: args.isUnsplitRound
+      });
+
+      const kilnBalance = calculator.calculateSolarKilnBalance({
+        numCollectors: args.numCollectors,
+        collectorGlazingLayers: args.collectorGlazingLayers,
+        boxGlazingLayers: args.boxGlazingLayers,
+        woodLoadResult: woodLoad
+      });
+
+      const heatPumpRoi = calculator.calculateKilnHeatPumpROI({
+        cordsProcessedPerSeason: args.cordsProcessedPerSeason,
+        electricRatePerKwh: args.electricRatePerKwh,
+        heatPumpCop: args.heatPumpCop,
+        buildCostUsd: args.buildCostUsd
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                summary: {
+                  outdoorDwellDays: kilnBalance.outdoorDwellDays,
+                  waterEvapLbsPerDay: kilnBalance.waterEvapLbsPerDay,
+                  waterEvapGalPerDay: kilnBalance.waterEvapGalPerDay,
+                  totalNetDailyBtu: kilnBalance.totalNetDailyBtu,
+                  cordsEquivalent: woodLoad.cordsEquivalent,
+                  totalWaterGallons: woodLoad.totalWaterGallons,
+                  seasonalValueVsHeatPumpUsd: heatPumpRoi.seasonalValueVsHeatPump,
+                  paybackWeeksTotalHeat: heatPumpRoi.paybackWeeksTotalHeat
+                },
+                woodMoistureLoad: woodLoad,
+                solarKilnThermalBalance: kilnBalance,
+                heatPumpROI: heatPumpRoi
+              },
+              null,
+              2
+            )
+          }
+        ]
+      };
+    }
+  );
+
 }

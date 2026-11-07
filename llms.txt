@@ -20,10 +20,24 @@ Runs the passive thermal simulation.
 - `duration`: Hours (24 or 168)
 - `lowTemp`, `highTemp`
 
-
 ### `get_detailed_results`
 Retrieves the current calculated heat loss results for all active scenarios.
 
+### `calculate_solar_kiln_performance`
+Calculates solar firewood kiln drying dwell times, wood moisture mass loss, multi-layer glazing optical/thermal R-values, psychrometric downdraft buoyancy, and economic ROI against a central heat pump.
+- `grossVolumeCuFt`: Stack volume in cu ft (e.g. 27.0 for 1 yd³ rack, 42.7 for 1 pallet, 128 for 1 cord)
+- `initialMcPct`: Initial moisture content % dry basis (e.g. 50% semi-seasoned, 75% green)
+- `targetMcPct`: Final stove-ready moisture content % (standard 20%)
+- `useBasementFinisher`: Boolean (true to finish bound water <26% MC in indoor conditioned basement)
+- `splitDiameterInches`: Average split thickness in inches (default 2.75)
+- `isUnsplitRound`: Boolean (true for unsplit round timber with intact bark)
+- `numCollectors`: Number of transpired screen solar air collectors (default 2)
+- `collectorGlazingLayers`: Glazing layers on solar collectors (1-3)
+- `boxGlazingLayers`: Glazing layers on pallet drying box walls (1-3)
+- `electricRatePerKwh`: Electricity price in $/kWh (default 0.169)
+- `heatPumpCop`: Seasonal COP of central heat pump (default 2.40)
+- `cordsProcessedPerSeason`: Total cords processed annually (default 1.5)
+- `buildCostUsd`: Total DIY build capital expense (default 234.0)
 
 ### `calculate_assembly`
 Calculates the effective R-value (Winter/Summer) of a wall or roof assembly given a list of layer keys.
@@ -56,3 +70,6 @@ Update Scenario B construction details.
 
 ### `update_simulation_settings`
 Update simulation settings (Duration, Internal Gains, Daily Temperatures).
+
+### `calculate_solar_kiln_performance` (Form)
+Declarative form for calculating solar firewood kiln drying times, multi-layer glazing performance, and heat pump economic ROI. Located in `solar_kiln.html`. Supports auto-submit.

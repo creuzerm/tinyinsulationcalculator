@@ -254,9 +254,10 @@ window.addEventListener('load', () => {
             helpModal.classList.remove('hidden');
             const helpContent = el('helpContent');
             if (helpContent && helpContent.innerHTML.includes('Loading...')) {
+                const fetchDoc = (name) => fetch('docs/' + name).then(r => r.ok ? r.text() : fetch(name).then(r2 => r2.text())).catch(() => fetch(name).then(r2 => r2.text()));
                 Promise.all([
-                    fetch('help.md').then(r => r.text()),
-                    fetch('methods.md').then(r => r.text())
+                    fetchDoc('help.md'),
+                    fetchDoc('methods.md')
                 ]).then(([help, methods]) => {
                     helpContent.innerHTML = marked.parse(help + '\n<hr>\n' + methods);
                 }).catch(err => {

@@ -31,6 +31,14 @@
     --color-border: #e5e7eb;
     /* gray-200 */
 
+    /* Solar Kiln & Biomass Palette */
+    --color-solar: #f59e0b;
+    --color-solar-subtle: #fffbeb;
+    --color-drying: #06b6d4;
+    --color-drying-subtle: #ecfeff;
+    --color-kiln-heat: #ea580c;
+    --color-savings: #16a34a;
+
     /* Geometry */
     --font-heading: 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;

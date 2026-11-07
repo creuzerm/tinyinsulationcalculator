@@ -82,6 +82,7 @@
             <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">Tiny Home Calculator</a>
             <a href="existing_building_estimator.html" class="text-gray-600 hover:text-primary transition-colors">Existing Building Estimator</a>
             <a href="insulationexplorer.html" class="text-gray-600 hover:text-primary transition-colors">Insulation Explorer</a>
+            <a href="solar_kiln.html" class="text-gray-600 hover:text-primary transition-colors">Solar Kiln & Greenhouse</a>
             <a href="#" id="help-link" class="text-gray-600 hover:text-primary transition-colors">Help / Documentation</a>
         </nav>
 
@@ -125,7 +126,7 @@
         </header>
 
         <!-- SHARED PARAMETERS ROW -->
-        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_shared_settings"
+        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_shared_settings" toolaction="update_shared_settings"
             tooldescription="Update shared building and climate settings" toolautosubmit="true"
             onsubmit="event.preventDefault()">
             <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Shared Building & Climate Settings</h2>
@@ -177,7 +178,7 @@
 
             <!-- SCENARIO A -->
             <form id="scenarioBoxA" class="scenario-card scenario-card-a scenario-box-a p-4 rounded-lg shadow-sm"
-                toolname="update_scenario_a" tooldescription="Update Scenario A construction details"
+                toolname="update_scenario_a" toolaction="update_scenario_a" tooldescription="Update Scenario A construction details"
                 toolautosubmit="true" onsubmit="event.preventDefault()">
                 <h3 id="headerA" class="text-xl font-bold mb-4 scenario-header-a pb-2">Construction Details</h3>
 
@@ -203,7 +204,7 @@
 
                     <div class="mb-2">
                         <label class="text-xs text-gray-500 block mb-1">Structure Type</label>
-                        <select id="wallAssemblyType_A" class="input-field text-sm">
+                        <select id="wallAssemblyType_A" data-model="wallAssemblyType_A" class="input-field text-sm">
                             <option value="stick">Stick Frame (Wood)</option>
                             <option value="mass">Mass / Solid Wall</option>
                         </select>
@@ -264,7 +265,7 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Fastener Type</label>
-                            <select id="wallFastenerType_A" class="input-field text-sm">
+                            <select id="wallFastenerType_A" data-model="wallFastenerType_A" class="input-field text-sm">
                                 <option value="galvanized">Galvanized Screw</option>
                                 <option value="stainless">Stainless Steel Screw</option>
                                 <option value="adhesive">Adhesive/Thermally Broken</option>
@@ -272,7 +273,7 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Fastener Density (screws/sq ft)</label>
-                            <input type="number" id="wallFastenerDensity_A" class="input-field text-sm" value="1.0"
+                            <input type="number" id="wallFastenerDensity_A" data-model="wallFastenerDensity_A" class="input-field text-sm" value="1.0"
                                 step="0.1">
                         </div>
                     </div>
@@ -282,7 +283,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-xs text-gray-500 block mb-1">Material</label>
-                                <select id="wallMassMaterial_A" class="input-field text-sm">
+                                <select id="wallMassMaterial_A" data-model="wallMassMaterial_A" class="input-field text-sm">
                                     <option value="cmu_standard">Standard CMU</option>
                                     <option value="aircrete">Aircrete</option>
                                     <option value="concrete">Poured Concrete</option>
@@ -291,21 +292,21 @@
                             </div>
                             <div>
                                 <label class="text-xs text-gray-500 block mb-1">Thickness (in)</label>
-                                <input type="number" id="wallMassThickness_A" class="input-field text-sm" value="8">
+                                <input type="number" id="wallMassThickness_A" data-model="wallMassThickness_A" class="input-field text-sm" value="8">
                             </div>
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">Addt'l Insulation (R-Value)</label>
-                            <input type="number" id="wallMassInsulation_A" class="input-field text-sm" placeholder="0"
+                            <input type="number" id="wallMassInsulation_A" data-model="wallMassInsulation_A" class="input-field text-sm" placeholder="0"
                                 value="0">
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 input-group">
-                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_A"
+                    <div><label class="input-label">Roof R</label><input type="number" id="roofRValue_A" data-model="roofRValue_A"
                             class="input-field" value="38"></div>
-                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_A"
+                    <div><label class="input-label">Floor R</label><input type="number" id="floorRValue_A" data-model="floorRValue_A"
                             class="input-field" value="10"></div>
                 </div>
 
@@ -314,16 +315,16 @@
                     <div class="grid grid-cols-2 gap-2 input-group">
                         <div>
                             <label class="input-label">Insulation (R)</label>
-                            <input type="number" id="skirtR_A" class="input-field" value="0" placeholder="0 = None">
+                            <input type="number" id="skirtR_A" data-model="skirtR_A" class="input-field" value="0" placeholder="0 = None">
                         </div>
                         <div>
                             <label class="input-label">Height (ft)</label>
-                            <input type="number" id="skirtHeight_A" class="input-field" value="2">
+                            <input type="number" id="skirtHeight_A" data-model="skirtHeight_A" class="input-field" value="2">
                         </div>
                     </div>
                     <div class="input-group mt-2">
                         <label class="input-label">Skirting Air Tightness</label>
-                        <select id="skirtSeal_A" class="input-field">
+                        <select id="skirtSeal_A" data-model="skirtSeal_A" class="input-field">
                             <option value="sealed">Sealed (Foam Board/Tape) - ACH 0.5</option>
                             <option value="vented">Vented (Lattice) - ACH 5.0</option>
                             <option value="leaky">Leaky (Improvised) - ACH 20.0</option>
@@ -335,7 +336,7 @@
                     <h4 class="font-semibold text-gray-700 mb-2">Windows & Doors</h4>
                     <div class="input-group mb-2">
                         <label class="input-label">Glazing Preset</label>
-                        <select id="glazingPreset_A" class="input-field" onchange="applyGlazingPreset('_A')">
+                        <select id="glazingPreset_A" data-model="glazingPreset_A" class="input-field" onchange="applyGlazingPreset('_A')">
                             <option value="">Custom</option>
                             <option value="minimal">Minimal (10% Floor)</option>
                             <option value="common" selected>Common (20% Floor)</option>
@@ -345,25 +346,25 @@
                     <div class="grid grid-cols-2 gap-2 input-group">
                         <div>
                             <label class="input-label">Window Area (sq ft)</label>
-                            <input type="number" id="windowArea_A" class="input-field" placeholder="e.g. 40">
+                            <input type="number" id="windowArea_A" data-model="windowArea_A" class="input-field" placeholder="e.g. 40">
                         </div>
                         <div>
                             <label class="input-label">Window R-Value</label>
-                            <input type="number" id="windowR_A" class="input-field" value="3" step="0.1">
+                            <input type="number" id="windowR_A" data-model="windowR_A" class="input-field" value="3" step="0.1">
                         </div>
                         <div>
                             <label class="input-label">Door Area (sq ft)</label>
-                            <input type="number" id="doorArea_A" class="input-field" placeholder="e.g. 20">
+                            <input type="number" id="doorArea_A" data-model="doorArea_A" class="input-field" placeholder="e.g. 20">
                         </div>
                         <div>
                             <label class="input-label">Door R-Value</label>
-                            <input type="number" id="doorR_A" class="input-field" value="3" step="0.1">
+                            <input type="number" id="doorR_A" data-model="doorR_A" class="input-field" value="3" step="0.1">
                         </div>
                     </div>
                 </div>
                 <div class="input-group">
                     <label class="input-label">Building Tightness (Air Sealing)</label>
-                    <select id="airSealing_A" class="input-field">
+                    <select id="airSealing_A" data-model="airSealing_A" class="input-field">
                         <option value="passive_house">Passive House (0.15 ACH)</option>
                         <option value="tight">Tight (0.35 ACH)</option>
                         <option value="average" selected>Average (0.50 ACH)</option>
@@ -604,7 +605,7 @@
         </div>
 
         <!-- SHARED SIMULATION SETTINGS -->
-        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_simulation_settings"
+        <form class="bg-white p-6 rounded-lg shadow-md mb-6" toolname="update_simulation_settings" toolaction="update_simulation_settings"
             tooldescription="Update simulation settings" toolautosubmit="true" onsubmit="event.preventDefault()">
             <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Simulation Settings (Shared)</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -638,7 +639,7 @@
             </div>
 
             <!-- Hidden Input for Custom Gains Persistence -->
-            <input type="hidden" id="customGainsData">
+            <input type="hidden" id="customGainsData" data-model="customGainsData">
 
             <!-- Quick Internal Gain Table -->
             <details class="mt-4 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden">

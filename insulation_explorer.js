@@ -17,6 +17,7 @@
 
                 // Iterate through categories to build UI and lookup table
                 for (const [category, items] of Object.entries(data)) {
+                    if (category === 'solar_kiln_materials' || !items || Array.isArray(items)) continue;
                     // Create Category Header
                     const header = document.createElement('h4');
                     header.className = 'col-span-full font-semibold text-xs text-gray-500 uppercase tracking-wider mt-2 mb-1 border-b pb-1';
@@ -193,9 +194,10 @@
                      helpModal.classList.remove('hidden');
 
                      if (helpContent && helpContent.innerHTML.includes('Loading...')) {
+                         const fetchDoc = (name) => fetch('docs/' + name).then(r => r.ok ? r.text() : fetch(name).then(r2 => r2.text())).catch(() => fetch(name).then(r2 => r2.text()));
                          Promise.all([
-                             fetch('help.md').then(res => res.text()),
-                             fetch('methods.md').then(res => res.text())
+                             fetchDoc('help.md'),
+                             fetchDoc('methods.md')
                          ]).then(([help, methods]) => {
                              helpContent.innerHTML = marked.parse(help + '\n<hr>\n' + methods);
                          }).catch(err => {

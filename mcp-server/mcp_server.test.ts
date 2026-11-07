@@ -25,7 +25,7 @@ describe("Tiny Insulation Calculator MCP Server Integration Tests", () => {
     ]);
   });
 
-  test("should list all 4 registered tools", async () => {
+  test("should list all 5 registered tools", async () => {
     const result = await client.listTools();
     const toolNames = result.tools.map((t) => t.name);
 
@@ -33,6 +33,7 @@ describe("Tiny Insulation Calculator MCP Server Integration Tests", () => {
     expect(toolNames).toContain("calculate_assembly_rvalue");
     expect(toolNames).toContain("estimate_r_value_from_hvac");
     expect(toolNames).toContain("run_passive_simulation");
+    expect(toolNames).toContain("calculate_solar_kiln_performance");
   });
 
   test("should execute calculate_heat_loss tool with valid output", async () => {
@@ -160,4 +161,36 @@ describe("Tiny Insulation Calculator MCP Server Integration Tests", () => {
     expect(messageContent.text).toContain("rectangle");
     expect(messageContent.text).toContain("Zone 5 Winter");
   });
+
+  test("should execute calculate_solar_kiln_performance tool with valid output", async () => {
+    const response = await client.callTool({
+      name: "calculate_solar_kiln_performance",
+      arguments: {
+        grossVolumeCuFt: 27.0,
+        initialMcPct: 50,
+        targetMcPct: 20,
+        useBasementFinisher: true,
+        splitDiameterInches: 2.75,
+        numCollectors: 2,
+        electricRatePerKwh: 0.169,
+        heatPumpCop: 2.40,
+        cordsProcessedPerSeason: 1.5,
+        buildCostUsd: 234.0
+      },
+    });
+
+    expect(response.content).toHaveLength(1);
+    expect(response.content[0].type).toEqual("text");
+
+    const textOutput = (response.content[0] as { type: "text"; text: string }).text;
+    const data = JSON.parse(textOutput);
+    expect(data.summary).toBeDefined();
+    expect(data.summary.outdoorDwellDays).toBeGreaterThan(0);
+    expect(data.summary.waterEvapLbsPerDay).toBeGreaterThan(0);
+    expect(data.summary.seasonalValueVsHeatPumpUsd).toBeGreaterThan(100);
+    expect(data.woodMoistureLoad).toBeDefined();
+    expect(data.solarKilnThermalBalance).toBeDefined();
+    expect(data.heatPumpROI).toBeDefined();
+  });
+
 });

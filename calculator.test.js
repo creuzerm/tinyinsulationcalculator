@@ -18,7 +18,12 @@ const {
     renderCustomGains,
     calculateEffectiveR,
     applyPreset,
-    MATERIALS
+    MATERIALS,
+    calculateGlazingProps,
+    calculatePsychrometrics,
+    calculateWoodMoistureLoad,
+    calculateSolarKilnBalance,
+    calculateKilnHeatPumpROI
 } = require('./calculator');
 
 describe('Tiny Home Heat Loss Calculator', () => {
@@ -811,3 +816,56 @@ describe('Tiny Home Heat Loss Calculator', () => {
     });
 });
 
+
+
+describe('Solar Kiln & Greenhouse Calculator Module', () => {
+  test('calculateGlazingProps computes optical transmittance and R-value accurately', () => {
+    const single = calculateGlazingProps(1, 0.88, false);
+    const double = calculateGlazingProps(2, 0.88, false);
+    const triple = calculateGlazingProps(3, 0.88, false);
+
+    expect(single.netTransmittance).toBeCloseTo(0.88, 2);
+    expect(single.rValue).toBeCloseTo(0.85, 2);
+
+    expect(double.netTransmittance).toBeCloseTo(0.7744, 3);
+    expect(double.rValue).toBeCloseTo(1.80, 2);
+
+    expect(triple.netTransmittance).toBeCloseTo(0.6815, 3);
+    expect(triple.rValue).toBeCloseTo(2.70, 2);
+  });
+
+  test('calculateWoodMoistureLoad matches 1 cubic yard (Full Basement Rack) energy budget', () => {
+    const load = calculateWoodMoistureLoad({
+      grossVolumeCuFt: 27.0,
+      solidVolumeCuFt: 17.0,
+      dryDensityLbFt3: 36.0,
+      initialMcPct: 50,
+      targetMcPct: 20,
+      useBasementFinisher: false
+    });
+    expect(load.ovenDryWeightLbs).toBe(612.0);
+    expect(load.totalWaterLbs).toBeCloseTo(183.6, 1);
+    expect(load.totalEnergyBtu).toBe(211140);
+  });
+
+  test('calculatePsychrometrics verifies downdraft evaporative cooling density increase (+5.3%)', () => {
+    const topInlet = calculatePsychrometrics(90, 8);
+    const bottomExhaust = calculatePsychrometrics(60, 90);
+    expect(bottomExhaust.densityLbFt3).toBeGreaterThan(topInlet.densityLbFt3 * 1.045);
+  });
+
+  test('calculateKilnHeatPumpROI computes NE Kentucky heat pump savings and payback', () => {
+    const roi = calculateKilnHeatPumpROI({
+      cordsProcessedPerSeason: 1.5,
+      grossMmbtuPerCord: 24.0,
+      electricRatePerKwh: 0.169,
+      heatPumpCop: 2.40,
+      buildCostUsd: 234.0
+    });
+    expect(roi.usableMmbtuPerCordDry).toBeCloseTo(17.28, 2);
+    expect(roi.dryingBonusMmbtuPerCord).toBeCloseTo(6.28, 2);
+    expect(roi.costPerMmbtuHeatPump).toBeCloseTo(20.64, 1);
+    expect(roi.cordValueDryVsHeatPump).toBeCloseTo(356.6, 0);
+    expect(roi.paybackSeasonsTotalHeat).toBeLessThan(0.5);
+  });
+});

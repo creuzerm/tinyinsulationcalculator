@@ -212,6 +212,20 @@ describe('WebMCP Integration', () => {
         expect(result.scenarioA.loss.totalLoss).toBeGreaterThan(0);
     });
 
+    test('calculate_solar_kiln_performance tool returns summary and calculations', async () => {
+        const tool = window.aiTools['calculate_solar_kiln_performance'];
+        expect(tool).toBeDefined();
+        const result = await tool({
+            grossVolumeCuFt: 27.0,
+            initialMcPct: 50,
+            targetMcPct: 20
+        }, {});
+        expect(result).toBeDefined();
+        expect(result.summaryStats).toBeDefined();
+        expect(result.summaryStats.outdoorDwellDays).toBeGreaterThan(0);
+        expect(result.woodLoad.cordsEquivalent).toBeCloseTo(0.211, 2);
+    });
+
     describe('Error Paths and Parameter Validation', () => {
         test('tool registration directly calls window.navigator.modelContext.registerTool', () => {
             // Re-run the polyfill creation logic with a mock registerTool to spy on it directly
@@ -228,6 +242,7 @@ describe('WebMCP Integration', () => {
             expect(registerSpy.mock.calls.some(call => call[0].name === 'apply_preset')).toBe(true);
             expect(registerSpy.mock.calls.some(call => call[0].name === 'set_dimensions')).toBe(true);
             expect(registerSpy.mock.calls.some(call => call[0].name === 'run_simulation')).toBe(true);
+            expect(registerSpy.mock.calls.some(call => call[0].name === 'calculate_solar_kiln_performance')).toBe(true);
 
             window.navigator.modelContext = prevModelContext; // Restore
         });

@@ -104,9 +104,10 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
     };
 }
 
+if (typeof window !== 'undefined') {
+    window.calculate = calculate;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { calculate };
-} else {
-    // In browser, calculate is global
-    window.calculate = calculate;
 }

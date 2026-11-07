@@ -14,6 +14,15 @@ This project is an exploration tool designed to estimate the heating load and pa
 
 * **Passive Simulation:** Simulates indoor temperature drift over 24 hours or 7 days ("Coasting") based on internal gains, solar exposure, and thermal mass.
 
+* **Solar Kiln & Greenhouse Simulator:** Models multi-layer greenhouse glazing, transpired solar collectors, wood moisture drying kinetics, and economic substitution ROI against central heat pumps.
+
+## 📚 Project Documentation
+* **[PRD.md](PRD.md)**: Product Requirements Document outlining system architecture, target personas, functional requirements, and non-functional specifications.
+* **[TODO.md](TODO.md)**: Codebase gap scratchpad, audit findings, and prioritized backlog.
+* **[docs/SKINNING.md](docs/SKINNING.md)**: Contract for customizing themes, CSS variables, and non-destructive extensions.
+* **[docs/methods.md](docs/methods.md)**: Mathematical reference covering UA loss, skirting equilibrium, thermal mass, psychrometrics, and solar kiln physics.
+* **[docs/help.md](docs/help.md)**: Comprehensive user manual and tool suite navigation guide.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -171,7 +180,7 @@ To reset the calculator, use the **"Clear all"** button at the bottom of the pag
 - [ ] **Responsive chart sizing:** Charts can overflow or be too small on mobile; investigate responsive Chart.js options.
 - [ ] **Existing Building Estimator parity:** Align the estimator's look, feel, and CSS variables with the main calculator (it currently uses an older style).
 - [ ] **Input validation & error messaging:** Add visible validation (e.g., "R-value must be > 0") on the main calculator; the estimator already has error display but the main tool does not.
-- [x] **Improved help documentation:** The Help modal loads `help.md` (user-friendly guide) followed by `methods.md` (engineering reference).
+- [x] **Improved help documentation:** The Help modal loads `docs/help.md` (user-friendly guide) followed by `docs/methods.md` (engineering reference).
 - [ ] **Loading states:** Show spinners or skeleton UI while `internal_gains.json` and `materials.json` are fetched.
 
 ### 🧪 Testing
@@ -181,7 +190,7 @@ To reset the calculator, use the **"Clear all"** button at the bottom of the pag
 
 ### 📚 Documentation
 - [ ] **Canonical URLs:** Replace `https://example.com/` placeholders in `<meta>` tags and `<link rel="canonical">` with the actual deployed URL.
-- [x] **User-facing help guide:** Standalone user guide `help.md` created with usage walkthroughs for all three tools.
+- [x] **User-facing help guide:** Standalone user guide `docs/help.md` created with usage walkthroughs for all tools.
 - [ ] **`llms.txt` sync:** Ensure `llms.txt` stays up-to-date when tools are added or modified.
 
 ### 🏗️ Architecture

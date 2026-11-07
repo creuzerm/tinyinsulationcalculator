@@ -1465,9 +1465,10 @@ function init() {
             helpModal.classList.remove('hidden');
 
             if (helpContent.innerHTML.includes('Loading...')) {
+                const fetchDoc = (name) => fetch('docs/' + name).then(r => r.ok ? r.text() : fetch(name).then(r2 => r2.text())).catch(() => fetch(name).then(r2 => r2.text()));
                 Promise.all([
-                    fetch('help.md').then(res => res.text()),
-                    fetch('methods.md').then(res => res.text())
+                    fetchDoc('help.md'),
+                    fetchDoc('methods.md')
                 ]).then(([help, methods]) => {
                     helpContent.innerHTML = marked.parse(help + '\n<hr>\n' + methods);
                 }).catch(err => {
@@ -1536,8 +1537,277 @@ if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', init);
 }
 
+
+// ==========================================
+// Solar Kiln, Greenhouse Glazing & Heat-Pump ROI Engine
+// ==========================================
+
+const SOLAR_KILN_CONSTANTS = {
+  BTU_PER_KWH: 3412.14,
+  BTU_PER_LB_WATER: 1150, // Combined sensible + latent + bound sorption heat
+  LBS_PER_GALLON_WATER: 8.34,
+  SOLID_WOOD_PACKING_FRACTION: 0.625, // 80 solid cu ft per 128 gross cu ft cord
+  FULL_CORD_GROSS_CU_FT: 128.0,
+  FULL_CORD_SOLID_CU_FT: 80.0,
+  DEFAULT_WINTER_TILT_INSOLATION: 950, // BTU/sq ft/day at 55-60 deg tilt (38N Lat)
+  DEFAULT_BOX_WALL_INSOLATION: 460, // Weighted avg BTU/sq ft/day on roof/E/W/S walls
+  COLLECTOR_BASE_EFFICIENCY: 0.421, // Transpired 3-layer charcoal screen efficiency
+  STOVE_EFFICIENCY_DRY: 0.72, // <20% MC kiln-dried burn efficiency
+  STOVE_EFFICIENCY_WET: 0.4583 // ~50% MC damp wood burn efficiency (11.0 / 24.0 MMBTU)
+};
+
+function calculateGlazingProps(layers = 2, singleTransmittance = 0.88, hasReflectix = false) {
+  const n = Math.max(1, Math.min(4, Math.round(layers)));
+  const netTransmittance = hasReflectix ? 0 : Math.pow(singleTransmittance, n);
+  const opticalLossPct = hasReflectix ? 100 : (1 - netTransmittance / singleTransmittance) * 100;
+
+  let rValue = 0.85;
+  if (n === 2) rValue = 1.80;
+  if (n === 3) rValue = 2.70;
+  if (n >= 4) rValue = 3.55;
+  if (hasReflectix) rValue += 1.75;
+
+  const uValue = 1 / rValue;
+  return {
+    layers: n,
+    netTransmittance: Number(netTransmittance.toFixed(4)),
+    opticalLossPct: Number(opticalLossPct.toFixed(1)),
+    rValue: Number(rValue.toFixed(2)),
+    uValue: Number(uValue.toFixed(3))
+  };
+}
+
+function calculatePsychrometrics(tempF, relativeHumidityPct) {
+  const rh = Math.max(0, Math.min(100, relativeHumidityPct)) / 100;
+  const tempC = (tempF - 32) / 1.8;
+  const pwsPsia = 0.08859 * Math.exp((17.27 * tempC) / (tempC + 237.3));
+  const pwPsia = rh * pwsPsia;
+  const patmPsia = 14.696;
+
+  const wLbPerLb = 0.62198 * (pwPsia / Math.max(0.1, patmPsia - pwPsia));
+  const grainsPerLb = wLbPerLb * 7000;
+  const satGrainsPerLb = 7000 * 0.62198 * (pwsPsia / Math.max(0.1, patmPsia - pwsPsia));
+
+  let dewPointF = tempF;
+  if (pwPsia > 0.001) {
+    const alpha = Math.log(pwPsia / 0.08859);
+    const dewPointC = (237.3 * alpha) / (17.27 - alpha);
+    dewPointF = dewPointC * 1.8 + 32;
+  }
+
+  const tempRankine = tempF + 459.67;
+  const dryAirDensity = (patmPsia * 144) / (53.35 * tempRankine);
+  const moistAirDensity = dryAirDensity * ((1 + wLbPerLb) / (1 + 1.6078 * wLbPerLb));
+
+  return {
+    tempF,
+    relativeHumidityPct,
+    pwsPsia: Number(pwsPsia.toFixed(4)),
+    grainsPerLb: Number(grainsPerLb.toFixed(1)),
+    satGrainsPerLb: Number(satGrainsPerLb.toFixed(1)),
+    dewPointF: Number(dewPointF.toFixed(1)),
+    densityLbFt3: Number(moistAirDensity.toFixed(4))
+  };
+}
+
+function calculateWoodMoistureLoad({
+  grossVolumeCuFt = 42.7,
+  solidVolumeCuFt = null,
+  dryDensityLbFt3 = 36.0,
+  initialMcPct = 50,
+  targetMcPct = 20,
+  useBasementFinisher = false,
+  splitDiameterInches = 2.75,
+  isUnsplitRound = false
+} = {}) {
+  const solidCuFt = solidVolumeCuFt !== null
+    ? solidVolumeCuFt
+    : grossVolumeCuFt * SOLAR_KILN_CONSTANTS.SOLID_WOOD_PACKING_FRACTION;
+
+  const ovenDryWeightLbs = solidCuFt * dryDensityLbFt3;
+  const effectiveOutdoorTargetMcPct = useBasementFinisher
+    ? Math.max(targetMcPct, 26)
+    : targetMcPct;
+
+  const totalWaterLbs = Math.max(0, ovenDryWeightLbs * ((initialMcPct - targetMcPct) / 100));
+  const outdoorWaterLbs = Math.max(0, ovenDryWeightLbs * ((initialMcPct - effectiveOutdoorTargetMcPct) / 100));
+  const indoorWaterLbs = Math.max(0, totalWaterLbs - outdoorWaterLbs);
+
+  const totalEnergyBtu = totalWaterLbs * SOLAR_KILN_CONSTANTS.BTU_PER_LB_WATER;
+  const outdoorEnergyBtu = outdoorWaterLbs * SOLAR_KILN_CONSTANTS.BTU_PER_LB_WATER;
+
+  const baseThicknessRatio = Math.max(0.5, splitDiameterInches / 2.75);
+  const barkPenalty = isUnsplitRound ? 2.2 : 1.0;
+  const splitMultiplier = Math.pow(baseThicknessRatio, 1.5) * barkPenalty;
+
+  return {
+    grossVolumeCuFt: Number(grossVolumeCuFt.toFixed(1)),
+    solidVolumeCuFt: Number(solidCuFt.toFixed(1)),
+    cordsEquivalent: Number((solidCuFt / SOLAR_KILN_CONSTANTS.FULL_CORD_SOLID_CU_FT).toFixed(3)),
+    basementBaysEquivalent: Number((solidCuFt / 8.0).toFixed(2)),
+    ovenDryWeightLbs: Number(ovenDryWeightLbs.toFixed(1)),
+    totalWaterLbs: Number(totalWaterLbs.toFixed(1)),
+    totalWaterGallons: Number((totalWaterLbs / SOLAR_KILN_CONSTANTS.LBS_PER_GALLON_WATER).toFixed(1)),
+    outdoorWaterLbs: Number(outdoorWaterLbs.toFixed(1)),
+    indoorWaterLbs: Number(indoorWaterLbs.toFixed(1)),
+    totalEnergyBtu: Math.round(totalEnergyBtu),
+    totalEnergyKwh: Number((totalEnergyBtu / SOLAR_KILN_CONSTANTS.BTU_PER_KWH).toFixed(1)),
+    outdoorEnergyBtu: Math.round(outdoorEnergyBtu),
+    splitMultiplier: Number(splitMultiplier.toFixed(2))
+  };
+}
+
+function calculateSolarKilnBalance({
+  numCollectors = 2,
+  collectorAreaSqFtEach = 24.0,
+  collectorGlazingLayers = 1,
+  boxGlazingLayers = 2,
+  northWallReflectix = true,
+  totalFanCfm = 96,
+  chainedBoxesInSeries = false,
+  ambientTempF = 32,
+  internalKilnTempF = 80,
+  sunHoursPerDay = 5.0,
+  woodLoadResult
+} = {}) {
+  const collGlazing = calculateGlazingProps(collectorGlazingLayers, 0.88, false);
+  const boxGlazing = calculateGlazingProps(boxGlazingLayers, 0.88, false);
+  const northGlazing = calculateGlazingProps(boxGlazingLayers, 0.88, northWallReflectix);
+
+  const effectiveCfm = chainedBoxesInSeries ? totalFanCfm * 0.55 : totalFanCfm;
+  const totalCollectorArea = numCollectors * collectorAreaSqFtEach;
+  const opticalRatio = collGlazing.netTransmittance / 0.88;
+  const cfmPenalty = chainedBoxesInSeries ? 0.78 : 1.0;
+  const collectorGainBtu = totalCollectorArea
+    * SOLAR_KILN_CONSTANTS.DEFAULT_WINTER_TILT_INSOLATION
+    * SOLAR_KILN_CONSTANTS.COLLECTOR_BASE_EFFICIENCY
+    * opticalRatio
+    * cfmPenalty;
+
+  const boxSolarAreaSqFt = 45.0;
+  const boxWallLossAreaSqFt = 29.3;
+  const northWallAreaSqFt = 13.3;
+
+  const boxPassiveSolarGainBtu = boxSolarAreaSqFt
+    * SOLAR_KILN_CONSTANTS.DEFAULT_BOX_WALL_INSOLATION
+    * boxGlazing.netTransmittance
+    * 0.58;
+
+  const deltaT = Math.max(10, internalKilnTempF - ambientTempF);
+  const hourlyWallLossBtu =
+    (boxWallLossAreaSqFt * boxGlazing.uValue * deltaT) +
+    (northWallAreaSqFt * northGlazing.uValue * deltaT);
+  const daytimeWallLossBtu = hourlyWallLossBtu * sunHoursPerDay;
+
+  const netBoxGainBtu = boxPassiveSolarGainBtu - daytimeWallLossBtu;
+  const totalNetDailyBtu = Math.max(1500, collectorGainBtu + netBoxGainBtu);
+
+  const waterEvapLbsPerDay = totalNetDailyBtu / SOLAR_KILN_CONSTANTS.BTU_PER_LB_WATER;
+
+  const collectorVolumeCuFt = totalCollectorArea * 0.389;
+  const stackVoidVolumeCuFt = woodLoadResult
+    ? woodLoadResult.grossVolumeCuFt * (1 - SOLAR_KILN_CONSTANTS.SOLID_WOOD_PACKING_FRACTION)
+    : 16.0;
+  const cfmPerSec = Math.max(0.1, effectiveCfm / 60);
+
+  const collectorResidenceSec = collectorVolumeCuFt / cfmPerSec;
+  const stackResidenceSec = stackVoidVolumeCuFt / cfmPerSec;
+
+  const targetBtu = woodLoadResult ? woodLoadResult.outdoorEnergyBtu : 211140;
+  const splitMult = woodLoadResult ? woodLoadResult.splitMultiplier : 1.0;
+  const outdoorDwellDays = (targetBtu / totalNetDailyBtu) * splitMult;
+
+  return {
+    collectorGainBtu: Math.round(collectorGainBtu),
+    boxPassiveSolarGainBtu: Math.round(boxPassiveSolarGainBtu),
+    daytimeWallLossBtu: Math.round(daytimeWallLossBtu),
+    netBoxGainBtu: Math.round(netBoxGainBtu),
+    totalNetDailyBtu: Math.round(totalNetDailyBtu),
+    waterEvapLbsPerDay: Number(waterEvapLbsPerDay.toFixed(1)),
+    waterEvapGalPerDay: Number((waterEvapLbsPerDay / SOLAR_KILN_CONSTANTS.LBS_PER_GALLON_WATER).toFixed(2)),
+    effectiveCfm: Number(effectiveCfm.toFixed(1)),
+    collectorResidenceSec: Number(collectorResidenceSec.toFixed(1)),
+    stackResidenceSec: Number(stackResidenceSec.toFixed(1)),
+    totalResidenceSec: Number((collectorResidenceSec + stackResidenceSec).toFixed(1)),
+    outdoorDwellDays: Number(outdoorDwellDays.toFixed(1)),
+    collGlazing,
+    boxGlazing,
+    northGlazing
+  };
+}
+
+function calculateKilnHeatPumpROI({
+  cordsProcessedPerSeason = 1.5,
+  grossMmbtuPerCord = 24.0,
+  electricRatePerKwh = 0.169,
+  heatPumpCop = 2.40,
+  buildCostUsd = 234.0
+} = {}) {
+  const usableMmbtuPerCordDry = grossMmbtuPerCord * SOLAR_KILN_CONSTANTS.STOVE_EFFICIENCY_DRY;
+  const usableMmbtuPerCordWet = grossMmbtuPerCord * SOLAR_KILN_CONSTANTS.STOVE_EFFICIENCY_WET;
+  const dryingBonusMmbtuPerCord = usableMmbtuPerCordDry - usableMmbtuPerCordWet;
+
+  const kwhPerMmbtuHeatPump = (1000000 / SOLAR_KILN_CONSTANTS.BTU_PER_KWH) / heatPumpCop;
+  const kwhPerMmbtuAuxStrips = 1000000 / SOLAR_KILN_CONSTANTS.BTU_PER_KWH;
+
+  const costPerMmbtuHeatPump = kwhPerMmbtuHeatPump * electricRatePerKwh;
+  const costPerMmbtuAuxStrips = kwhPerMmbtuAuxStrips * electricRatePerKwh;
+
+  const cordValueDryVsHeatPump = usableMmbtuPerCordDry * costPerMmbtuHeatPump;
+  const cordValueWetVsHeatPump = usableMmbtuPerCordWet * costPerMmbtuHeatPump;
+  const cordDryingBonusVsHeatPump = dryingBonusMmbtuPerCord * costPerMmbtuHeatPump;
+  const cordValueDryVsAuxStrips = usableMmbtuPerCordDry * costPerMmbtuAuxStrips;
+
+  const seasonalUsableMmbtu = cordsProcessedPerSeason * usableMmbtuPerCordDry;
+  const seasonalBonusMmbtu = cordsProcessedPerSeason * dryingBonusMmbtuPerCord;
+  const seasonalValueVsHeatPump = cordsProcessedPerSeason * cordValueDryVsHeatPump;
+  const seasonalBonusValueVsHeatPump = cordsProcessedPerSeason * cordDryingBonusVsHeatPump;
+  const seasonalValueVsAuxStrips = cordsProcessedPerSeason * cordValueDryVsAuxStrips;
+
+  const paybackSeasonsTotalHeat = buildCostUsd / Math.max(1, seasonalValueVsHeatPump);
+  const paybackSeasonsBonusOnly = buildCostUsd / Math.max(1, seasonalBonusValueVsHeatPump);
+
+  return {
+    usableMmbtuPerCordDry: Number(usableMmbtuPerCordDry.toFixed(2)),
+    usableMmbtuPerCordWet: Number(usableMmbtuPerCordWet.toFixed(2)),
+    dryingBonusMmbtuPerCord: Number(dryingBonusMmbtuPerCord.toFixed(2)),
+    kwhPerMmbtuHeatPump: Number(kwhPerMmbtuHeatPump.toFixed(1)),
+    costPerMmbtuHeatPump: Number(costPerMmbtuHeatPump.toFixed(2)),
+    costPerMmbtuAuxStrips: Number(costPerMmbtuAuxStrips.toFixed(2)),
+    cordValueDryVsHeatPump: Number(cordValueDryVsHeatPump.toFixed(2)),
+    cordValueWetVsHeatPump: Number(cordValueWetVsHeatPump.toFixed(2)),
+    cordDryingBonusVsHeatPump: Number(cordDryingBonusVsHeatPump.toFixed(2)),
+    cordValueDryVsAuxStrips: Number(cordValueDryVsAuxStrips.toFixed(2)),
+    seasonalUsableMmbtu: Number(seasonalUsableMmbtu.toFixed(2)),
+    seasonalBonusMmbtu: Number(seasonalBonusMmbtu.toFixed(2)),
+    seasonalValueVsHeatPump: Number(seasonalValueVsHeatPump.toFixed(2)),
+    seasonalBonusValueVsHeatPump: Number(seasonalBonusValueVsHeatPump.toFixed(2)),
+    seasonalValueVsAuxStrips: Number(seasonalValueVsAuxStrips.toFixed(2)),
+    paybackSeasonsTotalHeat: Number(paybackSeasonsTotalHeat.toFixed(2)),
+    paybackWeeksTotalHeat: Number((paybackSeasonsTotalHeat * 21.4).toFixed(1)),
+    paybackSeasonsBonusOnly: Number(paybackSeasonsBonusOnly.toFixed(2))
+  };
+}
+
+if (typeof window !== 'undefined') {
+  window.SOLAR_KILN_CONSTANTS = SOLAR_KILN_CONSTANTS;
+  window.calculateGlazingProps = calculateGlazingProps;
+  window.calculatePsychrometrics = calculatePsychrometrics;
+  window.calculateWoodMoistureLoad = calculateWoodMoistureLoad;
+  window.calculateSolarKilnBalance = calculateSolarKilnBalance;
+  window.calculateKilnHeatPumpROI = calculateKilnHeatPumpROI;
+}
+
 if (typeof module !== 'undefined') {
     module.exports = {
+        SOLAR_KILN_CONSTANTS,
+        calculateGlazingProps,
+        calculatePsychrometrics,
+        calculateWoodMoistureLoad,
+        calculateSolarKilnBalance,
+        calculateKilnHeatPumpROI,
+
+    
         calculateHeatLoss,
         calculateMassCapacity,
         calculateEffectiveR,

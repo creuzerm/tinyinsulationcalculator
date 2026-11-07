@@ -19,7 +19,7 @@ global.window.addEventListener = jest.fn((event, cb) => {
         } catch (e) {}
     }
 });
-global.window.location = { search: '', origin: 'http://localhost', pathname: '/' };
+window.history.pushState({}, '', 'http://localhost/');
 global.window.navigator = global.window.navigator || {};
 global.window.navigator.modelContext = global.window.navigator.modelContext || { registerTool: registerToolMock };
 global.window.localStorage = {

@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Tiny Insulation Calculator & Building Science Engine",
+  "description": "Building envelope thermal calculations, transient temperature simulations, empirical R-value estimation, and solar kiln psychrometric drying modeling for tiny homes, sheds, and small structures.",
+  "version": "1.0.0",
+  "url": "https://example.com",
+  "protocolVersion": "2024-11-05",
+  "tools": [
+    {
+      "name": "apply_preset",
+      "description": "Applies a construction preset (e.g. 'van_build', 'code_min') to a specific scenario (A or B). This updates wall assemblies, insulation values, and other defaults.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "suffix": {
+            "type": "string",
+            "enum": ["_A", "_B"],
+            "description": "The scenario suffix. Use '_A' for Scenario A (Standard) or '_B' for Scenario B (Comparison)."
+          },
+          "preset": {
+            "type": "string",
+            "enum": ["code_min", "high_perf", "passive_house", "van_build", "uninsulated"],
+            "description": "The preset identifier to apply."
+          }
+        },
+        "required": ["suffix", "preset"]
+      }
+    },
+    {
+      "name": "set_dimensions",
+      "description": "Sets the building shape and dimensions. Updates the UI and recalculates surface areas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "shape": {
+            "type": "string",
+            "enum": ["rectangle", "a-frame", "gothic-arch", "cargo-van"],
+            "description": "The shape of the building."
+          },
+          "length": {
+            "type": "number",
+            "description": "Length in feet."
+          },
+          "width": {
+            "type": "number",
+            "description": "Width in feet."
+          },
+          "height": {
+            "type": "number",
+            "description": "Height (or interior height) in feet."
+          },
+          "roofPitch": {
+            "type": "number",
+            "description": "Roof pitch (rise/12). Only for 'rectangle'."
+          }
+        },
+        "required": ["shape", "length", "width", "height"]
+      }
+    },
+    {
+      "name": "run_simulation",
+      "description": "Runs the passive thermal simulation for a specified duration and returns the temperature data series with executive summary statistics.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "duration": {
+            "type": "number",
+            "description": "Duration in hours (e.g. 24 or 168)."
+          },
+          "lowTemp": {
+            "type": "number",
+            "description": "Daily low temperature (°F)."
+          },
+          "highTemp": {
+            "type": "number",
+            "description": "Daily high temperature (°F)."
+          }
+        },
+        "required": ["duration"]
+      }
+    },
+    {
+      "name": "get_detailed_results",
+      "description": "Retrieves the current calculated heat loss results for all active scenarios.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "estimate_r_value",
+      "description": "Estimate building component R-value using HVAC data and temperature measurements where internal construction is unknown.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "spaceDimensions": {
+            "type": "object",
+            "properties": {
+              "length": { "type": "number", "description": "Space interior length in feet." },
+              "width": { "type": "number", "description": "Space interior width in feet." },
+              "height": { "type": "number", "description": "Space interior height in feet." }
+            }
+          },
+          "temperatures": {
+            "type": "object",
+            "properties": {
+              "indoor": { "type": "number", "description": "Indoor air temp (°F)." },
+              "outdoor": { "type": "number", "description": "Outdoor air temp (°F)." }
+            }
+          },
+          "hvac": {
+            "type": "object",
+            "properties": {
+              "rate": { "type": "number", "description": "Applied HVAC heating/cooling rate (BTU/hr)." },
+              "mode": { "type": "string", "enum": ["heating", "cooling"], "description": "HVAC mode." }
+            }
+          },
+          "targetComponent": {
+            "type": "object",
+            "properties": {
+              "area": { "type": "number", "description": "Target component surface area (sq ft)." },
+              "type": { "type": "string", "enum": ["wall", "ceiling", "floor"], "description": "Target component type." }
+            }
+          },
+          "surfaceTemperatures": {
+            "type": "object",
+            "properties": {
+              "indoor": { "type": "number", "description": "Target component indoor surface temp (°F)." },
+              "outdoor": { "type": "number", "description": "Target component outdoor surface temp (°F)." }
+            }
+          },
+          "envelope": {
+            "type": "object",
+            "properties": {
+              "achRate": { "type": "number", "description": "Air changes per hour." },
+              "areaWindows": { "type": "number", "description": "Total window area (sq ft)." },
+              "areaOtherWallsCeilings": { "type": "number", "description": "Area of other walls/ceilings (sq ft)." },
+              "areaFloor": { "type": "number", "description": "Floor area (sq ft)." }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "calculate_solar_kiln_performance",
+      "description": "Calculates solar firewood kiln drying time, glazing optical/thermal R-values, psychrometric air buoyancy, and financial ROI against a central air heat pump.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "grossVolumeCuFt": { "type": "number", "description": "Gross stacked wood volume in cu ft (27 = 1 yd3/basement rack, 42.7 = 1 pallet, 128 = 1 cord)", "default": 27.0 },
+          "initialMcPct": { "type": "number", "description": "Initial wood moisture content % on dry basis (e.g. 75 green, 50 semi-seasoned)", "default": 50 },
+          "targetMcPct": { "type": "number", "description": "Final stove-ready moisture content % (typically 18-20%)", "default": 20 },
+          "useBasementFinisher": { "type": "boolean", "description": "True if finishing bound water (<26% MC) in indoor 60F low-humidity basement rack", "default": true },
+          "splitDiameterInches": { "type": "number", "description": "Average thickness/diameter of wood splits in inches", "default": 2.75 },
+          "isUnsplitRound": { "type": "boolean", "description": "True if logs are unsplit rounds with intact bark", "default": false },
+          "numCollectors": { "type": "number", "description": "Number of 36x96 transpired screen solar collectors attached to active box", "default": 2 },
+          "collectorGlazingLayers": { "type": "number", "description": "Layers of 6-mil UV film on solar collectors (1-3)", "default": 1 },
+          "boxGlazingLayers": { "type": "number", "description": "Layers of 6-mil UV film on pallet box walls (1-3)", "default": 2 },
+          "electricRatePerKwh": { "type": "number", "description": "Local electricity rate in $/kWh (0.169 KY Power, 0.138 KY Co-op)", "default": 0.169 },
+          "heatPumpCop": { "type": "number", "description": "Seasonal Coefficient of Performance of central heat pump", "default": 2.4 },
+          "cordsProcessedPerSeason": { "type": "number", "description": "Total cords processed through kiln over 150-day winter", "default": 1.5 },
+          "buildCostUsd": { "type": "number", "description": "Total DIY solar kiln build cost in USD", "default": 234 }
+        }
+      }
+    }
+  ]
+}

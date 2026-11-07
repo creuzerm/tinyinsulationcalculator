@@ -610,7 +610,104 @@ The bedrock of the entire Manual J system is the basic transmission equation, wh
 ![][image2]  
 Where:
 
-* ![][image1]: The heat transfer rate in British Thermal Units per hour (![][image3]).  
+* ![]
+---
+
+## **11. Solar Kiln & Greenhouse Drying Physics: Glazing Optics, Moisture Load, Daily Heat Balance, Psychrometric Downdraft Buoyancy, and Heat Pump Payback Math**
+
+### **11.1 Multi-Layer Glazing Transmittance & Thermal Resistance**
+When layering $n$ sheets of clear greenhouse film (or rigid polycarbonate) separated by $n-1$ dead-air gaps ($1.0\text{ in}\text{ to }3.5\text{ in}$ thick):
+
+1. **Net Solar Transmittance ($\\tau_{\\text{net}}$):** Shortwave solar transmission multiplies across layers:
+   $$\\tau_{\\text{net}} = (\\tau_{\\text{single}})^n$$
+   * Where $\\tau_{\\text{single}} = 0.88$ for 6-mil UV polyethylene film:
+     * Single Glazing ($n = 1$): $\\tau_{\\text{net}} = 0.88^1 = 88.0\%$
+     * Double Glazing ($n = 2$): $\\tau_{\\text{net}} = 0.88^2 = 77.4\%$
+     * Triple Glazing ($n = 3$): $\\tau_{\\text{net}} = 0.88^3 = 68.1\%$
+
+2. **Effective Envelope Thermal Resistance ($R_{\\text{eff}}$) & Conductance ($U_{\\text{eff}}$):**
+   $$R_{\\text{eff}} = R_{\\text{surface\\_films}} + (n - 1) \\cdot R_{\\text{air\\_gap}} + R_{\\text{reflective\\_bonus}}$$
+   $$U_{\\text{eff}} = \\frac{1}{R_{\\text{eff}}} \\quad \\left[\\text{BTU}/(\\text{hr}\\cdot\\text{ft}^2\\cdot^\\circ\\text{F})\\right]$$
+   * Single layer ($n=1$): $R_{\\text{eff}} = 0.85\\text{ hr}\\cdot\\text{ft}^2\\cdot^\\circ\\text{F/BTU}$ ($U = 1.176$)
+   * Double layer ($n=2$, $3.5\\text{ in}$ pallet cavity): $R_{\\text{eff}} = 0.85 + 0.95 = 1.80$ ($U = 0.556$)
+   * Triple layer ($n=3$, two $1.75\\text{ in}$ cavities): $R_{\\text{eff}} = 0.85 + 2(0.925) = 2.70$ ($U = 0.370$)
+   * North Wall with internal Reflectix facing a $3.5\\text{ in}$ dead-air gap: adds $+R\\text{-}2.70$ radiant barrier credit ($R_{\\text{north}} = 3.55\\text{ to }4.50$).
+
+---
+
+### **11.2 Wood Moisture Mass & Latent/Sensible Energy Budget**
+1. **Solid Wood Volume ($V_{\\text{solid}}$) & Oven-Dry Mass ($M_{\\text{dry}}$):**
+   Firewood stacks contain a solid wood packing fraction $f_{\\text{pack}} \\approx 0.625$ ($80\\text{ ft}^3$ solid wood per $128\\text{ ft}^3$ gross full cord):
+   $$V_{\\text{solid}} = V_{\\text{gross}} \\cdot f_{\\text{pack}}$$
+   $$M_{\\text{dry}} = V_{\\text{solid}} \\cdot \\rho_{\\text{dry}}$$
+   * Where $\\rho_{\\text{dry}} \\approx 36.0\\text{ lb/ft}^3$ for mixed Appalachian hardwoods.
+
+2. **Water Mass to Evaporate ($\\Delta M_{\\text{water}}$):**
+   On an oven-dry basis ($MC_{\\text{dry}}$), reducing moisture from initial $MC_i$ (e.g., $0.75$ green or $0.50$ semi-seasoned) to target $MC_f$ (e.g., $0.20$ stove-ready, or $0.26$ Fiber Saturation Point when paired with an indoor Stage-2 basement rack):
+   $$\\Delta M_{\\text{water}} = M_{\\text{dry}} \\cdot (MC_i - MC_f) \\quad [\\text{lbs of water}]$$
+   $$V_{\\text{water\\_gal}} = \\frac{\\Delta M_{\\text{water}}}{8.34} \\quad [\\text{gallons}]$$
+
+3. **Splitting Thickness Multiplier ($k_{\\text{split}}$):**
+   Drying diffusion time scales non-linearly with piece thickness $d$ (in inches) relative to a standard $2.75\\text{ in}$ split:
+   $$k_{\\text{split}} = \\left(\\frac{d}{2.75}\\right)^{1.5} \\cdot k_{\\text{bark}}$$
+   * Where $k_{\\text{bark}} = 1.0$ for split wood (exposed longitudinal grain) and $k_{\\text{bark}} = 2.2$ for unsplit rounds with intact bark.
+
+4. **Total Thermal Drying Energy Required ($Q_{\\text{req}}$):**
+   Combining the sensible heat to warm frozen timber/water and the latent heat of vaporization + bound-water heat of sorption ($h_{\\text{evap}} \\approx 1,150\\text{ BTU/lb}$):
+   $$Q_{\\text{req}} = \\Delta M_{\\text{water}} \\cdot 1,150 \\quad [\\text{BTU}]$$
+
+---
+
+### **11.3 Daily Solar Kiln Heat Balance ($Q_{\\text{net\\_day}}$)**
+1. **Active Transpired Collector Gain ($Q_{\\text{coll}}$):**
+   $$Q_{\\text{coll}} = A_{\\text{coll}} \\cdot I_{\\text{tilt}} \\cdot \\left(\\frac{\\tau_{\\text{coll}}}{0.88}\\right) \\cdot \\eta_{\\text{collector}} \\cdot f_{\\text{flow\\_penalty}}$$
+   * Where $A_{\\text{coll}}$ is total collector aperture area ($48\\text{ ft}^2$ for two $3' \\times 8'$ panels), $I_{\\text{tilt}} \\approx 950\\text{ BTU/ft}^2\\text{/day}$ at $55^\\circ\\text{--}60^\\circ$ winter tilt, and $\\eta_{\\text{collector}} \\approx 0.421$.
+
+2. **Passive Greenhouse Box Gain Minus Conductive Wall Loss ($Q_{\\text{box\\_net}}$):**
+   $$Q_{\\text{box\\_solar}} = A_{\\text{glazed\\_box}} \\cdot I_{\\text{box\\_avg}} \\cdot \\tau_{\\text{box}} \\cdot \\alpha_{\\text{wood}}$$
+   $$Q_{\\text{box\\_loss}} = \\left( \\frac{A_{\\text{glazed\\_box}}}{R_{\\text{box}}} + \\frac{A_{\\text{north}}}{R_{\\text{north}}} \\right) \\cdot \\Delta T_{\\text{day}} \\cdot t_{\\text{sun\\_hrs}}$$
+   $$Q_{\\text{net\\_day}} = Q_{\\text{coll}} + Q_{\\text{box\\_solar}} - Q_{\\text{box\\_loss}} \\quad [\\text{BTU/clear day}]$$
+
+3. **Daily Water Evaporation & Batch Dwell Time ($D_{\\text{days}}$):**
+   $$\\dot{m}_{\\text{evap\\_clear}} = \\frac{Q_{\\text{net\\_day}}}{1,150} \\quad [\\text{lbs water / clear day}]$$
+   $$D_{\\text{clear\\_days}} = \\frac{Q_{\\text{req}}}{Q_{\\text{net\\_day}}} \\cdot k_{\\text{split}}$$
+   $$D_{\\text{calendar\\_days}} = \\frac{D_{\\text{clear\\_days}}}{f_{\\text{sun\\_fraction}}}$$
+   * Where $f_{\\text{sun\\_fraction}} \\approx 0.55\\text{ to }0.65$ accounts for cloudy winter days in Northeast Kentucky (or $1.0$ when evaluating clear-equivalent days).
+
+---
+
+### **11.4 Psychrometrics, Air Residence Time & Downdraft Buoyancy**
+1. **Saturation Vapor Pressure ($P_{\\text{ws}}$ in psia, for $T$ in $^\\circ\\text{F}$):**
+   Using the Magnus-Tetens approximation converted to $^\\circ\\text{F}$ and $\\text{psia}$ ($T_C = (T_F - 32)/1.8$):
+   $$P_{\\text{ws}}(T_C) = 0.08859 \\cdot \\exp\\left(\\frac{17.27 \\cdot T_C}{T_C + 237.3}\\right) \\quad [\\text{psia}]$$
+2. **Humidity Ratio ($W$ in Grains of Moisture per lb of Dry Air):**
+   $$P_w = \\text{RH} \\cdot P_{\\text{ws}}$$
+   $$W_{\\text{grains}} = 7000 \\cdot 0.62198 \\cdot \\frac{P_w}{14.696 - P_w}$$
+3. **Moist Air Density ($\\rho_{\\text{air}}$ in $\\text{lb/ft}^3$) & Downdraft Gravity Sink:**
+   $$\\rho_{\\text{air}} = \\frac{14.696 \\cdot 144}{53.35 \\cdot (T_F + 459.67)} \\cdot \\frac{1 + (W_{\\text{grains}}/7000)}{1 + 1.6078 \\cdot (W_{\\text{grains}}/7000)}$$
+   * At $90^\\circ\\text{F}$ / $8\\%\\text{ RH}$ (top inlet): $\\rho_{\\text{in}} = 0.0721\\text{ lb/ft}^3$.
+   * At $60^\\circ\\text{F}$ / $90\\%\\text{ RH}$ (bottom exhaust): $\\rho_{\\text{out}} = 0.0759\\text{ lb/ft}^3$ (**$+5.3\%$ heavier**, driving natural downdraft flow).
+4. **Air Residence Dwell Time ($t_{\\text{dwell}}$ in seconds):**
+   $$t_{\\text{collector}} = \\frac{V_{\\text{collector}}\\text{ [ft}^3\\text{]}}{\\text{CFM} / 60}, \\quad t_{\\text{stack}} = \\frac{V_{\\text{gross}} \\cdot (1 - f_{\\text{pack}})}{\\text{CFM} / 60}$$
+
+---
+
+### **11.5 Firewood vs. Central Heat Pump ROI Math**
+1. **Heat Pump Cost per Million BTU ($\\text{MMBTU}$):**
+   $$\\text{kWh per MMBTU} = \\frac{1,000,000\\text{ BTU}}{3,412.14\\text{ BTU/kWh} \\cdot \\text{COP}} = \\frac{293.07}{\\text{COP}}$$
+   $$\\text{Cost per MMBTU} = \\text{kWh per MMBTU} \\cdot \\text{Rate}_{\\$/\\text{kWh}}$$
+2. **Net Usable Stove Heat per Cord ($Q_{\\text{usable}}$):**
+   * **Kiln-Dried ($<20\%$ MC):** $Q_{\\text{dry}} = Q_{\\text{gross\\_cord}} \\cdot \\eta_{\\text{stove\\_dry}} = 24.0\\text{ MMBTU} \\times 0.72 = 17.28\\text{ MMBTU/cord}$.
+   * **Unseasoned / Damp ($\\sim 50\%$ MC):** $Q_{\\text{wet}} = Q_{\\text{gross\\_cord}} \\cdot \\eta_{\\text{stove\\_wet}} = 24.0\\text{ MMBTU} \\times 0.458 = 11.00\\text{ MMBTU/cord}$.
+   * **Pure Drying Bonus ($\\Delta Q_{\\text{bonus}}$):** $17.28 - 11.00 = +6.28\\text{ MMBTU/cord}$ ($+57.1\%$ more usable heat from the exact same wood).
+3. **Seasonal Net Savings & Payback:**
+   $$\\text{Gross Heat Pump Cost} = Q_{\\text{usable\\_total}} \\cdot \\text{Cost}_{\\text{MMBTU}}$$
+   $$\\text{Kiln Operating Electricity Cost} = \\text{kWh}_{\\text{fans}} \\cdot \\text{Rate}_{\\$/\\text{kWh}}$$
+   $$\\text{Net Annual Savings} = \\text{Gross Savings} - \\text{Operating Electricity}$$
+   $$\\text{Simple Payback (years)} = \\frac{\\text{Kiln Build Cost}}{\\text{Net Annual Savings}}$$
+
+
+[image1]: The heat transfer rate in British Thermal Units per hour (![][image3]).  
 * ![][image4]: The Overall Coefficient of Heat Transmission (![][image5]). This value represents the thermal conductivity of a composite assembly (e.g., a wall with siding, sheathing, insulation, and drywall). It is mathematically the reciprocal of the total thermal resistance (![][image6]\-value): ![][image7].4  
 * ![][image8]: The net surface area of the component in square feet (![][image9]).  
 * ![][image10]: The temperature difference between the conditioned space and the ambient environment (![][image11]).
