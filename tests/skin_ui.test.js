@@ -18,6 +18,15 @@ describe('UI Skinning Logic & Non-Destructive DOM Injection', () => {
         expect(skinScript).toEqual(skinSubdirScript);
     });
 
+    test('skin rendering does not utilize unsafe innerHTML assignment', () => {
+        // Strip the first line security note which intentionally mentions innerHTML
+        const codeLines = skinScript.split('\n').slice(1).join('\n');
+        expect(codeLines).not.toContain('.innerHTML');
+
+        const subdirCodeLines = skinSubdirScript.split('\n').slice(1).join('\n');
+        expect(subdirCodeLines).not.toContain('.innerHTML');
+    });
+
     test('non-destructively injects brand icon and run button without duplicating', () => {
         document.body.innerHTML = `
             <header>
