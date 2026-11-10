@@ -373,6 +373,13 @@
             // If no params, return false to let defaults load
             if (!params.has('a') && !params.has('b') && !params.has('ab')) return false;
 
+            // Guard against prototype poisoning in query string
+            for (const key of params.keys()) {
+                if (key === '__proto__' || key === 'constructor' || key.startsWith('__proto__[') || key.startsWith('constructor[')) {
+                    return false;
+                }
+            }
+
             // Clear defaults
             stacks.A = [];
             stacks.B = [];

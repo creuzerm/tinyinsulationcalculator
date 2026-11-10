@@ -451,6 +451,13 @@ function deserializeConfiguration() {
     const params = new URLSearchParams(window.location.search);
     if ([...params].length === 0) return false;
 
+    // Guard against prototype poisoning in query string
+    for (const key of params.keys()) {
+        if (key === '__proto__' || key === 'constructor' || key.startsWith('__proto__[') || key.startsWith('constructor[')) {
+            return false;
+        }
+    }
+
     if (params.has('buildingShape')) {
         const shape = params.get('buildingShape');
         const shapeEl = document.getElementById('buildingShape');

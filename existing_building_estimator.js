@@ -190,6 +190,14 @@ function serializeConfig() {
 
 function deserializeConfig() {
     const params = new URLSearchParams(window.location.search);
+
+    // Guard against prototype poisoning in query string
+    for (const key of params.keys()) {
+        if (key === '__proto__' || key === 'constructor' || key.startsWith('__proto__[') || key.startsWith('constructor[')) {
+            return false;
+        }
+    }
+
     let hasParams = false;
     CONFIG_FIELDS.forEach(id => {
         if (params.has(id)) {

@@ -217,6 +217,13 @@ describe('Insulation Explorer tests', () => {
             const params = new URLSearchParams(searchParams);
             if (!params.has('a') && !params.has('b') && !params.has('ab')) return false;
 
+            // Guard against prototype poisoning in query string
+            for (const key of params.keys()) {
+                if (key === '__proto__' || key === 'constructor' || key.startsWith('__proto__[') || key.startsWith('constructor[')) {
+                    return false;
+                }
+            }
+
             stacks.A = [];
             stacks.B = [];
 
@@ -274,6 +281,14 @@ describe('Insulation Explorer tests', () => {
             const searchParams = '?other=param';
             const result = deserializeConfiguration(searchParams);
             expect(result).toBe(false);
+        });
+
+        it('ignores prototype poisoning attempts safely', () => {
+            const searchParams = '?__proto__[polluted]=true&constructor[polluted]=true&a=Material1';
+            const result = deserializeConfiguration(searchParams);
+
+            expect(result).toBe(false);
+            expect({}.polluted).toBeUndefined();
         });
     });
 });
