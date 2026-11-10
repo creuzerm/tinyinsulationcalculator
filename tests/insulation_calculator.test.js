@@ -18,6 +18,49 @@ describe('Insulation Calculator', () => {
     });
 
     describe('Boundary checks (empty stack, zero thickness)', () => {
+        test('Multi-layer wall assembly with zero thickness', () => {
+            const stack = [
+                { type: 'structure', r: 0, thickness: 0 },
+                { type: 'insulation', r: 10, thickness: 0 },
+                { type: 'structure', r: 0, thickness: 0 }
+            ];
+            const result = calculate(stack);
+
+            // Expected: 0.85 (winter film) + 10 = 10.85 -> "10.8" (node rounds 10.85 to 10.8 due to float mechanics)
+            // totalR is 10.85 -> rounded to 1 decimal place = 10.8 in Node due to float mechanics
+            expect(result.r_winter).toBe("10.8");
+            expect(result.r_summer).toBe("10.8");
+            expect(result.warnings).toEqual([]);
+        });
+
+        test('Negative conductivity (negative resistance)', () => {
+            const stack = [
+                { type: 'structure', r: -5, thickness: 1 },
+                { type: 'insulation', r: -10, thickness: 2 }
+            ];
+            const result = calculate(stack);
+
+            // Expected: 0.85 (winter film) - 15 = -14.15 -> "-14.2"
+            // -14.15.toFixed(1) gives "-14.2" in node
+            expect(result.r_winter).toBe("-14.2");
+            expect(result.r_summer).toBe("-14.2");
+            // For U-value, totalR is -14.15 -> u is Infinity
+            expect(result.u_winter).toBe("Infinity");
+            expect(result.u_summer).toBe("Infinity");
+        });
+
+        test('Infinite resistance', () => {
+            const stack = [
+                { type: 'insulation', r: Infinity, thickness: 5 }
+            ];
+            const result = calculate(stack);
+
+            expect(result.r_winter).toBe("Infinity");
+            expect(result.r_summer).toBe("Infinity");
+            expect(result.u_winter).toBe("0.000");
+            expect(result.u_summer).toBe("0.000");
+        });
+
         test('Empty stack calculates only air films', () => {
             const stack = [];
             const result = calculate(stack);

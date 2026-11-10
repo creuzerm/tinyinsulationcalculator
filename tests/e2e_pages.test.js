@@ -13,6 +13,18 @@ const PAGES = [
 ];
 
 describe('Suite End-to-End Page Lifecycle & Asset Integrity', () => {
+    test('index.html contains valid Schema.org JSON-LD structured data', () => {
+        const content = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
+
+        // Extract the JSON-LD block
+        const match = content.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+        expect(match).not.toBeNull();
+
+        const jsonLd = JSON.parse(match[1]);
+        expect(jsonLd['@context']).toBe('https://schema.org');
+        expect(jsonLd['@type']).toBe('https://schema.org/WebApplication');
+    });
+
 
     test('all 4 primary application HTML files exist and have valid structure', () => {
         PAGES.forEach(page => {
