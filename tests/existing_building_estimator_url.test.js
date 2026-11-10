@@ -67,6 +67,14 @@ setMockUrl('?spaceLength=200&tIndoorAir=68&hvacMode=cooling');
         expect(document.getElementById('spaceWidth').value).toBe('');
     });
 
+    test('deserializeConfig ignores prototype poisoning attempts', () => {
+        setMockUrl('?__proto__[polluted]=true&constructor[polluted]=true&spaceLength=50');
+        const hasParams = deserializeConfig();
+
+        expect(hasParams).toBe(false); // Returns false on early abort
+        expect({}.polluted).toBeUndefined();
+    });
+
     test('deserializeConfig returns false when no parameters are present', () => {
 
 
