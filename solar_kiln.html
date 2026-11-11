@@ -99,10 +99,9 @@
                     <div>
                         <label for="volumePreset" class="block text-sm font-medium text-gray-700 mb-1">Standard Volume Preset</label>
                         <select id="volumePreset" data-action="apply-kiln-preset"
-                            toolparamdescription="Standard wood stack volume preset (1 Basement Bay, 1 Cubic Yard Rack, 1 Pallet Dryer, 2 Pallets, 1 Full Cord)"
+                            toolparamdescription="Standard wood stack volume preset (1 Basement Bay, 1 Pallet Dryer, 2 Pallets, 1 Full Cord)"
                             class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
-                            <option value="half_basement_rack">1 Basement Bay (12 cu ft / ~0.10 cord)</option>
-                            <option value="full_basement_rack_1yd" selected>Full Basement Rack / 1 yd³ (27 cu ft / ~0.21 cord)</option>
+                            <option value="half_basement_rack" selected>1 Basement Bay (12 cu ft / ~0.10 cord)</option>
                             <option value="single_outdoor_pallet">1 Outdoor Pallet Dryer (42.7 cu ft / 0.33 cord)</option>
                             <option value="twin_outdoor_pallets">2 Outdoor Pallet Dryers Flip-Flop (85.3 cu ft / 0.67 cord)</option>
                             <option value="full_cord">1 Full Cord (128 cu ft / 1.00 cord)</option>
@@ -112,7 +111,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label for="grossVolumeCuFt" class="block text-xs font-medium text-gray-700">Gross Stack (cu ft)</label>
-                            <input type="number" id="grossVolumeCuFt" data-model="grossVolumeCuFt" step="0.5" min="5" max="500" value="27.0"
+                            <input type="number" id="grossVolumeCuFt" data-model="grossVolumeCuFt" step="0.5" min="5" max="500" value="12.0"
                                 toolparamdescription="Gross stacked volume of firewood in cubic feet"
                                 class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-primary focus:border-primary text-sm">
                         </div>
@@ -146,14 +145,14 @@
                     <!-- 2-Stage Drying Finisher Toggle -->
                     <div class="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
                         <input type="checkbox" id="useBasementFinisher" data-model="useBasementFinisher" checked
-                            toolparamdescription="Enable 2-stage finishing: Stage 1 outdoor kiln to 26% FSP, Stage 2 indoor basement rack finishing"
+                            toolparamdescription="Enable 2-stage finishing: Stage 1 outdoor kiln to 26% FSP, Stage 2 indoor basement finishing"
                             class="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                         <div>
                             <label for="useBasementFinisher" class="text-xs font-semibold text-blue-900 cursor-pointer">
                                 Enable 2-Stage Hybrid Finishing (Recommended)
                             </label>
                             <p class="text-[11px] text-blue-700 mt-0.5">
-                                Outdoor solar kiln removes free water down to Fiber Saturation Point (~26% MC). Indoor basement finisher rack desorbs remaining bound water using waste house heat, accelerating outdoor batch turnaround.
+                                Outdoor solar kiln removes free water down to Fiber Saturation Point (~26% MC). Indoor finishing in a basement or conditioned space desorbs remaining bound water using waste house heat, accelerating outdoor batch turnaround.
                             </p>
                         </div>
                     </div>
@@ -192,6 +191,23 @@
                                         <option value="2" selected>2 Layers (R-1.80)</option>
                                         <option value="3">3 Layers (R-2.70)</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="totalFanCfm" class="block text-[11px] text-gray-600">Airflow Rate (CFM)</label>
+                                    <input type="number" id="totalFanCfm" data-model="totalFanCfm" min="10" max="1000" step="5" value="96"
+                                        toolparamdescription="Active fan ventilation airflow rate in CFM through collector and kiln plenum"
+                                        class="w-full border-gray-300 rounded p-1.5 border text-xs">
+                                </div>
+                                <div class="flex items-center pt-4">
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                                        <input type="checkbox" id="chainedBoxesInSeries" data-model="chainedBoxesInSeries"
+                                            toolparamdescription="True if multiple drying boxes are connected in series airflow (doubles static pressure penalty)"
+                                            class="h-4 w-4 text-primary border-gray-300 rounded">
+                                        <span>Boxes in Series</span>
+                                    </label>
                                 </div>
                             </div>
 
@@ -340,6 +356,14 @@
                             <div class="flex justify-between py-1 border-b">
                                 <dt class="text-gray-500">Daytime Wall Conduction Loss:</dt>
                                 <dd class="font-medium text-red-600" data-output="daytimeWallLossBtu">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Effective Ventilation Airflow:</dt>
+                                <dd class="font-medium text-gray-900" data-output="effectiveCfm">--</dd>
+                            </div>
+                            <div class="flex justify-between py-1 border-b">
+                                <dt class="text-gray-500">Air Residence Time:</dt>
+                                <dd class="font-medium text-gray-900" data-output="airResidenceSec">--</dd>
                             </div>
                             <div class="flex justify-between py-1 border-b">
                                 <dt class="text-gray-500">Split Diffusion Multiplier:</dt>

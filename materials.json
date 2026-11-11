@@ -365,17 +365,10 @@
         "volume_presets": [
             {
                 "id": "half_basement_rack",
-                "name": "1 Basement Bay (1.5' x 6' x 16\")",
+                "name": "1 Basement Bay (12 cu ft / ~0.10 cord)",
                 "gross_cu_ft": 12.0,
                 "solid_cu_ft": 7.5,
                 "cords": 0.094
-            },
-            {
-                "id": "full_basement_rack_1yd",
-                "name": "Full Basement Rack / 1 Cubic Yard (3' x 6' x 18\")",
-                "gross_cu_ft": 27.0,
-                "solid_cu_ft": 17.0,
-                "cords": 0.211
             },
             {
                 "id": "single_outdoor_pallet",

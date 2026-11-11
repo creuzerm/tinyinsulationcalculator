@@ -25,10 +25,10 @@ Retrieves the current calculated heat loss results for all active scenarios.
 
 ### `calculate_solar_kiln_performance`
 Calculates solar firewood kiln drying dwell times, wood moisture mass loss, multi-layer glazing optical/thermal R-values, psychrometric downdraft buoyancy, and economic ROI against a central heat pump.
-- `grossVolumeCuFt`: Stack volume in cu ft (e.g. 27.0 for 1 yd³ rack, 42.7 for 1 pallet, 128 for 1 cord)
+- `grossVolumeCuFt`: Stack volume in cu ft (e.g. 12.0 for 1 basement bay, 42.7 for 1 pallet, 128 for 1 cord)
 - `initialMcPct`: Initial moisture content % dry basis (e.g. 50% semi-seasoned, 75% green)
 - `targetMcPct`: Final stove-ready moisture content % (standard 20%)
-- `useBasementFinisher`: Boolean (true to finish bound water <26% MC in indoor conditioned basement)
+- `useBasementFinisher`: Boolean (true to finish bound water <26% MC in indoor conditioned basement space)
 - `splitDiameterInches`: Average split thickness in inches (default 2.75)
 - `isUnsplitRound`: Boolean (true for unsplit round timber with intact bark)
 - `numCollectors`: Number of transpired screen solar air collectors (default 2)

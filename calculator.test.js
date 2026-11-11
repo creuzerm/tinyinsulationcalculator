@@ -855,7 +855,7 @@ describe('Solar Kiln & Greenhouse Calculator Module', () => {
     expect(triple.rValue).toBeCloseTo(2.70, 2);
   });
 
-  test('calculateWoodMoistureLoad matches 1 cubic yard (Full Basement Rack) energy budget', () => {
+  test('calculateWoodMoistureLoad matches 1 cubic yard energy budget', () => {
     const load = calculateWoodMoistureLoad({
       grossVolumeCuFt: 27.0,
       solidVolumeCuFt: 17.0,
@@ -867,6 +867,21 @@ describe('Solar Kiln & Greenhouse Calculator Module', () => {
     expect(load.ovenDryWeightLbs).toBe(612.0);
     expect(load.totalWaterLbs).toBeCloseTo(183.6, 1);
     expect(load.totalEnergyBtu).toBe(211140);
+  });
+
+  test('calculateWoodMoistureLoad matches 1 Basement Bay energy budget', () => {
+    const load = calculateWoodMoistureLoad({
+      grossVolumeCuFt: 12.0,
+      solidVolumeCuFt: 7.5,
+      dryDensityLbFt3: 36.0,
+      initialMcPct: 50,
+      targetMcPct: 20,
+      useBasementFinisher: false
+    });
+    expect(load.ovenDryWeightLbs).toBe(270.0);
+    expect(load.totalWaterLbs).toBeCloseTo(81.0, 1);
+    expect(load.totalEnergyBtu).toBe(93150);
+    expect(load.cordsEquivalent).toBeCloseTo(0.094, 3);
   });
 
   test('calculatePsychrometrics verifies downdraft evaporative cooling density increase (+5.3%)', () => {

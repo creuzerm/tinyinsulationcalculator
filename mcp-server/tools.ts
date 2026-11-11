@@ -474,8 +474,8 @@ export function registerTools(server: McpServer): void {
       grossVolumeCuFt: z
         .number()
         .optional()
-        .default(27.0)
-        .describe("Gross stacked wood volume in cu ft (27 = 1 yd3/basement rack, 42.7 = 1 pallet, 128 = 1 cord)"),
+        .default(12.0)
+        .describe("Gross stacked wood volume in cu ft (12 = 1 basement bay, 42.7 = 1 pallet, 128 = 1 cord)"),
       initialMcPct: z
         .number()
         .optional()
@@ -490,7 +490,7 @@ export function registerTools(server: McpServer): void {
         .boolean()
         .optional()
         .default(true)
-        .describe("True if finishing bound water (<26% MC) in indoor 60F low-humidity basement rack"),
+        .describe("True if finishing bound water (<26% MC) in indoor basement or conditioned space"),
       splitDiameterInches: z
         .number()
         .optional()
@@ -516,6 +516,16 @@ export function registerTools(server: McpServer): void {
         .optional()
         .default(2)
         .describe("Layers of 6-mil UV film on pallet box walls (1-3)"),
+      totalFanCfm: z
+        .number()
+        .optional()
+        .default(96)
+        .describe("Active fan ventilation airflow rate in CFM"),
+      chainedBoxesInSeries: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("True if multiple drying boxes are connected in series airflow"),
       electricRatePerKwh: z
         .number()
         .optional()
@@ -551,6 +561,8 @@ export function registerTools(server: McpServer): void {
         numCollectors: args.numCollectors,
         collectorGlazingLayers: args.collectorGlazingLayers,
         boxGlazingLayers: args.boxGlazingLayers,
+        totalFanCfm: args.totalFanCfm,
+        chainedBoxesInSeries: args.chainedBoxesInSeries,
         woodLoadResult: woodLoad
       });
 

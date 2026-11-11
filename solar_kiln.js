@@ -8,13 +8,7 @@ const PRESETS = {
         grossVolumeCuFt: 12.0,
         solidVolumeCuFt: 7.5,
         cords: 0.094,
-        description: "1 Basement Bay (1.5' x 6' x 16\")"
-    },
-    full_basement_rack_1yd: {
-        grossVolumeCuFt: 27.0,
-        solidVolumeCuFt: 17.0,
-        cords: 0.211,
-        description: "Full Basement Rack / 1 Cubic Yard (3' x 6' x 18\")"
+        description: "1 Basement Bay (12 cu ft / ~0.10 cord)"
     },
     single_outdoor_pallet: {
         grossVolumeCuFt: 42.7,
@@ -81,8 +75,8 @@ function applyKilnPreset(presetKey) {
 }
 
 function getFormData() {
-    const volumePreset = el('volumePreset')?.value || 'full_basement_rack_1yd';
-    const grossVolumeCuFt = parseFloat(el('grossVolumeCuFt')?.value) || 27.0;
+    const volumePreset = el('volumePreset')?.value || 'half_basement_rack';
+    const grossVolumeCuFt = parseFloat(el('grossVolumeCuFt')?.value) || 12.0;
     const woodSpecies = el('woodSpecies')?.value || 'ne_ky_mixed_hardwood';
     const speciesInfo = SPECIES[woodSpecies] || SPECIES.ne_ky_mixed_hardwood;
 
@@ -95,6 +89,8 @@ function getFormData() {
     const numCollectors = parseInt(el('numCollectors')?.value, 10) || 2;
     const collectorGlazingLayers = parseInt(el('collectorGlazingLayers')?.value, 10) || 1;
     const boxGlazingLayers = parseInt(el('boxGlazingLayers')?.value, 10) || 2;
+    const totalFanCfm = parseFloat(el('totalFanCfm')?.value) || 96;
+    const chainedBoxesInSeries = el('chainedBoxesInSeries')?.checked ?? false;
     const northWallReflectix = el('northWallReflectix')?.checked ?? true;
 
     const ambientTempF = parseFloat(el('ambientTempF')?.value) || 32;
@@ -119,6 +115,8 @@ function getFormData() {
         numCollectors,
         collectorGlazingLayers,
         boxGlazingLayers,
+        totalFanCfm,
+        chainedBoxesInSeries,
         northWallReflectix,
         ambientTempF,
         internalKilnTempF,
@@ -155,6 +153,8 @@ function calculateSolarKiln() {
         numCollectors: data.numCollectors,
         collectorGlazingLayers: data.collectorGlazingLayers,
         boxGlazingLayers: data.boxGlazingLayers,
+        totalFanCfm: data.totalFanCfm,
+        chainedBoxesInSeries: data.chainedBoxesInSeries,
         northWallReflectix: data.northWallReflectix,
         ambientTempF: data.ambientTempF,
         internalKilnTempF: data.internalKilnTempF,
@@ -191,6 +191,8 @@ function calculateSolarKiln() {
     updateOutputText('totalWaterGallons', `${woodLoad.totalWaterGallons} gal (${woodLoad.totalWaterLbs} lbs water)`);
     updateOutputText('outdoorWaterLbs', `${woodLoad.outdoorWaterLbs} lbs outdoor Stage 1`);
     updateOutputText('indoorWaterLbs', `${woodLoad.indoorWaterLbs} lbs indoor Stage 2`);
+    updateOutputText('effectiveCfm', `${kilnBalance.effectiveCfm} CFM`);
+    updateOutputText('airResidenceSec', `${kilnBalance.totalResidenceSec}s (${kilnBalance.collectorResidenceSec}s coll / ${kilnBalance.stackResidenceSec}s stack)`);
     updateOutputText('splitMultiplier', `${woodLoad.splitMultiplier}x baseline`);
 
     updateOutputText('densityDelta', `+${densityIncreasePct.toFixed(1)}% heavier at exhaust (natural downdraft)`);

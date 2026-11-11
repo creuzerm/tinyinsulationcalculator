@@ -110,7 +110,7 @@ The Tiny House Thermal Suite solves this by unifying four interconnected, mathem
   * Moist air density calculations verifying the natural downdraft gravity sink: warm dry air entering at the top ($90^\circ\text{F}$ / 8% RH, $\rho = 0.0721\text{ lb/ft}^3$) absorbs evaporative moisture and cools, exiting the bottom heavily saturated ($60^\circ\text{F}$ / 90% RH, $\rho = 0.0759\text{ lb/ft}^3$, **+5.3% heavier**), reinforcing natural downward convective flow.
 * **FR-4.5 (Hybrid 2-Stage Drying Strategy)**:
   * Stage-1: Transpired outdoor solar kiln evaporates free water down to the Fiber Saturation Point ($MC \approx 26\%$).
-  * Stage-2: Conditioned indoor / basement finisher rack desorbs remaining bound water down to stove-ready ($MC \le 20\%$) using waste home heat, reducing outdoor kiln dwell days by up to 25%.
+  * Stage-2: Conditioned indoor / basement finishing desorbs remaining bound water down to stove-ready ($MC \le 20\%$) using waste home heat, reducing outdoor kiln dwell days by up to 25%.
 * **FR-4.6 (Firewood vs Central Heat Pump Economic ROI)**:
   * Calculate electricity equivalent cost per Million BTU ($\text{MMBTU}$) across seasonal heat pump COP ($2.40$) and auxiliary strip heat ($\text{COP } 1.0$).
   * Determine net stove heat output per cord: dry wood ($<20\%$ MC) yields $17.28\text{ MMBTU/cord}$ ($72\%$ stove efficiency) vs damp wood ($\sim 50\%$ MC) yielding $11.00\text{ MMBTU/cord}$ ($45.8\%$ stove efficiency), proving a $+57.1\%$ drying bonus ($\Delta Q = +6.28\text{ MMBTU/cord}$).
@@ -132,8 +132,7 @@ The Tiny House Thermal Suite solves this by unifying four interconnected, mathem
 * **Soft Maple / Tulip Poplar**: Dry Density $29.0\text{ lb/ft}^3$, Gross Energy $18.6\text{ MMBTU/cord}$.
 
 ### 5.3 Wood Volume & Stack Presets
-* **Half Basement Rack / 1 Bay** ($1.5' \times 6' \times 16"$): Gross $12.0\text{ ft}^3$, Solid $7.5\text{ ft}^3$ ($0.094\text{ cords}$).
-* **Full Basement Rack / 1 Cubic Yard** ($3' \times 6' \times 18"$): Gross $27.0\text{ ft}^3$, Solid $17.0\text{ ft}^3$ ($0.211\text{ cords}$).
+* **1 Basement Bay**: Gross $12.0\text{ ft}^3$, Solid $7.5\text{ ft}^3$ ($0.094\text{ cords}$).
 * **Single Outdoor Pallet Dryer** ($40" \times 48" \times 48"$): Gross $42.7\text{ ft}^3$, Solid $26.7\text{ ft}^3$ ($0.333\text{ cords}$).
 * **Twin Outdoor Pallet Dryers (Flip-Flop)**: Gross $85.3\text{ ft}^3$, Solid $53.3\text{ ft}^3$ ($0.667\text{ cords}$).
 * **Full Cord** ($4' \times 4' \times 8'$): Gross $128.0\text{ ft}^3$, Solid $80.0\text{ ft}^3$ ($1.000\text{ cords}$).
