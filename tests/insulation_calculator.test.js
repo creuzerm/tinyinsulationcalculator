@@ -151,6 +151,69 @@ describe('Insulation Calculator', () => {
         });
     });
 
+
+
+    describe('Temperature Gradient & Condensation (Glaser Method)', () => {
+        test('Detects condensation plane at sheathing without vapor barrier', () => {
+            const stack = [
+                { type: 'finish', name: 'Drywall', r: 0.45, thickness: 0.5 },
+                { type: 'insulation', name: 'Fiberglass Batt', r: 13, thickness: 3.5 },
+                { type: 'sheathing', name: 'OSB Sheathing', r: 0.6, thickness: 0.5 }
+            ];
+
+            const options = {
+                orientation: 'wall',
+                indoorTemp: 70,
+                indoorRH: 40,
+                outdoorTemp: 10
+            };
+
+            const result = calculate(stack, options);
+
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(result.warnings.some(w => w.includes('Condensation Risk'))).toBe(true);
+            expect(result.warnings.some(w => w.includes('OSB Sheathing') || w.includes('Fiberglass Batt'))).toBe(true);
+        });
+
+        test('No condensation warning if interior vapor barrier is present', () => {
+            const stack = [
+                { type: 'finish', name: 'Drywall', r: 0.45, thickness: 0.5 },
+                { type: 'vapor', name: 'Polyethylene', r: 0, thickness: 0.01 },
+                { type: 'insulation', name: 'Fiberglass Batt', r: 13, thickness: 3.5 },
+                { type: 'sheathing', name: 'OSB Sheathing', r: 0.6, thickness: 0.5 }
+            ];
+
+            const options = {
+                orientation: 'wall',
+                indoorTemp: 70,
+                indoorRH: 40,
+                outdoorTemp: 10
+            };
+
+            const result = calculate(stack, options);
+
+            expect(result.warnings.some(w => w.includes('Condensation Risk'))).toBe(false);
+        });
+
+        test('No condensation when outdoor temperatures are mild', () => {
+            const stack = [
+                { type: 'finish', name: 'Drywall', r: 0.45, thickness: 0.5 },
+                { type: 'insulation', name: 'Fiberglass Batt', r: 13, thickness: 3.5 },
+                { type: 'sheathing', name: 'OSB Sheathing', r: 0.6, thickness: 0.5 }
+            ];
+
+            const options = {
+                orientation: 'wall',
+                indoorTemp: 70,
+                indoorRH: 40,
+                outdoorTemp: 50
+            };
+
+            const result = calculate(stack, options);
+
+            expect(result.warnings.some(w => w.includes('Condensation Risk'))).toBe(false);
+        });
+    });
     describe('Air Gaps', () => {
         test('Air gaps alone use 0.9 R-value', () => {
             const stack = [
