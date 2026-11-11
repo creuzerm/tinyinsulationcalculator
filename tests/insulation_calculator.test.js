@@ -1,4 +1,4 @@
-const { calculate } = require('../insulation_calculator.js');
+const { calculate, _interfaceTempCache } = require('../insulation_calculator.js');
 
 describe('Insulation Calculator', () => {
     describe('Layer addition and cumulative R-value accumulation', () => {
@@ -302,6 +302,76 @@ describe('Insulation Calculator', () => {
             
             expect(result.warnings.length).toBeGreaterThan(0);
             expect(result.warnings[0]).toContain('Your insulation + air gaps (4") are thicker than your framing (3.5").');
+        });
+    });
+
+    describe('Memoization of Interface Temperature Calculations', () => {
+        beforeEach(() => {
+            _interfaceTempCache.clear();
+        });
+
+        test('Cache is populated and used on subsequent identical calls', () => {
+            const stack = [
+                { type: 'finish', name: 'Drywall', r: 0.45, thickness: 0.5 },
+                { type: 'insulation', name: 'Fiberglass Batt', r: 13, thickness: 3.5 },
+                { type: 'sheathing', name: 'OSB Sheathing', r: 0.6, thickness: 0.5 }
+            ];
+
+            const options = {
+                orientation: 'wall',
+                indoorTemp: 70,
+                indoorRH: 40,
+                outdoorTemp: 10
+            };
+
+            expect(_interfaceTempCache.size).toBe(0);
+
+            const result1 = calculate(stack, options);
+            const initialCacheSize = _interfaceTempCache.size;
+
+            expect(initialCacheSize).toBeGreaterThan(0);
+
+            // Calculate again with same params
+            const result2 = calculate(stack, options);
+
+            // Cache size should not increase because it hits cache
+            expect(_interfaceTempCache.size).toBe(initialCacheSize);
+
+            // Output identity check
+            expect(result1.warnings).toEqual(result2.warnings);
+            expect(result1.r_winter).toBe(result2.r_winter);
+            expect(result1.r_summer).toBe(result2.r_summer);
+        });
+
+        test('Cache miss when different temperatures are used', () => {
+             const stack = [
+                { type: 'finish', name: 'Drywall', r: 0.45, thickness: 0.5 },
+                { type: 'insulation', name: 'Fiberglass Batt', r: 13, thickness: 3.5 },
+                { type: 'sheathing', name: 'OSB Sheathing', r: 0.6, thickness: 0.5 }
+            ];
+
+            const options1 = {
+                orientation: 'wall',
+                indoorTemp: 70,
+                indoorRH: 40,
+                outdoorTemp: 10
+            };
+
+            const options2 = {
+                orientation: 'wall',
+                indoorTemp: 72, // Different temp
+                indoorRH: 40,
+                outdoorTemp: 10
+            };
+
+            calculate(stack, options1);
+            const sizeAfterFirst = _interfaceTempCache.size;
+
+            calculate(stack, options2);
+            const sizeAfterSecond = _interfaceTempCache.size;
+
+            // Since it's a different temperature, it should calculate and cache new values
+            expect(sizeAfterSecond).toBeGreaterThan(sizeAfterFirst);
         });
     });
 });

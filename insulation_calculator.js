@@ -1,3 +1,34 @@
+
+// Bounded cache for performance
+class BoundedCache {
+    constructor(limit = 1000) {
+        this.cache = new Map();
+        this.limit = limit;
+    }
+    get(key) {
+        return this.cache.get(key);
+    }
+    set(key, value) {
+        if (this.cache.size >= this.limit) {
+            // Evict first (oldest) entry
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+        this.cache.set(key, value);
+    }
+    has(key) {
+        return this.cache.has(key);
+    }
+    clear() {
+        this.cache.clear();
+    }
+    get size() {
+        return this.cache.size;
+    }
+}
+const _interfaceTempCache = new BoundedCache(500);
+
+
 // The Physics Engine
 function calculate(currentStack, options = { orientation: 'wall' }) {
     let totalR_winter = 0;
@@ -126,8 +157,18 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
 
                 currentR += r_up;
 
-                // Calculate interface temperature AT THE COLD SIDE of this layer
-                let interfaceTemp = tIn - ((tIn - tOut) * (currentR / totalR));
+                // Fast memoize interface temperature
+                const stackHash = currentStack.map(l => l.key || l.name || l.type).join('|');
+                const cacheKey = `${stackHash}_${tIn}_${tOut}_${currentR.toFixed(3)}_${totalR.toFixed(3)}`;
+
+                let interfaceTemp;
+                if (_interfaceTempCache.has(cacheKey)) {
+                    interfaceTemp = _interfaceTempCache.get(cacheKey);
+                } else {
+                    // Calculate interface temperature AT THE COLD SIDE of this layer
+                    interfaceTemp = tIn - ((tIn - tOut) * (currentR / totalR));
+                    _interfaceTempCache.set(cacheKey, interfaceTemp);
+                }
 
                 if (layer.type === 'vapor' || layer.type === 'radiant') {
                     vaporBarrierFound = true;
@@ -165,5 +206,5 @@ if (typeof window !== 'undefined') {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { calculate };
+    module.exports = { calculate, _interfaceTempCache };
 }
