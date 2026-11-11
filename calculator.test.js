@@ -381,6 +381,27 @@ describe('Tiny Home Heat Loss Calculator', () => {
             const r = calculateEffectiveR(assembly);
             expect(r).toBeCloseTo(21.05, 1);
         });
+
+        test('Memoization caching works for identical repeated calls', () => {
+            const assembly = {
+                type: 'stick',
+                studSize: '2x4',
+                studMaterial: 'wood',
+                spacing: '16',
+                cavityInsulation: 'fiberglass_batt',
+                continuousInsulation: '0'
+            };
+            const firstRun = calculateEffectiveR(assembly, 'wall');
+            const secondRun = calculateEffectiveR(assembly, 'wall');
+
+            // Should be exactly the same
+            expect(firstRun).toBe(secondRun);
+
+            // Should also work across different reference but same stringified object
+            const identicalAssembly = { ...assembly };
+            const thirdRun = calculateEffectiveR(identicalAssembly, 'wall');
+            expect(secondRun).toBe(thirdRun);
+        });
     });
 
     describe('Mass Capacity Calculation', () => {

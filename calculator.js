@@ -3,9 +3,25 @@ let heatLossChart;
 let simulationChart;
 let breakdownChart;
 
+const _domCache = new Map();
+
 // Helper to get element by ID or Data Model (Skinning Support)
 function el(id) {
-    return document.getElementById(id) || document.querySelector(`[data-model="${id}"]`) || document.querySelector(`[data-action="${id}"]`);
+    if (typeof document === 'undefined') return null;
+
+    if (_domCache.has(id)) {
+        const cached = _domCache.get(id);
+        if (document.body.contains(cached)) {
+            return cached;
+        }
+        _domCache.delete(id);
+    }
+
+    const element = document.getElementById(id) || document.querySelector(`[data-model="${id}"]`) || document.querySelector(`[data-action="${id}"]`);
+    if (element) {
+        _domCache.set(id, element);
+    }
+    return element;
 }
 
 const CONFIG_FIELDS = [
@@ -419,11 +435,11 @@ function calculateDetailedGains() {
     });
 
     for (const [key, val] of Object.entries(sectionTotals)) {
-        const el = document.getElementById(`gain_summary_${key}`);
-        if (el) el.textContent = `${Math.round(val)} BTU/hr`;
+        const element = el(`gain_summary_${key}`);
+        if (element) element.textContent = `${Math.round(val)} BTU/hr`;
     }
 
-    const simInput = document.getElementById('simInternalGain');
+    const simInput = el('simInternalGain');
     if (simInput) {
         simInput.value = Math.round(totalBTUPerHour);
         if (typeof calculateAll === 'function') calculateAll();
@@ -460,7 +476,7 @@ function deserializeConfiguration() {
 
     if (params.has('buildingShape')) {
         const shape = params.get('buildingShape');
-        const shapeEl = document.getElementById('buildingShape');
+        const shapeEl = el('buildingShape');
         if (shapeEl) {
             shapeEl.value = shape;
             saveInputToLocalStorage(shapeEl);
@@ -899,40 +915,40 @@ function getScenarioData(suffix) {
         rWall = parseFloat(el(`wallRValue${suffix}`)?.value) || 13;
     }
 
-    const rRoofEl = document.getElementById(`roofRValue${suffix}`);
+    const rRoofEl = el(`roofRValue${suffix}`);
     const rRoof = rRoofEl ? (parseFloat(rRoofEl.value) || 1) : 1;
 
-    const rFloorEl = document.getElementById(`floorRValue${suffix}`);
+    const rFloorEl = el(`floorRValue${suffix}`);
     const rFloor = rFloorEl ? (parseFloat(rFloorEl.value) || 1) : 1;
 
-    const skirtREl = document.getElementById(`skirtR${suffix}`);
+    const skirtREl = el(`skirtR${suffix}`);
     const skirtR = skirtREl ? (parseFloat(skirtREl.value) || 0) : 0;
 
-    const skirtHeightEl = document.getElementById(`skirtHeight${suffix}`);
+    const skirtHeightEl = el(`skirtHeight${suffix}`);
     const skirtHeight = skirtHeightEl ? (parseFloat(skirtHeightEl.value) || 0) : 0;
 
-    const skirtSealEl = document.getElementById(`skirtSeal${suffix}`);
+    const skirtSealEl = el(`skirtSeal${suffix}`);
     const skirtSeal = skirtSealEl ? skirtSealEl.value : 'vented';
 
-    const wAreaEl = document.getElementById(`windowArea${suffix}`);
+    const wAreaEl = el(`windowArea${suffix}`);
     const wArea = wAreaEl ? (parseFloat(wAreaEl.value) || 0) : 0;
 
-    const wREl = document.getElementById(`windowR${suffix}`);
+    const wREl = el(`windowR${suffix}`);
     const wR = wREl ? (parseFloat(wREl.value) || 1) : 1;
 
-    const dAreaEl = document.getElementById(`doorArea${suffix}`);
+    const dAreaEl = el(`doorArea${suffix}`);
     const dArea = dAreaEl ? (parseFloat(dAreaEl.value) || 0) : 0;
 
-    const dREl = document.getElementById(`doorR${suffix}`);
+    const dREl = el(`doorR${suffix}`);
     const dR = dREl ? (parseFloat(dREl.value) || 1) : 1;
 
-    const sealingEl = document.getElementById(`airSealing${suffix}`);
+    const sealingEl = el(`airSealing${suffix}`);
     const sealing = sealingEl ? sealingEl.value : 'poor';
 
-    const massMatEl = document.getElementById(`massMaterial${suffix}`);
+    const massMatEl = el(`massMaterial${suffix}`);
     const massMat = massMatEl ? massMatEl.value : 'wood';
 
-    const thicknessEl = document.getElementById(`slabThickness${suffix}`);
+    const thicknessEl = el(`slabThickness${suffix}`);
     const thickness = thicknessEl ? (parseFloat(thicknessEl.value) || 1) : 1;
 
     return { rWall, rRoof, rFloor, skirtR, skirtHeight, skirtSeal, wArea, wR, dArea, dR, sealing, massMat, thickness };
@@ -958,7 +974,7 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     const ua_win = data.wArea / rW_win;
     const ua_door = data.dArea / rD_door;
 
-    const shape = data.buildingShape || (typeof document !== 'undefined' ? document.getElementById('buildingShape')?.value : undefined) || 'rectangle';
+    const shape = data.buildingShape || (typeof document !== 'undefined' ? el('buildingShape')?.value : undefined) || 'rectangle';
     const isAirCoupled = (shape === 'cargo-van') || (data.massMat === 'wood' || data.massMat === 'metal');
 
     let lossFloor = 0;
@@ -1012,7 +1028,7 @@ function calculateHeatLoss(areas, data, deltaT_Air, deltaT_Ground) {
     else if (tightness === 'average') ach = 0.50;
     else if (tightness === 'leaky' || tightness === 'poor') ach = 1.00;
 
-    const bHeight = data.height || (typeof document !== 'undefined' ? parseFloat(document.getElementById('height')?.value || '') : NaN) || 8;
+    const bHeight = data.height || (typeof document !== 'undefined' ? parseFloat(el('height')?.value || '') : NaN) || 8;
     const volume = areas.floor * bHeight;
     const infiltrationLoss = volume * ach * 0.018 * deltaT_Air;
 
@@ -1400,18 +1416,24 @@ function init() {
 
     ['indoorTemp', 'outdoorTemp', 'groundTemp', 'simDuration', 'simLowTemp', 'simHighTemp', 'customGainsData'].forEach(attachAndLoad);
 
+    const sharedFields = ['insulationPreset', 'glazingPreset', 'roofRValue', 'floorRValue',
+        'skirtR', 'skirtHeight', 'skirtSeal',
+        'windowArea', 'windowR', 'doorArea', 'doorR', 'airSealing', 'massMaterial', 'slabThickness'];
+
+    const assemblyFields = ['wallAssemblyType', 'wallStudSize', 'wallStudMaterial', 'wallStudSpacing', 'wallCavityInsulation', 'wallContinuousInsulation',
+        'wallFastenerType', 'wallFastenerDensity',
+        'wallMassMaterial', 'wallMassThickness', 'wallMassInsulation'];
+
+    const glazingFields = ['windowArea', 'doorArea'];
+
     ['_A', '_B'].forEach(s => {
         // Shared & Others
-        ['insulationPreset', 'glazingPreset', 'roofRValue', 'floorRValue',
-            'skirtR', 'skirtHeight', 'skirtSeal',
-            'windowArea', 'windowR', 'doorArea', 'doorR', 'airSealing', 'massMaterial', 'slabThickness'].forEach(base => {
-                attachAndLoad(base + s);
-            });
+        sharedFields.forEach(base => {
+            attachAndLoad(base + s);
+        });
 
         // Assembly Fields
-        ['wallAssemblyType', 'wallStudSize', 'wallStudMaterial', 'wallStudSpacing', 'wallCavityInsulation', 'wallContinuousInsulation',
-            'wallFastenerType', 'wallFastenerDensity',
-            'wallMassMaterial', 'wallMassThickness', 'wallMassInsulation'].forEach(base => {
+        assemblyFields.forEach(base => {
                 const id = base + s;
                 const element = el(id);
                 if (element) {
@@ -1432,7 +1454,7 @@ function init() {
         // Toggle visibility initially
         toggleScenarioAssemblyUI(s);
 
-        ['windowArea', 'doorArea'].forEach(k => {
+        glazingFields.forEach(k => {
             const element = el(k + s);
             if (element) {
                 element.addEventListener('input', () => {

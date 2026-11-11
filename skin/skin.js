@@ -12,7 +12,8 @@
              h1.textContent = "Tiny Home Heat Loss Calculator";
 
              // Inject Branding Icon (Prepend instead of Replace)
-             if (!document.getElementById('brand-icon')) {
+             const existingIcon = document.getElementById('brand-icon');
+             if (!existingIcon) {
                 const icon = document.createElement('div');
                 icon.id = 'brand-icon';
                 icon.textContent = 'TC'; // Or your SVG
@@ -29,7 +30,8 @@
 
     // 2. Inject "Run Thermal Check" Button
     const resultsGrid = document.getElementById('resultsGrid');
-    if (resultsGrid && !document.getElementById('runThermalCheckBtn')) {
+    const existingBtn = document.getElementById('runThermalCheckBtn');
+    if (resultsGrid && !existingBtn) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'text-center mb-6';
 
