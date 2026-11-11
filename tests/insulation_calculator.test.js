@@ -267,6 +267,42 @@ describe('Insulation Calculator', () => {
             // Summer (heat flow up): 0.61 + 0.17 = 0.78 -> "0.8"
             expect(result.r_summer).toBe("0.8");
         });
+
+        test('Interior surface air film (Rsi) based on heat flow direction', () => {
+            const wallResult = calculate([{ type: 'insulation', r: 10, thickness: 1 }], { orientation: 'wall' });
+            // 10 + 0.68 + 0.17 = 10.85 -> 10.9
+            expect(wallResult.r_winter).toBe("10.8");
+
+            const roofResult = calculate([{ type: 'insulation', r: 10, thickness: 1 }], { orientation: 'roof' });
+            // winter (up): 10 + 0.61 + 0.17 = 10.78 -> 10.8
+            expect(roofResult.r_winter).toBe("10.8");
+            // summer (down): 10 + 0.92 + 0.17 = 11.09 -> 11.1
+            expect(roofResult.r_summer).toBe("11.1");
+
+            const floorResult = calculate([{ type: 'insulation', r: 10, thickness: 1 }], { orientation: 'floor' });
+            // winter (down): 10 + 0.92 + 0.17 = 11.09 -> 11.1
+            expect(floorResult.r_winter).toBe("11.1");
+            // summer (up): 10 + 0.61 + 0.17 = 10.78 -> 10.8
+            expect(floorResult.r_summer).toBe("10.8");
+        });
+
+        test('Wind exposure categories modify exterior air film (Rse)', () => {
+            // normal uses 0.17 -> 0.17 + 0.68 = 0.85 -> "0.9"
+            const resultNormal = calculate([], { orientation: 'wall', windExposure: 'normal' });
+            expect(resultNormal.r_winter).toBe("0.9");
+
+            // sheltered uses 0.25 -> 0.25 + 0.68 = 0.93 -> "0.9"
+            // Wait, 0.93 toFixed(1) is 0.9.
+            // Let's use something to differentiate.
+            // Let's add a 10.0 insulation to see exact rounding.
+            // 10 + 0.25 + 0.68 = 10.93 -> "10.9"
+            const resultSheltered = calculate([{ type: 'insulation', r: 10, thickness: 1 }], { orientation: 'wall', windExposure: 'sheltered' });
+            expect(resultSheltered.r_winter).toBe("10.9");
+
+            // severe uses 0.04 -> 10 + 0.04 + 0.68 = 10.72 -> "10.7"
+            const resultSevere = calculate([{ type: 'insulation', r: 10, thickness: 1 }], { orientation: 'wall', windExposure: 'severe' });
+            expect(resultSevere.r_winter).toBe("10.7");
+        });
     });
 
     describe('Thickness conflicts and warnings', () => {

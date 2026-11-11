@@ -36,7 +36,15 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
     let warnings = [];
     let notes = [];
 
-    const r_se = 0.17; // Exterior air film
+    let r_se = 0.17; // Default Exterior air film (normal)
+
+    // Wind exposure categories
+    const windExposure = options.windExposure || 'normal';
+    if (windExposure === 'sheltered') {
+        r_se = 0.25;
+    } else if (windExposure === 'severe') {
+        r_se = 0.04;
+    }
 
     // Basic air films (Exterior + Interior) based on orientation
     if (options.orientation === 'roof') {
