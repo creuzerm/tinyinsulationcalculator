@@ -87,7 +87,63 @@ function calculate(currentStack, options = { orientation: 'wall' }) {
         warnings.push(`<b>Compression Warning:</b> Your insulation + air gaps (${insulationThickness}") are thicker than your framing (${structureThickness}"). Compressing insulation reduces R-value and eliminates air gaps.`);
     }
 
+    // --- GLASER METHOD: Dew Point & Condensation Plane Detection ---
+    if (options.indoorTemp !== undefined && options.outdoorTemp !== undefined && options.indoorRH !== undefined) {
+        const tIn = parseFloat(options.indoorTemp);
+        const tOut = parseFloat(options.outdoorTemp);
+        const rh = parseFloat(options.indoorRH) / 100;
+
+        if (!isNaN(tIn) && !isNaN(tOut) && !isNaN(rh) && rh > 0) {
+            // Calculate indoor dew point using Magnus-Tetens approximation
+            const tempC = (tIn - 32) / 1.8;
+            const alpha = Math.log(rh * Math.exp((17.27 * tempC) / (tempC + 237.3)));
+            const dewPointC = (237.3 * alpha) / (17.27 - alpha);
+            const dewPointF = (dewPointC * 1.8) + 32;
+
+            // Compute total R for winter (since heating season is primary condensation risk)
+            // Wait, we just calculated totalR_winter inside the loop. Let's use it.
+            // Air films
+            const r_interior_film = options.orientation === 'roof' ? 0.61 : (options.orientation === 'floor' ? 0.92 : 0.68);
+            const totalR = totalR_winter;
+            let currentR = r_interior_film;
+            let vaporBarrierFound = false;
+
+            for (let i = 0; i < currentStack.length; i++) {
+                const layer = currentStack[i];
+                const layer_r = parseFloat(layer.r) || 0;
+
+                // Effective R-up for this layer (simplified from loop above)
+                let r_up = layer_r;
+                if (layer.type === 'radiant') {
+                    const prev = currentStack[i - 1];
+                    const next = currentStack[i + 1];
+                    if ((prev && prev.type === 'air') || (next && next.type === 'air')) {
+                        r_up = 5.0;
+                    }
+                } else if (layer.type === 'air') {
+                    r_up = 0.9;
+                }
+
+                currentR += r_up;
+
+                // Calculate interface temperature AT THE COLD SIDE of this layer
+                let interfaceTemp = tIn - ((tIn - tOut) * (currentR / totalR));
+
+                if (layer.type === 'vapor' || layer.type === 'radiant') {
+                    vaporBarrierFound = true;
+                }
+
+                // If interface is below dew point and no vapor barrier is protecting it from warm humid indoor air
+                if (interfaceTemp < dewPointF && !vaporBarrierFound) {
+                    warnings.push(`<b>Condensation Risk:</b> The temperature drops to ${interfaceTemp.toFixed(1)}°F at the exterior side of the ${layer.name || 'layer'}. This is below the interior dew point of ${dewPointF.toFixed(1)}°F. Consider adding a vapor barrier on the warm side.`);
+                    break; // Warn once for the first condensation plane
+                }
+            }
+        }
+    }
+
     // Round to 1 decimal place to prevent microscopic float variations (like 1.11e-16) from failing zero-checks
+
     let final_r_winter = parseFloat(totalR_winter.toFixed(1));
     let final_r_summer = parseFloat(totalR_summer.toFixed(1));
 
