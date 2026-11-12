@@ -643,7 +643,7 @@ When layering $n$ sheets of clear greenhouse film (or rigid polycarbonate) separ
    * Where $\\rho_{\\text{dry}} \\approx 36.0\\text{ lb/ft}^3$ for mixed Appalachian hardwoods.
 
 2. **Water Mass to Evaporate ($\\Delta M_{\\text{water}}$):**
-   On an oven-dry basis ($MC_{\\text{dry}}$), reducing moisture from initial $MC_i$ (e.g., $0.75$ green or $0.50$ semi-seasoned) to target $MC_f$ (e.g., $0.20$ stove-ready, or $0.26$ Fiber Saturation Point when paired with an indoor Stage-2 basement rack):
+   On an oven-dry basis ($MC_{\\text{dry}}$), reducing moisture from initial $MC_i$ (e.g., $0.75$ green or $0.50$ semi-seasoned) to target $MC_f$ (e.g., $0.20$ stove-ready, or $0.26$ Fiber Saturation Point when paired with indoor Stage-2 basement finishing):
    $$\\Delta M_{\\text{water}} = M_{\\text{dry}} \\cdot (MC_i - MC_f) \\quad [\\text{lbs of water}]$$
    $$V_{\\text{water\\_gal}} = \\frac{\\Delta M_{\\text{water}}}{8.34} \\quad [\\text{gallons}]$$
 

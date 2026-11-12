@@ -46,7 +46,7 @@ When layering $n$ sheets of clear greenhouse film (or rigid polycarbonate) separ
    * Where $\rho_{\text{dry}} \approx 36.0\text{ lb/ft}^3$ for mixed Appalachian hardwoods.
 
 2. **Water Mass to Evaporate ($\Delta M_{\text{water}}$):**
-   On an oven-dry basis ($MC_{\text{dry}}$), reducing moisture from initial $MC_i$ (e.g., $0.75$ green or $0.50$ semi-seasoned) to target $MC_f$ (e.g., $0.20$ stove-ready, or $0.26$ Fiber Saturation Point when paired with an indoor Stage-2 basement rack):
+   On an oven-dry basis ($MC_{\text{dry}}$), reducing moisture from initial $MC_i$ (e.g., $0.75$ green or $0.50$ semi-seasoned) to target $MC_f$ (e.g., $0.20$ stove-ready, or $0.26$ Fiber Saturation Point when paired with indoor Stage-2 basement finishing):
    $$\Delta M_{\text{water}} = M_{\text{dry}} \cdot (MC_i - MC_f) \quad [\text{lbs of water}]$$
    $$V_{\text{water\_gal}} = \frac{\Delta M_{\text{water}}}{8.34} \quad [\text{gallons}]$$
 
@@ -182,17 +182,10 @@ Add the following JSON block to your `materials.json` file:
     "volume_presets": [
       {
         "id": "half_basement_rack",
-        "name": "1 Basement Bay (1.5' x 6' x 16\")",
+        "name": "1 Basement Bay (12 cu ft / ~0.10 cord)",
         "gross_cu_ft": 12.0,
         "solid_cu_ft": 7.5,
         "cords": 0.094
-      },
-      {
-        "id": "full_basement_rack_1yd",
-        "name": "Full Basement Rack / 1 Cubic Yard (3' x 6' x 18\")",
-        "gross_cu_ft": 27.0,
-        "solid_cu_ft": 17.0,
-        "cords": 0.211
       },
       {
         "id": "single_outdoor_pallet",
@@ -329,7 +322,7 @@ function calculateWoodMoistureLoad({
     : grossVolumeCuFt * SOLAR_KILN_CONSTANTS.SOLID_WOOD_PACKING_FRACTION;
 
   const ovenDryWeightLbs = solidCuFt * dryDensityLbFt3;
-  // If using the Stage-2 basement rack finisher, outdoor kiln only needs to reach ~26% FSP
+  // If using Stage-2 indoor basement finishing, outdoor kiln only needs to reach ~26% FSP
   const effectiveOutdoorTargetMcPct = useBasementFinisher
     ? Math.max(targetMcPct, 26)
     : targetMcPct;
@@ -535,10 +528,10 @@ const solarKilnMcpTool = {
   inputSchema: {
     type: "object",
     properties: {
-      grossVolumeCuFt: { type: "number", description: "Gross stacked wood volume in cu ft (27 = 1 yd3/basement rack, 42.7 = 1 pallet, 128 = 1 cord)", default: 27.0 },
+      grossVolumeCuFt: { type: "number", description: "Gross stacked wood volume in cu ft (12 = 1 basement bay, 42.7 = 1 pallet, 128 = 1 cord)", default: 12.0 },
       initialMcPct: { type: "number", description: "Initial wood moisture content % on dry basis (e.g., 75 green, 50 semi-seasoned)", default: 50 },
       targetMcPct: { type: "number", description: "Final stove-ready moisture content % (typically 18-20%)", default: 20 },
-      useBasementFinisher: { type: "boolean", description: "True if finishing bound water (<26% MC) in indoor 60F low-humidity basement rack", default: true },
+      useBasementFinisher: { type: "boolean", description: "True if finishing bound water (<26% MC) in indoor basement or conditioned space", default: true },
       splitDiameterInches: { type: "number", description: "Average thickness/diameter of wood splits in inches", default: 2.75 },
       isUnsplitRound: { type: "boolean", description: "True if logs are unsplit rounds with intact bark", default: false },
       numCollectors: { type: "number", description: "Number of 36x96 transpired screen solar collectors attached to active box", default: 2 },
@@ -576,7 +569,7 @@ describe('Solar Kiln & Greenhouse Calculator Module', () => {
     expect(triple.rValue).toBeCloseTo(2.70, 2);
   });
 
-  test('calculateWoodMoistureLoad matches 1 cubic yard (Full Basement Rack) energy budget', () => {
+  test('calculateWoodMoistureLoad matches 1 cubic yard energy budget', () => {
     const load = calculateWoodMoistureLoad({
       grossVolumeCuFt: 27.0,
       solidVolumeCuFt: 17.0,

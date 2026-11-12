@@ -200,15 +200,17 @@
             inputSchema: {
                 type: "object",
                 properties: {
-                    grossVolumeCuFt: { type: "number", description: "Gross stacked wood volume in cu ft (27 = 1 yd3/basement rack, 42.7 = 1 pallet, 128 = 1 cord)", default: 27.0 },
+                    grossVolumeCuFt: { type: "number", description: "Gross stacked wood volume in cu ft (12 = 1 basement bay, 42.7 = 1 pallet, 128 = 1 cord)", default: 12.0 },
                     initialMcPct: { type: "number", description: "Initial wood moisture content % on dry basis (e.g. 75 green, 50 semi-seasoned)", default: 50 },
                     targetMcPct: { type: "number", description: "Final stove-ready moisture content % (typically 18-20%)", default: 20 },
-                    useBasementFinisher: { type: "boolean", description: "True if finishing bound water (<26% MC) in indoor 60F low-humidity basement rack", default: true },
+                    useBasementFinisher: { type: "boolean", description: "True if finishing bound water (<26% MC) in indoor basement or conditioned space", default: true },
                     splitDiameterInches: { type: "number", description: "Average thickness/diameter of wood splits in inches", default: 2.75 },
                     isUnsplitRound: { type: "boolean", description: "True if logs are unsplit rounds with intact bark", default: false },
                     numCollectors: { type: "number", description: "Number of 36x96 transpired screen solar collectors attached to active box", default: 2 },
                     collectorGlazingLayers: { type: "number", description: "Layers of 6-mil UV film on solar collectors (1-3)", default: 1 },
                     boxGlazingLayers: { type: "number", description: "Layers of 6-mil UV film on pallet box walls (1-3)", default: 2 },
+                    totalFanCfm: { type: "number", description: "Active fan ventilation airflow rate in CFM", default: 96 },
+                    chainedBoxesInSeries: { type: "boolean", description: "True if multiple drying boxes are connected in series airflow", default: false },
                     electricRatePerKwh: { type: "number", description: "Local electricity rate in $/kWh (0.169 KY Power, 0.138 KY Co-op)", default: 0.169 },
                     heatPumpCop: { type: "number", description: "Seasonal Coefficient of Performance of central heat pump", default: 2.4 },
                     cordsProcessedPerSeason: { type: "number", description: "Total cords processed through kiln over 150-day winter", default: 1.5 },
@@ -221,7 +223,7 @@
                     throw new Error("Solar kiln calculator engine not available.");
                 }
 
-                const grossVolumeCuFt = params.grossVolumeCuFt ?? 27.0;
+                const grossVolumeCuFt = params.grossVolumeCuFt ?? 12.0;
                 const initialMcPct = params.initialMcPct ?? 50;
                 const targetMcPct = params.targetMcPct ?? 20;
                 const useBasementFinisher = params.useBasementFinisher ?? true;
@@ -230,6 +232,8 @@
                 const numCollectors = params.numCollectors ?? 2;
                 const collectorGlazingLayers = params.collectorGlazingLayers ?? 1;
                 const boxGlazingLayers = params.boxGlazingLayers ?? 2;
+                const totalFanCfm = params.totalFanCfm ?? 96;
+                const chainedBoxesInSeries = params.chainedBoxesInSeries ?? false;
                 const electricRatePerKwh = params.electricRatePerKwh ?? 0.169;
                 const heatPumpCop = params.heatPumpCop ?? 2.4;
                 const cordsProcessedPerSeason = params.cordsProcessedPerSeason ?? 1.5;
@@ -248,6 +252,8 @@
                     numCollectors,
                     collectorGlazingLayers,
                     boxGlazingLayers,
+                    totalFanCfm,
+                    chainedBoxesInSeries,
                     woodLoadResult: woodLoad
                 });
 

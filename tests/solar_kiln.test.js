@@ -25,13 +25,12 @@ describe('Solar Kiln & Greenhouse Frontend Module', () => {
 
             <form id="solarKilnForm">
                 <select id="volumePreset">
-                    <option value="half_basement_rack">1 Basement Bay</option>
-                    <option value="full_basement_rack_1yd" selected>Full Basement Rack</option>
+                    <option value="half_basement_rack" selected>1 Basement Bay</option>
                     <option value="single_outdoor_pallet">1 Outdoor Pallet Dryer</option>
                     <option value="twin_outdoor_pallets">2 Outdoor Pallets</option>
                     <option value="full_cord">1 Full Cord</option>
                 </select>
-                <input type="number" id="grossVolumeCuFt" value="27.0">
+                <input type="number" id="grossVolumeCuFt" value="12.0">
                 <select id="woodSpecies">
                     <option value="ne_ky_mixed_hardwood" selected>Mixed Hardwood</option>
                     <option value="white_oak_hickory">Oak / Hickory</option>
@@ -49,6 +48,8 @@ describe('Solar Kiln & Greenhouse Frontend Module', () => {
                 <select id="boxGlazingLayers">
                     <option value="2" selected>2</option>
                 </select>
+                <input type="number" id="totalFanCfm" value="96">
+                <input type="checkbox" id="chainedBoxesInSeries">
                 <input type="checkbox" id="northWallReflectix" checked>
                 <input type="number" id="ambientTempF" value="32">
                 <input type="number" id="internalKilnTempF" value="80">
@@ -72,6 +73,8 @@ describe('Solar Kiln & Greenhouse Frontend Module', () => {
                 <span data-output="seasonalValueVsHeatPump"></span>
                 <span data-output="paybackWeeksTotalHeat"></span>
                 <span data-output="densityDelta"></span>
+                <span data-output="effectiveCfm"></span>
+                <span data-output="airResidenceSec"></span>
             </div>
 
             <div id="helpModal" class="hidden">
@@ -82,7 +85,9 @@ describe('Solar Kiln & Greenhouse Frontend Module', () => {
     });
 
     test('presets and species constants are populated', () => {
-        expect(PRESETS.full_basement_rack_1yd.grossVolumeCuFt).toBe(27.0);
+        expect(PRESETS.full_basement_rack_1yd).toBeUndefined();
+        expect(PRESETS.half_basement_rack.grossVolumeCuFt).toBe(12.0);
+        expect(PRESETS.half_basement_rack.description).toBe("1 Basement Bay (12 cu ft / ~0.10 cord)");
         expect(PRESETS.full_cord.cords).toBe(1.0);
         expect(SPECIES.ne_ky_mixed_hardwood.dryDensity).toBe(36.0);
         expect(SPECIES.white_oak_hickory.grossMmbtuPerCord).toBe(27.7);
@@ -99,7 +104,7 @@ describe('Solar Kiln & Greenhouse Frontend Module', () => {
     test('calculateSolarKiln accurately updates all DOM output hooks', () => {
         const result = calculateSolarKiln();
         expect(result).toBeDefined();
-        expect(result.woodLoad.cordsEquivalent).toBeCloseTo(0.211, 2);
+        expect(result.woodLoad.cordsEquivalent).toBeCloseTo(0.094, 2);
         expect(result.kilnBalance.outdoorDwellDays).toBeGreaterThan(0);
         expect(result.heatPumpRoi.seasonalValueVsHeatPump).toBeGreaterThan(100);
 
@@ -111,6 +116,21 @@ describe('Solar Kiln & Greenhouse Frontend Module', () => {
 
         const bonusEl = document.querySelector('[data-output="dryingBonusMmbtuPerCord"]');
         expect(bonusEl.textContent).toContain('+6.28 MMBTU');
+
+        const cfmEl = document.querySelector('[data-output="effectiveCfm"]');
+        expect(cfmEl.textContent).toBe('96 CFM');
+
+        const residenceEl = document.querySelector('[data-output="airResidenceSec"]');
+        expect(residenceEl.textContent).toContain('s coll /');
+    });
+
+    test('airflow knob totalFanCfm adjusts effective CFM and residence time', () => {
+        document.getElementById('totalFanCfm').value = "150";
+        const result = calculateSolarKiln();
+        expect(result.kilnBalance.effectiveCfm).toBe(150);
+
+        const cfmEl = document.querySelector('[data-output="effectiveCfm"]');
+        expect(cfmEl.textContent).toBe('150 CFM');
     });
 
     test('form submission handles agentInvoked and calls respondWith', () => {
